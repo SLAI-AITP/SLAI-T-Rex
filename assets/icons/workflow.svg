@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="240" viewBox="0 0 1080 240" role="img" aria-label="OR post-training workflow">
+  <rect width="1080" height="240" rx="22" fill="#f8fafc"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="30" y="72" width="180" height="86" rx="14" fill="#dbeafe" stroke="#2563eb"/>
+    <text x="68" y="105" font-size="17" font-weight="700" fill="#1e40af">1. CPT Data</text>
+    <text x="58" y="132" font-size="13" fill="#1e3a8a">reserved module</text>
+    <rect x="245" y="72" width="180" height="86" rx="14" fill="#e0f2fe" stroke="#0284c7"/>
+    <text x="275" y="105" font-size="17" font-weight="700" fill="#075985">2. CPT Train</text>
+    <text x="276" y="132" font-size="13" fill="#0c4a6e">reserved module</text>
+    <rect x="460" y="72" width="180" height="86" rx="14" fill="#dcfce7" stroke="#15803d"/>
+    <text x="493" y="105" font-size="17" font-weight="700" fill="#166534">3. SFT Data</text>
+    <text x="494" y="132" font-size="13" fill="#14532d">ready to run</text>
+    <rect x="675" y="72" width="180" height="86" rx="14" fill="#ffedd5" stroke="#c2410c"/>
+    <text x="704" y="105" font-size="17" font-weight="700" fill="#9a3412">4. SFT Train</text>
+    <text x="706" y="132" font-size="13" fill="#7c2d12">reserved module</text>
+    <rect x="890" y="72" width="160" height="86" rx="14" fill="#ede9fe" stroke="#7c3aed"/>
+    <text x="914" y="105" font-size="17" font-weight="700" fill="#5b21b6">5. Deploy</text>
+    <text x="913" y="132" font-size="13" fill="#4c1d95">reserved module</text>
+  </g>
+  <path d="M210 115h30" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M425 115h30" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M640 115h30" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M855 115h30" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/>
+</svg>
+

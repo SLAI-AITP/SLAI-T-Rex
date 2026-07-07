@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Model deployment icon">
+  <rect x="12" y="14" width="72" height="50" rx="12" fill="#ede9fe"/>
+  <path d="M28 34h40M28 48h26" stroke="#7c3aed" stroke-width="6" stroke-linecap="round"/>
+  <path d="M30 78h36" stroke="#7c3aed" stroke-width="6" stroke-linecap="round"/>
+  <path d="M48 64v14" stroke="#7c3aed" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="68" cy="48" r="6" fill="#7c3aed"/>
+</svg>
+

@@ -1,0 +1,15 @@
+seed_required_fields:
+  - problem
+  - answer
+
+sft_required_fields:
+  - id
+  - messages
+  - metadata
+
+metadata_dimensions:
+  mode: [DP, DT, DPS]
+  data_interface: [inline_text, markdown_table, attached_files]
+  answer_style: [math_model, math_model_with_code, code_only]
+  difficulty: [small, medium, large, industrial]
+

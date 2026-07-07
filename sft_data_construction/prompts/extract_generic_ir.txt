@@ -1,0 +1,19 @@
+You convert one high-quality optimization modeling problem-answer pair into a generic modeling IR.
+
+Return JSON only.
+
+Required fields:
+- mode: one of DP, DT, DPS.
+- domain: broad application domain.
+- structure: one of assignment, scheduling, routing, transportation, blending, capacity_planning, facility_location, production_planning, portfolio, generic_lp_mip.
+- difficulty: small, medium, large, or industrial.
+- data_interface: inline_text, markdown_table, or attached_files.
+- answer_style: math_model, math_model_with_code, or code_only.
+- objective: concise objective description.
+- decision_variables: list of variable families.
+- constraints: list of constraint families.
+- parameters: list of parameter families.
+- notes: optional modeling notes.
+
+Do not include source names, private lineage, or collection-specific fields.
+

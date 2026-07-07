@@ -1,0 +1,15 @@
+Render the given generic modeling IR into a visible optimization problem.
+
+Return JSON only:
+{
+  "problem": "...",
+  "data_files": []
+}
+
+Rules:
+- The problem must be self-contained for DP and DT.
+- For DT, include clear Markdown tables.
+- For DPS, describe what structured data are provided and include synthetic data_files when needed.
+- Do not mention IR, parent examples, validation, generation, or hidden answers.
+- Do not ask for a specific external prompt format.
+

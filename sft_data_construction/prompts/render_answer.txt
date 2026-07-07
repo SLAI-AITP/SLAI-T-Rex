@@ -1,0 +1,14 @@
+Generate a high-quality answer for the visible optimization problem and its modeling IR.
+
+Return JSON only:
+{
+  "answer": "..."
+}
+
+Rules:
+- If answer_style is math_model, provide sets, parameters, variables, objective, and constraints.
+- If answer_style is math_model_with_code, provide a clear formulation and Python optimization code.
+- If answer_style is code_only, provide only executable Python optimization code.
+- Keep notation consistent with the problem.
+- Do not add unverified claims about total supply, total demand, feasibility, tightness, or optimality unless they are directly derived from the stated data.
+- Do not include private lineage or generation comments.

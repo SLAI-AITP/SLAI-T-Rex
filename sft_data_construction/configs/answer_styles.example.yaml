@@ -1,0 +1,11 @@
+answer_styles:
+  math_model:
+    description: "A clear mathematical formulation with sets, parameters, variables, objective, and constraints."
+    include_code: false
+  math_model_with_code:
+    description: "A formulation plus executable Python optimization code."
+    include_code: true
+  code_only:
+    description: "Executable Python optimization code only."
+    include_code: true
+

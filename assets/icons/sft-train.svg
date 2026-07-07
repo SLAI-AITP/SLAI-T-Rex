@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="SFT training icon">
+  <rect x="12" y="16" width="72" height="56" rx="12" fill="#ffedd5"/>
+  <path d="M28 60V36l20 12-20 12z" fill="#c2410c"/>
+  <path d="M55 36h14M55 48h14M55 60h14" stroke="#c2410c" stroke-width="6" stroke-linecap="round"/>
+  <path d="M34 84h28" stroke="#c2410c" stroke-width="6" stroke-linecap="round"/>
+</svg>
+

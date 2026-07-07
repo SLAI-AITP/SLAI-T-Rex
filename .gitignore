@@ -1,0 +1,14 @@
+runs/
+logs/
+cache/
+outputs/
+checkpoints/
+wandb/
+*.log
+*.pyc
+__pycache__/
+.env
+.venv/
+seeds/private/
+data/private/
+

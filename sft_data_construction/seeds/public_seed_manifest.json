@@ -1,0 +1,67 @@
+{
+  "schema": "or_data_distill_public_seed_subset_v0.1",
+  "requested_count": 200,
+  "selected_count": 200,
+  "input_rows": 10000,
+  "candidate_rows": 9963,
+  "rejected_candidate_rows": 37,
+  "rejected_issue_count": 53,
+  "reject_counts": {
+    "problem:private_api_or_key": 29,
+    "answer:private_api_or_key": 12,
+    "problem:unfinished": 4,
+    "user:forbidden:locked": 4,
+    "problem:extra_forbidden_0": 3,
+    "answer:extra_forbidden_0": 1
+  },
+  "selection": {
+    "seed": 20260601,
+    "max_similarity": 0.82,
+    "mode_distribution": {
+      "DPS": 80,
+      "DP": 70,
+      "DT": 50
+    },
+    "domain_distribution": {
+      "production": 70,
+      "logistics": 44,
+      "finance": 30,
+      "energy": 21,
+      "generic": 20,
+      "healthcare": 10,
+      "environment": 3,
+      "education": 2
+    },
+    "structure_distribution": {
+      "generic_lp_mip": 41,
+      "routing": 39,
+      "production_planning": 25,
+      "transportation": 25,
+      "assignment": 23,
+      "blending": 14,
+      "scheduling": 13,
+      "capacity_planning": 10,
+      "portfolio": 8,
+      "facility_location": 2
+    },
+    "difficulty_distribution": {
+      "medium": 97,
+      "large": 50,
+      "small": 36,
+      "industrial": 17
+    },
+    "data_interface_distribution": {
+      "attached_files": 80,
+      "inline_text": 70,
+      "markdown_table": 50
+    },
+    "answer_style_distribution": {
+      "math_model_with_code": 120,
+      "code_only": 80
+    }
+  },
+  "output": {
+    "seed_file": "public_seed.jsonl",
+    "manifest_file": "public_seed_manifest.json"
+  }
+}

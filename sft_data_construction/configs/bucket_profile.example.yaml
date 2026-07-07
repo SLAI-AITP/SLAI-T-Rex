@@ -1,0 +1,25 @@
+profile_name: generic_or_modeling_profile
+
+mode_weights:
+  DP: 0.50
+  DT: 0.25
+  DPS: 0.25
+
+difficulty_weights:
+  small: 0.20
+  medium: 0.50
+  large: 0.25
+  industrial: 0.05
+
+structure_weights:
+  assignment: 0.10
+  scheduling: 0.10
+  routing: 0.10
+  transportation: 0.15
+  blending: 0.10
+  capacity_planning: 0.15
+  facility_location: 0.10
+  production_planning: 0.10
+  portfolio: 0.05
+  generic_lp_mip: 0.05
+

@@ -1,0 +1,27 @@
+Generate a new synthetic optimization modeling IR from the parent example.
+
+Return JSON only. The new IR should preserve the general modeling quality of the parent while changing the concrete scenario.
+
+Requirements:
+- Choose a mode from the allowed modes.
+- Choose a domain, structure, and difficulty from the allowed lists when provided.
+- If requirements.target_buckets is provided, use those target mode, domain, structure, and difficulty unless they are internally inconsistent.
+- Create fresh entities, parameters, numerical scale, and constraint families.
+- Keep the model mathematically coherent.
+- Do not copy the parent story, names, data, or wording.
+- Do not mention hidden data generation, validation, or private lineage.
+
+Required JSON fields:
+- mode
+- domain
+- structure
+- difficulty
+- data_interface
+- answer_style
+- synthetic_problem_brief
+- objective
+- decision_variables
+- parameters
+- constraints
+- data_requirements
+- modeling_notes

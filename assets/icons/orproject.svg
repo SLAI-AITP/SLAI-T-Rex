@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="180" viewBox="0 0 720 180" role="img" aria-label="ORProject logo">
+  <rect width="720" height="180" rx="24" fill="#f7faf9"/>
+  <circle cx="88" cy="90" r="52" fill="#0f766e"/>
+  <path d="M62 92c0-18 11-32 27-32s27 14 27 32-11 32-27 32-27-14-27-32zm16 0c0 10 4 18 11 18s11-8 11-18-4-18-11-18-11 8-11 18z" fill="#fff"/>
+  <path d="M130 60h24c18 0 30 10 30 26 0 11-6 19-16 23l20 31h-19l-17-28h-6v28h-16V60zm16 14v25h8c9 0 14-5 14-13s-5-12-14-12h-8z" fill="#0f766e"/>
+  <text x="214" y="78" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="700" fill="#102a43">ORProject</text>
+  <text x="214" y="118" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#486581">Post-training data and recipes for OR-focused LLMs</text>
+  <rect x="214" y="135" width="110" height="8" rx="4" fill="#2563eb"/>
+  <rect x="336" y="135" width="110" height="8" rx="4" fill="#0f766e"/>
+  <rect x="458" y="135" width="110" height="8" rx="4" fill="#c2410c"/>
+</svg>
+

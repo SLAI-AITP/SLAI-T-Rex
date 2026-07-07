@@ -1,0 +1,80 @@
+run:
+  run_id: demo
+  output_root: runs
+  # Desired number of accepted SFT rows. The runner may submit more attempts
+  # according to generation_oversample and max_rounds.
+  target_count: 5
+  max_rounds: 2
+  generation_oversample: 1.5
+  concurrency: 1
+  seed: 42
+  resume: true
+  force: false
+
+paths:
+  seeds: examples/seeds/small_seed.jsonl
+  # Optional previous accepted synthetic IR pools for flywheel-style growth.
+  synthetic_pool: []
+
+llm:
+  base_url: http://localhost:8000/v1
+  # base_urls can be used instead of base_url for multi-endpoint generation.
+  # base_urls:
+  #   - http://host-a:8000/v1
+  #   - http://host-b:8000/v1
+  workers_per_api: 0
+  model: your-model-name
+  api_key_env: LLM_API_KEY
+  temperature: 0.7
+  top_p: 0.9
+  max_tokens: 4096
+  timeout_seconds: 180
+  disable_proxy: false
+
+cache:
+  enabled: true
+  dir: cache/chat
+
+quality:
+  # 0 disables similarity filtering. 0.88-0.92 is a practical starting range.
+  problem_similarity_threshold: 0.9
+  compare_to_seeds: true
+  compare_to_run: true
+
+parent_pool:
+  # seed_only, hybrid, synthetic_only, or snowball.
+  parent_pool_mode: hybrid
+  synthetic_parent_share: 0.5
+  parent_match_top_k: 8
+  parent_usage_penalty: 0.25
+  parent_exact_match_probability: 0.5
+
+prompts:
+  generate_synthetic_ir: prompts/generate_synthetic_ir.txt
+  render_problem: prompts/render_problem.txt
+  render_answer: prompts/render_answer.txt
+
+problem_modes: [DP, DT, DPS]
+domains:
+  - logistics
+  - production
+  - energy
+  - healthcare
+  - finance
+  - agriculture
+  - education
+  - environment
+  - computing
+  - generic
+structures:
+  - assignment
+  - scheduling
+  - routing
+  - transportation
+  - blending
+  - capacity_planning
+  - facility_location
+  - production_planning
+  - portfolio
+  - generic_lp_mip
+difficulties: [small, medium, large, industrial]
