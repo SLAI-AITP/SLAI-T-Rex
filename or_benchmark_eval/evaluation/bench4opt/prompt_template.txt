@@ -1,0 +1,58 @@
+SYSTEM:
+You are a professional mathematical optimization expert. Please use Python and Gurobi 12.x compatible gurobipy to solve the following optimization problem.
+
+USER:
+# Problem Description
+{{Problem}}
+
+# Data Description
+The original dataset file for this instance is {{DataPath}}.
+During evaluation, the instance data will be provided as a JSON file named data.json in the working directory.
+
+## IMPORTANT: File Path Base Directory
+{{WorkingDirectory}}
+
+CRITICAL INSTRUCTIONS FOR FILE READING:
+1. Read the instance data from a JSON file named data.json.
+2. Do not use absolute paths or relative paths with ./ for the benchmark data file.
+3. Do not rely on any files other than data.json.
+
+Requirements:
+1. Formulate the mathematical model and write Python code to solve it.
+2. Use gurobipy with Gurobi 12.x as the solver.
+3. Use only the parameters described in the problem statement and contained in data.json.
+4. Define the final Gurobi model in a variable named model.
+5. Specify the upper and lower bounds for all variables.
+6. Be careful with the data types and dimensions of all variables and parameters.
+7. If helper quantities are necessary, derive them clearly from the provided data.
+8. Use syntax compatible with Gurobi 12.x. When naming constraints, pass the name with the name= keyword instead of extra positional arguments.
+9. Output Python code only. Do not output anything else.
+
+# Output Format
+Provide your response as executable Python code that directly uses gurobipy.
+
+import gurobipy as gp
+from gurobipy import GRB
+
+# Read data from data.json
+# Create model
+model = gp.Model("optimization_problem")
+
+# Decision variables
+# Objective
+# Constraints
+
+# Solve
+model.optimize()
+
+# Optional result printing
+if model.Status == GRB.OPTIMAL:
+	print(f"optimal_value = {model.ObjVal}")
+elif model.Status == GRB.INFEASIBLE:
+	print("optimal_value = INFEASIBLE")
+elif model.Status == GRB.UNBOUNDED:
+	print("optimal_value = UNBOUNDED")
+else:
+	print("optimal_value = ERROR")
+
+Note: Avoid including if __name__ == "__main__": in your response. Write the code directly without wrapping it in functions.

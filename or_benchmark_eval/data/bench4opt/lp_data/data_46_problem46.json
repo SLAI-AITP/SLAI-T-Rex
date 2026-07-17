@@ -1,0 +1,20 @@
+{
+    "T": 6,
+    "demand": [
+        7950,
+        12981,
+        8160,
+        9853,
+        9555,
+        9810
+    ],
+    "initial_inventory": 79,
+    "degradation_factor": 0.93,
+    "storage_cost": 2521.11,
+    "handling_cost": 1348.3,
+    "shortage_penalty": 22.93,
+    "disposal_cost": 2221.99,
+    "handling_limit": 22,
+    "inventory_lower_bound": 55,
+    "inventory_upper_bound": 72
+}

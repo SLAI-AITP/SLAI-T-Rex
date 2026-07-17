@@ -1,0 +1,76 @@
+{
+    "nurses": [
+        "Nurse_0",
+        "Nurse_1",
+        "Nurse_2",
+        "Nurse_3",
+        "Nurse_4",
+        "Nurse_5",
+        "Nurse_6",
+        "Nurse_7"
+    ],
+    "shifts": [
+        "Shift_0",
+        "Shift_1",
+        "Shift_2",
+        "Shift_3",
+        "Shift_4",
+        "Shift_5",
+        "Shift_6",
+        "Shift_7",
+        "Shift_8"
+    ],
+    "shift_requirements": [
+        6,
+        3,
+        3,
+        3,
+        4,
+        1,
+        6,
+        3,
+        5
+    ],
+    "max_hours": [
+        30.26,
+        20.41,
+        30.09,
+        21.14,
+        22.7,
+        20.97,
+        23.12,
+        22.65
+    ],
+    "shift_hours": [
+        10.89,
+        10.67,
+        8.59,
+        6.23,
+        5.97,
+        5.4,
+        4.88,
+        5.99,
+        9.12
+    ],
+    "nurse_skills": [
+        1,
+        1,
+        4,
+        2,
+        1,
+        3,
+        4,
+        5
+    ],
+    "shift_skill_requirements": [
+        4,
+        4,
+        5,
+        5,
+        4,
+        5,
+        4,
+        5,
+        3
+    ]
+}

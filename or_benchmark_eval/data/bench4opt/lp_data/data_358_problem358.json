@@ -1,0 +1,21 @@
+{
+    "T": 6,
+    "demand": [
+        8884,
+        11330,
+        11562,
+        8954,
+        9345,
+        11171
+    ],
+    "initial_inventory": 54,
+    "degradation_factor": 0.93,
+    "storage_cost": 2797.99,
+    "handling_cost": 1455.45,
+    "slack_penalty": 39.68,
+    "reservation_cost": 597.51,
+    "handling_limit": 19,
+    "inventory_lower_bound": 54,
+    "inventory_upper_bound": 72,
+    "reservation_limit": 8
+}

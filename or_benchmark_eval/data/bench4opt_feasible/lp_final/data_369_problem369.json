@@ -1,0 +1,148 @@
+{
+    "nodes": [
+        "node_0",
+        "node_1",
+        "node_2",
+        "node_3",
+        "node_4",
+        "node_5",
+        "node_6",
+        "node_7",
+        "node_8",
+        "node_9"
+    ],
+    "edges": [
+        {
+            "from": "node_5",
+            "to": "node_7",
+            "capacity": 1000.0,
+            "cost": 33.95213511660522
+        },
+        {
+            "from": "node_3",
+            "to": "node_7",
+            "capacity": 1000.0,
+            "cost": 18.28573992449834
+        },
+        {
+            "from": "node_6",
+            "to": "node_8",
+            "capacity": 1000.0,
+            "cost": 49.0148716010091
+        },
+        {
+            "from": "node_7",
+            "to": "node_0",
+            "capacity": 1000.0,
+            "cost": 79.05370627250744
+        },
+        {
+            "from": "node_4",
+            "to": "node_7",
+            "capacity": 1000.0,
+            "cost": 82.63953697351288
+        },
+        {
+            "from": "node_0",
+            "to": "node_4",
+            "capacity": 1000.0,
+            "cost": 8.080375195673284
+        },
+        {
+            "from": "node_6",
+            "to": "node_8",
+            "capacity": 1000.0,
+            "cost": 12.26920650372609
+        },
+        {
+            "from": "node_3",
+            "to": "node_2",
+            "capacity": 1000.0,
+            "cost": 25.892884768577087
+        },
+        {
+            "from": "node_3",
+            "to": "node_0",
+            "capacity": 1000.0,
+            "cost": 20.49287988613229
+        },
+        {
+            "from": "node_5",
+            "to": "node_9",
+            "capacity": 1000.0,
+            "cost": 22.306024920675686
+        },
+        {
+            "from": "node_7",
+            "to": "node_5",
+            "capacity": 1000.0,
+            "cost": 4.228918248842907
+        },
+        {
+            "from": "node_5",
+            "to": "node_9",
+            "capacity": 1000.0,
+            "cost": 46.04572056110174
+        },
+        {
+            "from": "node_1",
+            "to": "node_6",
+            "capacity": 1000.0,
+            "cost": 75.42254934839212
+        },
+        {
+            "from": "node_2",
+            "to": "node_1",
+            "capacity": 1000.0,
+            "cost": 18.188306235636137
+        },
+        {
+            "from": "node_9",
+            "to": "node_6",
+            "capacity": 1000.0,
+            "cost": 14.429807862648952
+        },
+        {
+            "from": "node_8",
+            "to": "node_2",
+            "capacity": 1000.0,
+            "cost": 18.047331977005875
+        },
+        {
+            "from": "node_6",
+            "to": "node_5",
+            "capacity": 1000.0,
+            "cost": 11.59858660863532
+        },
+        {
+            "from": "node_2",
+            "to": "node_7",
+            "capacity": 1000.0,
+            "cost": 54.41445519338989
+        },
+        {
+            "from": "node_0",
+            "to": "node_1",
+            "capacity": 1000.0,
+            "cost": 98.27372033533732
+        },
+        {
+            "from": "node_9",
+            "to": "node_3",
+            "capacity": 1000.0,
+            "cost": 18.749399512604327
+        }
+    ],
+    "demand": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        -10.0,
+        0,
+        10.0,
+        0,
+        0
+    ]
+}

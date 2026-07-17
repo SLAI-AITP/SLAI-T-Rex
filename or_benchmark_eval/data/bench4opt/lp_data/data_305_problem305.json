@@ -1,0 +1,19 @@
+{
+    "T": 6,
+    "demand": [
+        11461,
+        8841,
+        12305,
+        8220,
+        9176,
+        8165
+    ],
+    "initial_inventory": 54,
+    "decay_factor": 0.86,
+    "holding_cost": 2811,
+    "ordering_cost": 1314,
+    "penalty_cost": 39,
+    "ordering_limit": 24,
+    "inventory_lower_bound": 54,
+    "inventory_upper_bound": 84
+}

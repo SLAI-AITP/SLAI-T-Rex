@@ -1,0 +1,10 @@
+You are an expert in optimization modeling and gurobipy. Build a model for the following optimization problem and implement it using Gurobi Optimizer with the `gurobipy` package version installed in the current environment (12.x). The requirements are as follows:
+
+1. Do not optimize or solve the model. Instead, save the model as an `.lp` file.
+2. Specify the upper and lower bounds for all variables.
+3. Be careful with the data types and dimensions of all variables and parameters.
+4. Do not use any extra parameters that are not provided in the data file. If additional parameters are necessary, define them clearly.
+5. Output the Python code only. Do not output anything else.
+6. Make sure your output code can be run directly in Gurobi Optimizer and saves the desired `.lp` file.
+
+[Problem Description]

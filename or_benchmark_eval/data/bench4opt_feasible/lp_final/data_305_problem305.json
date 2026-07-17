@@ -1,0 +1,19 @@
+{
+    "T": 6,
+    "demand": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+    ],
+    "initial_inventory": 100,
+    "decay_factor": 1,
+    "holding_cost": 2396,
+    "ordering_cost": 1455,
+    "penalty_cost": 51,
+    "ordering_limit": 100,
+    "inventory_lower_bound": 0,
+    "inventory_upper_bound": 100
+}

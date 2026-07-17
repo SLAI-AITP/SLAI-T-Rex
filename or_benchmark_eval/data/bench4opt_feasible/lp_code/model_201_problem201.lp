@@ -1,0 +1,35 @@
+\ Model Transportation Problem with Environmental Impact Consideration
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+Minimize
+  - 2 x[0,0] - 2 x[0,1] - 2 x[0,2] - 2 x[0,3] - 2 x[0,4] - 2 x[1,0]
+   - 2 x[1,1] - 2 x[1,2] - 2 x[1,3] - 2 x[1,4] - 2 x[2,0] - 2 x[2,1]
+   - 2 x[2,2] - 2 x[2,3] - 2 x[2,4] - 2 x[3,0] - 2 x[3,1] - 2 x[3,2]
+   - 2 x[3,3] - 2 x[3,4] - 2 x[4,0] - 2 x[4,1] - 2 x[4,2] - 2 x[4,3]
+   - 2 x[4,4] - 2 x[5,0] - 2 x[5,1] - 2 x[5,2] - 2 x[5,3] - 2 x[5,4]
+   - 2 x[6,0] - 2 x[6,1] - 2 x[6,2] - 2 x[6,3] - 2 x[6,4] - 2 x[7,0]
+   - 2 x[7,1] - 2 x[7,2] - 2 x[7,3] - 2 x[7,4] - 2 x[8,0] - 2 x[8,1]
+   - 2 x[8,2] - 2 x[8,3] - 2 x[8,4] - 2 x[9,0] - 2 x[9,1] - 2 x[9,2]
+   - 2 x[9,3] - 2 x[9,4]
+Subject To
+ collection_point_0: x[0,0] + x[0,1] + x[0,2] + x[0,3] + x[0,4] <= 10
+ collection_point_1: x[1,0] + x[1,1] + x[1,2] + x[1,3] + x[1,4] <= 10
+ collection_point_2: x[2,0] + x[2,1] + x[2,2] + x[2,3] + x[2,4] <= 10
+ collection_point_3: x[3,0] + x[3,1] + x[3,2] + x[3,3] + x[3,4] <= 10
+ collection_point_4: x[4,0] + x[4,1] + x[4,2] + x[4,3] + x[4,4] <= 10
+ collection_point_5: x[5,0] + x[5,1] + x[5,2] + x[5,3] + x[5,4] <= 10
+ collection_point_6: x[6,0] + x[6,1] + x[6,2] + x[6,3] + x[6,4] <= 10
+ collection_point_7: x[7,0] + x[7,1] + x[7,2] + x[7,3] + x[7,4] <= 10
+ collection_point_8: x[8,0] + x[8,1] + x[8,2] + x[8,3] + x[8,4] <= 10
+ collection_point_9: x[9,0] + x[9,1] + x[9,2] + x[9,3] + x[9,4] <= 10
+ facility_0: x[0,0] + x[1,0] + x[2,0] + x[3,0] + x[4,0] + x[5,0] + x[6,0]
+   + x[7,0] + x[8,0] + x[9,0] <= 30
+ facility_1: x[0,1] + x[1,1] + x[2,1] + x[3,1] + x[4,1] + x[5,1] + x[6,1]
+   + x[7,1] + x[8,1] + x[9,1] <= 30
+ facility_2: x[0,2] + x[1,2] + x[2,2] + x[3,2] + x[4,2] + x[5,2] + x[6,2]
+   + x[7,2] + x[8,2] + x[9,2] <= 30
+ facility_3: x[0,3] + x[1,3] + x[2,3] + x[3,3] + x[4,3] + x[5,3] + x[6,3]
+   + x[7,3] + x[8,3] + x[9,3] <= 30
+ facility_4: x[0,4] + x[1,4] + x[2,4] + x[3,4] + x[4,4] + x[5,4] + x[6,4]
+   + x[7,4] + x[8,4] + x[9,4] <= 30
+Bounds
+End

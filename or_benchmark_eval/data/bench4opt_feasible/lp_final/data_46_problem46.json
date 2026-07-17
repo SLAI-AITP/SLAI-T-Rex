@@ -1,0 +1,20 @@
+{
+    "T": 6,
+    "demand": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+    ],
+    "initial_inventory": 100,
+    "degradation_factor": 1,
+    "storage_cost": 2290.88,
+    "handling_cost": 1006.33,
+    "shortage_penalty": 46.66,
+    "disposal_cost": 1759.7,
+    "handling_limit": 100,
+    "inventory_lower_bound": 0,
+    "inventory_upper_bound": 100
+}

@@ -1,0 +1,1 @@
+{"shift_requirements": [2, 3, 2], "availability": [[0.8, 1.0, 0.5], [1.0, 0.9, 1.0], [0.5, 0.5, 0.8]], "wages": [10, 12, 15], "overtime_threshold": [4, 5, 6], "overtime_wages": [15, 18, 20]}

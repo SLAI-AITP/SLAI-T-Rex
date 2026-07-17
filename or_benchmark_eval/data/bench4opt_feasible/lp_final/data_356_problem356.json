@@ -1,0 +1,43 @@
+{
+    "nurses": [
+        "nurse_0",
+        "nurse_1",
+        "nurse_2",
+        "nurse_3",
+        "nurse_4"
+    ],
+    "shifts": [
+        "shift_0",
+        "shift_1",
+        "shift_2",
+        "shift_3",
+        "shift_4",
+        "shift_0",
+        "shift_1"
+    ],
+    "shift_requirements": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+    ],
+    "max_hours": [
+        1000000.0,
+        1000000.0,
+        1000000.0,
+        1000000.0,
+        1000000.0
+    ],
+    "shift_hours": [
+        7.47,
+        4.03,
+        4.23,
+        6.54,
+        6.67,
+        7.47,
+        4.03
+    ]
+}
