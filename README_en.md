@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>English</b> | <a href="README.md">中文</a>
+  <b>English</b> | <a href="README_zh.md">中文</a>
 </p>
 
 <p align="center">
@@ -14,6 +14,10 @@
 </p>
 
 # ORProject: A Post-training Pipeline for OR-focused LLMs
+
+**Paper:** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](SLAI%20T-Rex.pdf)  
+**Model:** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)  
+**Code:** [SLAI-AITP/Deepseek-OR](https://github.com/SLAI-AITP/Deepseek-OR)
 
 ORProject is an open-source post-training project for large language models in Operations Research and Mathematical Optimization. The repository is organized as a five-stage pipeline, from domain corpus construction to continual pre-training, SFT data construction, SFT training, and finally model download and deployment.
 
@@ -173,6 +177,15 @@ llm:
   max_tokens: 4096
   timeout_seconds: 240
   disable_proxy: true
+
+cache:
+  enabled: true
+  dir: cache/chat
+
+quality:
+  problem_similarity_threshold: 0.9
+  compare_to_seeds: true
+  compare_to_run: true
 ```
 
 Run:
@@ -309,10 +322,11 @@ ORproject/
 ├── assets/icons/                # README icons and workflow figure
 ├── docs/                        # extended documentation, placeholder
 ├── examples/                    # end-to-end examples, placeholder
-├── README.md                    # Chinese version
-└── README_en.md                 # English version
+├── README.md                    # English version
+├── README_en.md                 # English version, kept for compatibility
+└── README_zh.md                 # Chinese version
 ```
 
 ## Citation
 
-Citation information will be added after the CPT data construction and model release modules are completed.
+Citation information will be added after the CPT data construction and model release modules are completed. For now, please refer to the [technical report PDF](SLAI%20T-Rex.pdf).
