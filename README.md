@@ -10,6 +10,7 @@
   <a href="SLAI%20T-Rex.pdf"><img alt="Paper" src="https://img.shields.io/badge/Paper-SLAI%20T--Rex-B34A78?logo=readthedocs&logoColor=white"></a>
   <a href="https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR"><img alt="ModelScope checkpoint" src="https://img.shields.io/badge/ModelScope-Checkpoint-624AFF?logo=modelscope&logoColor=white"></a>
   <a href="https://github.com/SLAI-AITP/SLAI-T-Rex"><img alt="GitHub repository" src="https://img.shields.io/badge/GitHub-SLAI--T--Rex-181717?logo=github&logoColor=white"></a>
+  <br>
   <img alt="Ascend 910C" src="https://img.shields.io/badge/Ascend-910C-C7000B?logo=huawei&logoColor=white">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
@@ -221,7 +222,22 @@ SLAI-T-Rex/
 ```bibtex
 @techreport{slai2026trex,
   title  = {SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD},
-  author = {{AI Training Platform Team, Shenzhen Loop Area Institute}},
+  author = {Dongfang Li and Xiaodong Luo and Ruoyu Sun and Xuhui Chen and
+            Linyuan Qiu and Jian Meng and Zhengxuan Lu and Yiting Wang and
+            Yucheng Xie and Tao Guo and Tianxiang Fang and Jing Li and
+            Sihang Chen and Shihao Hong and Chang Liu and Weihua Dai and
+            Zirong Zeng and Ziwei Zhu and Zhuohan Wang and Zhengjun Yue and
+            Igor Vasilyev and Min Liu and Weijian Sun and Xin Chen and
+            Yingmeng Gao and Jinhua Zhou and Taolue Chen and Chenwei Wu and
+            Dong Zhang and Wenlong Jin and Jinmin Xiang and Barkova Maria and
+            Ushakov Anton and Xianfei Jin and Tian Ding and Zhihang Lin and
+            Qian Chen and Linxin Yang and Mingzhe Yang and Bingwei Zhang and
+            Hongzhang Yang and Fangxue Zhang and Shijun Qin and Jie Yu and
+            Cuihua Hu and Tolstykh Vasiliy and Nosov Ivan and Abdullin Amir and
+            Zhichen Zhou and Xin Zhang and Zhixiong Ning and Xutong Zhao and
+            Junjie Huang and Jiajun Liu and Weiyan Kong and Zheng Zhang and
+            Wenhan Luo and Lin Hu and Yangbo Guo and Li Zeng and Shihao Zeng and
+            Baotian Hu and Min Zhang and Haizhou Li and Zhiquan Luo},
   year   = {2026},
   url    = {https://github.com/SLAI-AITP/SLAI-T-Rex}
 }
