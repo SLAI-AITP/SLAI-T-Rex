@@ -210,7 +210,6 @@ SLAI-T-Rex/
 ├── docs/                        # 扩展文档索引
 ├── examples/                    # 端到端流程索引
 ├── assets/                      # 兼容保留的 README 图标
-├── latex.zip                    # 技术报告 LaTeX 源码包
 ├── SLAI T-Rex.pdf               # 技术报告 PDF
 ├── README.md                    # 英文入口
 ├── README_en.md                 # 英文兼容入口

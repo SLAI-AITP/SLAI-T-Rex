@@ -210,7 +210,6 @@ SLAI-T-Rex/
 ├── docs/                        # Extended documentation index
 ├── examples/                    # End-to-end workflow index
 ├── assets/                      # README icons kept for compatibility
-├── latex.zip                    # LaTeX source archive for the technical report
 ├── SLAI T-Rex.pdf               # Technical report PDF
 ├── README.md                    # English entry
 ├── README_en.md                 # English compatibility entry
