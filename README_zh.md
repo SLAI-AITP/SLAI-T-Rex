@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icons/orproject.svg" width="720" alt="ORProject logo">
+  <img src="assets/slai-trex-logo.png" width="960" alt="SLAI T-Rex logo">
 </p>
 
 <p align="center">
@@ -9,263 +9,108 @@
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-blue">
-  <img alt="Status" src="https://img.shields.io/badge/Status-SFT%20Data%20%2B%20Training%20Templates-brightgreen">
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Ascend%20910C-red">
   <img alt="Domain" src="https://img.shields.io/badge/Domain-Operations%20Research-orange">
 </p>
 
-# ORProject: 面向运筹优化领域 LLM 的后训练流水线
+# SLAI T-Rex
+
+**SLAI T-Rex** 是技术报告配套的开源仓库：
 
 **论文：** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](SLAI%20T-Rex.pdf)  
 **模型：** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)  
-**代码：** [SLAI-AITP/Deepseek-OR](https://github.com/SLAI-AITP/Deepseek-OR)
+**代码：** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
 
-ORProject 是一个面向 Operations Research / Mathematical Optimization 领域的 LLM 后训练开源项目。项目采用流水线结构组织，从领域语料构建、持续预训练、SFT 数据构建、SFT 训练，到最终模型下载与部署，逐步形成完整的 OR 领域模型后训练方案。
+技术报告研究的是在 Ascend CloudMatrix384 SuperPOD 与 Ascend 910C NPU 上，对 DeepSeek-V4 系列模型进行全参数后训练的系统工程实践。本仓库开放其中可复现、可迁移的部分：OR 方向数据构建、MindSpeed-LLM CPT/SFT 启动模板、checkpoint 准备脚本，以及端到端后训练流程文档。
 
-当前仓库中 **第 3 步：SFT 数据集构建** 已经可运行；**第 2 步：CPT 训练示范** 和 **第 4 步：SFT 训练示范** 已接入 MindSpeed-LLM 启动模板。其余步骤先预留目录和说明，后续逐步填充。
+SLAI T-Rex 有两条主线：
+
+- **系统扩展：** 围绕 Ascend SuperPOD 上的万亿参数级 MoE 训练，优化并行策略、通信编排、CPU-NPU 协同和 AscendC 算子执行。
+- **领域专精：** 面向 Operations Research (OR) 任务，对 DeepSeek-V4-Flash 进行 solver-grounded CPT、self-distilled SFT、合约式清洗和 benchmark 验证。
+
+## 报告要点
 
 <p align="center">
-  <img src="assets/icons/workflow.svg" width="960" alt="ORProject workflow">
+  <img src="assets/overview_infra_and_acc.png" width="960" alt="SLAI T-Rex 系统与评测概览">
 </p>
 
-## 1. CPT 数据集构建
+- 在 DeepSeek-V4-Pro 训练中达到 **34.22% MFU**，相对开源 baseline recipe 提升 **2.93x**。
+- 提出 **AuraKernel**，面向 AscendC 的瓶颈算子优化流程，覆盖 sparse attention、RMS normalization、lightning indexer gradient、RoPE、limited SwiGLU、mHC 相关算子链等。
+- 构建 DeepSeek-V4-Flash 的 **OR CPT-SFT 专精流程**，结合 OR 资源收集、solver-verified synthetic documents、自蒸馏 SFT 样本和 Clean-CoT 质量门。
+- 形成 **10K 高质量 SFT 样本**，覆盖 4 类 OR 任务与 3 种问题表示形式。
+- 在 NL4OPT、OptiBench、B4O-Feasible、B4O-ORGEval 的平均 zero-shot Pass@1 上达到 **71.81%**，在报告对比中超过 GPT-5.4-Mini 3.98 个百分点、超过 DeepSeek-V4-Flash base 11.27 个百分点。
+- CPT-to-SFT 迁移实验显示：在相同 SFT 条件下，CPT 初始化后 B4O-Feasible 提升至 71.22%，B4O-ORGEval 提升至 59.39%。
 
-<img src="assets/icons/cpt-data.svg" width="36" alt=""> 入口：[cpt_data_construction](cpt_data_construction/)
+## 仓库状态
 
-当前状态：预留。
+| 模块 | 状态 | 作用 |
+| --- | --- | --- |
+| [cpt_data_construction](cpt_data_construction/) | 设计说明 | OR-CPT engine 的范围：solver-verified document synthesis 与 provenance 要求 |
+| [cpt_training](cpt_training/) | 已提供脚本 | MindSpeed-LLM CPT 数据转换、checkpoint 转换、4K 训练启动模板 |
+| [sft_data_construction](sft_data_construction/) | 可运行 | OR SFT 自蒸馏工具链：seed IR、synthetic IR、渲染、质量门、断点续跑、缓存、多 endpoint 生成 |
+| [sft_training](sft_training/) | 已提供脚本 | MindSpeed-LLM SFT 数据转换与 8K 多机训练启动模板 |
+| [model_download_deployment](model_download_deployment/) | 已提供脚本 | DeepSeek-V4 FP8 HuggingFace checkpoint 转 BF16 HuggingFace checkpoint |
+| [docs](docs/) | 索引 | 扩展文档与后续 dataset/model card |
+| [examples](examples/) | 索引 | 端到端流程示例入口 |
 
-后续将补充：
-
-- OR 领域原始语料收集；
-- 文档清洗、去重和格式标准化；
-- 领域相关性过滤；
-- tokenizer length packing；
-- CPT 数据集 card 和发布脚本。
-
-## 2. CPT 训练示范
-
-<img src="assets/icons/cpt-train.svg" width="36" alt=""> 入口：[cpt_training](cpt_training/)
-
-当前状态：已接入 MindSpeed-LLM 训练模板。
-
-这一阶段提供 DeepSeek-V4-Flash 风格的 CPT 示例脚本，覆盖：
-
-- CPT 文本语料转换为 MindSpeed indexed dataset；
-- HF checkpoint 与 MindSpeed/Megatron-Core checkpoint 互转；
-- 多机多卡 CPT 启动模板；
-- checkpoint、TensorBoard、archive 和可选 model registry 输出规范。
-
-最小使用示例：
-
-```bash
-cd ORproject/cpt_training
-
-export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
-export MINDSPEED_DIR=/path/to/MindSpeed
-export TOKENIZER_PATH=/path/to/DeepSeek-V4-Flash
-export CKPT_LOAD_DIR=/path/to/deepseek4_flash_mcore
-export OUTPUT_ROOT=/path/to/training_outputs/cpt
-export TRAIN_DATA_PATH=$'1.0 /path/to/processed/or_corpus_text_document'
-
-bash scripts/train_cpt_deepseek4_flash_4k.sh
-```
-
-详细说明见：[cpt_training/README.md](cpt_training/README.md)。
-
-## 3. SFT 数据集构建
-
-<img src="assets/icons/sft-data.svg" width="36" alt=""> 入口：[sft_data_construction](sft_data_construction/)
-
-当前状态：已可运行。
-
-这一阶段负责把少量高质量 OR 建模问答种子扩展成更大规模的 SFT 数据。核心流程是：
+## 端到端流程
 
 ```text
-problem-answer seeds
-  -> generic modeling IR
-  -> synthetic modeling IR
-  -> rendered problem
-  -> rendered answer
-  -> quality gate
-  -> SFT JSONL
+DeepSeek-V4 checkpoint
+  -> FP8/BF16 checkpoint 准备
+  -> HF <-> MindSpeed/Megatron-Core 转换
+  -> OR-CPT 数据构建
+  -> Ascend 910C CPT
+  -> 自蒸馏 OR SFT 数据
+  -> Clean-CoT / 合约式过滤
+  -> Ascend 910C SFT
+  -> HF 导出、服务部署、OR benchmark 评测
 ```
 
-已支持能力：
+当前仓库聚焦公开数据与训练脚手架。大规模生产数据、私有集群配置、内部评测产物不会随仓库发布。
 
-- 公开 seed pool：`sft_data_construction/seeds/public_seed.jsonl`
-- DP / DT / DPS 三种题目数据呈现模式
-- 通用 OR bucket：domain、structure、difficulty、data interface、answer style
-- Synthetic IR -> problem -> answer 三阶段生成
-- target bucket 控制，降低领域塌缩
-- request cache，避免重复 API 调用
-- accepted target top-up：`target_count` 表示最终需要的通过样本数
-- 多轮补足：`generation_oversample` + `max_rounds`
-- 断点续跑：`resume: true`
-- 多 API endpoint：`llm.base_urls` + `workers_per_api`
-- 流式落盘：中断后已完成样本不会丢
-- 相似度门控：避免新题和 seed / 本轮样本过像
-- surplus 池：超出 quota 但合格的数据单独保存，可作为后续飞轮素材
+## 快速开始
 
-### 3.1 安装
+拉取更名后的仓库：
 
 ```bash
-cd ORproject/sft_data_construction
-python -m pip install -e .
+git clone https://github.com/SLAI-AITP/SLAI-T-Rex.git
+cd SLAI-T-Rex
 ```
 
-也可以不安装，运行时使用：
+安装 SFT 数据构建工具：
 
 ```bash
-PYTHONPATH=src python -m or_data_distill --help
+cd sft_data_construction
+python3 -m pip install -e .
 ```
 
-### 3.2 校验公开 seed
+校验公开 seed pool：
 
 ```bash
-cd ORproject/sft_data_construction
-python -m or_data_distill validate-sft --input seeds/public_seed.jsonl
+python3 -m or_data_distill validate-sft --input seeds/public_seed.jsonl
 ```
 
-预期输出：
-
-```json
-{
-  "rows": 200,
-  "rows_with_issues": 0
-}
-```
-
-### 3.3 Dry-run 检查配置
+不调用 LLM 的 dry-run：
 
 ```bash
-python -m or_data_distill run \
+python3 -m or_data_distill run \
   --config examples/configs/demo.yaml \
   --dry-run
 ```
 
-dry-run 不调用 LLM，只生成请求和 manifest，用于确认配置是否可解析。
-
-### 3.4 使用真实 API 生成数据
-
-复制配置：
+使用 OpenAI-compatible backend 生成 SFT 数据：
 
 ```bash
 cp configs/run.example.yaml configs/run.local.yaml
-```
-
-编辑 `configs/run.local.yaml`：
-
-```yaml
-run:
-  run_id: sft_data_demo
-  output_root: runs
-  target_count: 200
-  max_rounds: 3
-  generation_oversample: 1.5
-  concurrency: 16
-  resume: true
-
-paths:
-  seeds: seeds/public_seed.jsonl
-  synthetic_pool: []
-
-llm:
-  base_url: http://YOUR_HOST:PORT/v1
-  model: your-model-name
-  api_key_env: LLM_API_KEY
-  temperature: 0.7
-  top_p: 0.9
-  max_tokens: 4096
-  timeout_seconds: 240
-  disable_proxy: true
-
-cache:
-  enabled: true
-  dir: cache/chat
-
-quality:
-  problem_similarity_threshold: 0.9
-  compare_to_seeds: true
-  compare_to_run: true
-```
-
-启动：
-
-```bash
 export LLM_API_KEY=YOUR_KEY_IF_NEEDED
-python -m or_data_distill run --config configs/run.local.yaml
+python3 -m or_data_distill run --config configs/run.local.yaml
 ```
 
-查看结果：
+转换生成的 SFT JSONL，并启动 MindSpeed-LLM SFT 模板：
 
 ```bash
-python tools/inspect_run.py --run-dir runs/sft_data_demo
-python -m or_data_distill validate-sft --input runs/sft_data_demo/sft.jsonl
-```
-
-关键输出：
-
-```text
-runs/<run_id>/sft.jsonl                       最终 accepted SFT 数据
-runs/<run_id>/accepted_synthetic_pool.jsonl   可用于下一轮飞轮的 Synthetic IR
-runs/<run_id>/surplus_sft.jsonl               quota 已满后额外通过的数据
-runs/<run_id>/surplus_synthetic_pool.jsonl    surplus 对应的 IR
-runs/<run_id>/rejected.jsonl                  被质量门/API/格式拒绝的数据
-runs/<run_id>/attempts.jsonl                  每次尝试的状态
-runs/<run_id>/manifest.json                   运行汇总
-```
-
-### 3.5 数据飞轮续跑
-
-第一轮生成完成后，下一轮可以使用上一轮 accepted pool 作为父样本上下文：
-
-```yaml
-paths:
-  seeds: seeds/public_seed.jsonl
-  synthetic_pool:
-    - runs/sft_data_demo/accepted_synthetic_pool.jsonl
-
-parent_pool:
-  parent_pool_mode: hybrid
-  synthetic_parent_share: 0.5
-  parent_match_top_k: 8
-  parent_usage_penalty: 0.25
-```
-
-更激进的滚雪球式扩展：
-
-```yaml
-parent_pool:
-  parent_pool_mode: snowball
-  synthetic_parent_share: 0.75
-```
-
-### 3.6 多 API 并行
-
-```yaml
-llm:
-  base_urls:
-    - http://HOST_A:8000/v1
-    - http://HOST_B:8000/v1
-  workers_per_api: 32
-  model: your-model-name
-```
-
-总并发约为：
-
-```text
-len(base_urls) * workers_per_api
-```
-
-## 4. SFT 训练示范
-
-<img src="assets/icons/sft-train.svg" width="36" alt=""> 入口：[sft_training](sft_training/)
-
-当前状态：已接入 MindSpeed-LLM 训练模板。
-
-这一阶段负责把第 3 步产出的 OpenAI-style `messages` JSONL 转换为 MindSpeed packed instruction dataset，并启动 SFT：
-
-```bash
-cd ORproject/sft_training
+cd ../sft_training
 
 export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
 export MINDSPEED_DIR=/path/to/MindSpeed
@@ -290,43 +135,91 @@ export DATA_PATH=/path/to/processed/or_sft/openai
 bash scripts/launch_sft_deepseek4_flash_8n16_910c.sh
 ```
 
-详细说明见：[sft_training/README.md](sft_training/README.md)。
+CPT 训练脚本见 [cpt_training/README.md](cpt_training/README.md)，checkpoint 准备见 [model_download_deployment/README.md](model_download_deployment/README.md)。
 
-## 5. 现有模型下载与部署命令
+## SFT 数据构建
 
-<img src="assets/icons/model-deploy.svg" width="36" alt=""> 入口：[model_download_deployment](model_download_deployment/)
-
-当前状态：已加入 FP8 -> BF16 权重准备脚本；模型下载、推理部署与服务化示例后续补充。
-
-已提供：
-
-- `model_download_deployment/scripts/convert_ckpt_fp8_to_bf16.sh`：将 DeepSeek-V4 FP8 HuggingFace checkpoint 转为 BF16 HuggingFace checkpoint。
-
-后续将补充：
-
-- 已发布模型列表；
-- 模型下载命令；
-- 本地推理服务启动命令；
-- OpenAI-compatible API 部署示例；
-- 不同硬件环境下的部署注意事项。
-
-## 项目结构
+公开 SFT 工具链实现了报告中的数据飞轮：
 
 ```text
-ORproject/
-├── cpt_data_construction/       # 1. CPT 数据集构建，预留
-├── cpt_training/                # 2. CPT 训练示范，MindSpeed 模板
-├── sft_data_construction/       # 3. SFT 数据集构建，已可运行
-├── sft_training/                # 4. SFT 训练示范，MindSpeed 模板
-├── model_download_deployment/   # 5. 模型下载与部署命令，含 FP8 -> BF16 权重准备脚本
-├── assets/icons/                # README 图标和流程图
-├── docs/                        # 扩展文档，预留
-├── examples/                    # 端到端示例，预留
-├── README.md                    # English version
-├── README_en.md                 # English version，保留兼容旧链接
-└── README_zh.md                 # 中文版
+problem-answer seeds
+  -> generic modeling IR
+  -> synthetic modeling IR
+  -> rendered problem
+  -> rendered answer
+  -> quality gate
+  -> OpenAI-style SFT JSONL
+```
+
+当前支持：
+
+- `sft_data_construction/seeds/` 下的公开 seed pool；
+- DP、DT、DPS 三种问题表示；
+- domain、structure、difficulty、data interface、answer style 等 OR bucket 控制；
+- `target_count`、`generation_oversample`、`max_rounds` 组成的 accepted-target top-up；
+- request cache 与断点续跑；
+- `llm.base_urls` 与 `workers_per_api` 组成的多 endpoint OpenAI-compatible 生成；
+- 对 seed 与本轮输出的相似度过滤；
+- accepted synthetic pool，可用于后续飞轮轮次；
+- surplus pool，用于保存 quota 满后仍合格的样本。
+
+## 训练模板
+
+训练脚本面向已经准备好的 Ascend/MindSpeed 环境。本仓库不内置 MindSpeed-LLM、MindSpeed、CANN、自定义算子、集群启动器或私有 checkpoint。
+
+`cpt_training/scripts/train_cpt_deepseek4_flash_4k.sh` 默认值：
+
+```text
+SEQ_LEN=4096
+GBS=128
+MBS=1
+TRAIN_ITERS=280
+LR=3.0e-6
+MIN_LR=3.0e-7
+TP=1, PP=4, EP=32, CP=1
+```
+
+`sft_training/scripts/train_sft_deepseek4_flash_8k.sh` 默认值：
+
+```text
+SEQ_LEN=8192
+GBS=128
+MBS=1
+TRAIN_ITERS=250
+LR=5.0e-6
+MIN_LR=5.0e-8
+TP=1, PP=4, EP=32, CP=1
+PROMPT_TYPE=deepseek4
+```
+
+修改这些值前，应先确认硬件拓扑、checkpoint 格式、并行策略和数据 packing 方式。
+
+## 仓库结构
+
+```text
+SLAI-T-Rex/
+├── cpt_data_construction/       # OR-CPT engine 设计范围与发布说明
+├── cpt_training/                # MindSpeed-LLM CPT 转换与启动模板
+├── sft_data_construction/       # 可运行的 OR SFT 数据蒸馏工具链
+├── sft_training/                # MindSpeed-LLM SFT 转换与启动模板
+├── model_download_deployment/   # checkpoint 准备与部署说明
+├── docs/                        # 扩展文档索引
+├── examples/                    # 端到端流程索引
+├── assets/                      # 兼容保留的 README 图标
+├── latex.zip                    # 技术报告 LaTeX 源码包
+├── SLAI T-Rex.pdf               # 技术报告 PDF
+├── README.md                    # 英文入口
+├── README_en.md                 # 英文兼容入口
+└── README_zh.md                 # 中文入口
 ```
 
 ## 引用
 
-Citation 信息会在 CPT 数据构建与模型发布模块补齐后统一整理。目前可先引用 [technical report PDF](SLAI%20T-Rex.pdf)。
+```bibtex
+@techreport{slai2026trex,
+  title  = {SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD},
+  author = {{AI Training Platform Team, Shenzhen Loop Area Institute}},
+  year   = {2026},
+  url    = {https://github.com/SLAI-AITP/SLAI-T-Rex}
+}
+```

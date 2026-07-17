@@ -1,29 +1,31 @@
-# 2. CPT Training
+# CPT Training
 
-This module provides a MindSpeed-LLM example for continual pre-training (CPT) on OR-domain text corpora. The scripts are model/runtime templates: edit paths through environment variables, keep generated checkpoints and logs outside this repository, and run them inside a prepared MindSpeed-LLM environment.
+This module provides **SLAI T-Rex** MindSpeed-LLM templates for OR-oriented continued pre-training (CPT) on Ascend 910C environments.
+
+The scripts are launch templates, not a self-contained training stack. Keep MindSpeed-LLM, MindSpeed, CANN, custom operators, private checkpoints, logs, and generated datasets outside this repository.
 
 ## Files
 
 ```text
 cpt_training/
 ├── scripts/
-│   ├── convert_data.sh                         # JSONL/text -> MindSpeed indexed dataset
-│   ├── train_cpt_deepseek4_flash_4k.sh                        # DeepSeek-V4-Flash CPT launcher
-│   ├── convert_ckpt_hf_to_mcore.sh
-│   └── convert_ckpt_mcore_to_hf.sh
+│   ├── convert_data.sh                    # JSONL/text -> MindSpeed indexed dataset
+│   ├── train_cpt_deepseek4_flash_4k.sh    # DeepSeek-V4-Flash CPT launcher
+│   ├── convert_ckpt_hf_to_mcore.sh        # HuggingFace -> MindSpeed/Megatron-Core
+│   └── convert_ckpt_mcore_to_hf.sh        # MindSpeed/Megatron-Core -> HuggingFace
 └── README.md
 ```
 
-## 0. Environment
+## Environment
 
-Required external repositories:
+Prepare the external runtime first:
 
 ```bash
 export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
 export MINDSPEED_DIR=/path/to/MindSpeed
 ```
 
-Common runtime variables:
+Common variables:
 
 ```bash
 export TOKENIZER_PATH=/path/to/DeepSeek-V4-Flash
@@ -32,18 +34,18 @@ export CUSTOM_TRANSFORMER_ENV=/usr/local/Ascend/cann/opp/vendors/custom_transfor
 export CONDA_ENV=your_conda_env_name
 ```
 
-## 1. Convert CPT Corpus
+## Convert CPT Corpus
 
-Input data should contain a text field, for example:
+Input JSONL should expose a text field:
 
 ```json
-{"text": "A clean OR-domain document or paragraph ..."}
+{"text": "A solver-verified OR document, formulation note, or cleaned domain paragraph ..."}
 ```
 
 Convert one dataset:
 
 ```bash
-cd ORproject/cpt_training
+cd SLAI-T-Rex/cpt_training
 
 bash scripts/convert_data.sh \
   --mindspeed-llm-dir "$MINDSPEED_LLM_DIR" \
@@ -57,13 +59,13 @@ bash scripts/convert_data.sh \
   --n-subs 16
 ```
 
-The training prefix passed later is usually:
+The training prefix is usually:
 
 ```text
 /path/to/processed/or_cpt_corpus_text_document
 ```
 
-Manifest batch conversion is also supported:
+Batch conversion through a manifest is also supported:
 
 ```bash
 bash scripts/convert_data.sh \
@@ -78,15 +80,15 @@ Manifest format:
 ```text
 # name input_path output_prefix workers n_subs log_interval
 or_books /path/to/books.jsonl /path/to/processed/or_books 8 16 1000
-or_notes /path/to/notes.jsonl /path/to/processed/or_notes 8 16 1000
+or_solver_docs /path/to/solver_docs.jsonl /path/to/processed/or_solver_docs 8 16 1000
 ```
 
-## 2. Convert HF Checkpoint to MCore
+## Convert Checkpoint to MCore
 
-If your source checkpoint is FP8 HF format, first convert it to BF16 with:
+If the source checkpoint is FP8 HuggingFace format, first prepare a BF16 HuggingFace checkpoint:
 
 ```bash
-cd ORproject/model_download_deployment
+cd SLAI-T-Rex/model_download_deployment
 
 export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
 export INPUT_FP8_HF_PATH=/path/to/deepseek4_fp8_hf
@@ -95,10 +97,10 @@ export OUTPUT_BF16_HF_PATH=/path/to/deepseek4_bf16_hf
 bash scripts/convert_ckpt_fp8_to_bf16.sh
 ```
 
-Then use the BF16 HF checkpoint as `HF_LOAD_DIR`:
+Then convert BF16 HuggingFace to MindSpeed/Megatron-Core:
 
 ```bash
-cd ORproject/cpt_training
+cd SLAI-T-Rex/cpt_training
 
 export HF_LOAD_DIR=/path/to/deepseek4_flash_bf16_hf
 export MCORE_SAVE_DIR=/path/to/deepseek4_flash_mcore
@@ -106,18 +108,18 @@ export MCORE_SAVE_DIR=/path/to/deepseek4_flash_mcore
 bash scripts/convert_ckpt_hf_to_mcore.sh
 ```
 
-## 3. Run CPT
+## Run CPT
 
-`TRAIN_DATA_PATH` follows MindSpeed weighted dataset syntax. Use one line per dataset:
+`TRAIN_DATA_PATH` follows MindSpeed weighted dataset syntax:
 
 ```bash
-cd ORproject/cpt_training
+cd SLAI-T-Rex/cpt_training
 
 export CKPT_LOAD_DIR=/path/to/deepseek4_flash_mcore
 export OUTPUT_ROOT=/path/to/training_outputs/cpt
 export VALID_DATA_PATH=/path/to/processed/validation_text_document
 
-export TRAIN_DATA_PATH=$'0.7 /path/to/processed/or_books_text_document\n0.3 /path/to/processed/or_notes_text_document'
+export TRAIN_DATA_PATH=$'0.7 /path/to/processed/or_books_text_document\n0.3 /path/to/processed/or_solver_docs_text_document'
 
 export NNODES=8
 export NPUS_PER_NODE=16
@@ -128,7 +130,7 @@ export NODE_RANK=0
 bash scripts/train_cpt_deepseek4_flash_4k.sh
 ```
 
-Important defaults in `scripts/train_cpt_deepseek4_flash_4k.sh`:
+Important defaults:
 
 ```text
 SEQ_LEN=4096
@@ -140,9 +142,9 @@ MIN_LR=3.0e-7
 TP=1, PP=4, EP=32, CP=1
 ```
 
-Override them with environment variables only after you have confirmed the hardware layout and batch size.
+Override them only after matching the hardware topology, sequence packing, and checkpoint parallelism.
 
-## 4. Outputs
+## Outputs
 
 ```text
 $OUTPUT_ROOT/checkpoints/<run_id>/      MCore checkpoints
@@ -151,12 +153,12 @@ $OUTPUT_ROOT/archive/<run_id>/          copied script, config.json, logs, metric
 $OUTPUT_ROOT/model_registry/            optional registry metadata
 ```
 
-The script refuses to silently overwrite an incomplete checkpoint. Use `FORCE_RERUN=1` only when you intentionally want to rerun from scratch.
+The launcher avoids silently overwriting incomplete checkpoints. Set `FORCE_RERUN=1` only when you intentionally want to rerun from scratch.
 
-## 5. Convert MCore Back to HF
+## Convert MCore Back to HuggingFace
 
 ```bash
-cd ORproject/cpt_training
+cd SLAI-T-Rex/cpt_training
 
 export MCORE_LOAD_DIR=/path/to/cpt_checkpoint
 export HF_SAVE_DIR=/path/to/cpt_checkpoint_hf

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icons/orproject.svg" width="720" alt="ORProject logo">
+  <img src="assets/slai-trex-logo.png" width="960" alt="SLAI T-Rex logo">
 </p>
 
 <p align="center">
@@ -9,263 +9,108 @@
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-blue">
-  <img alt="Status" src="https://img.shields.io/badge/Status-SFT%20Data%20%2B%20Training%20Templates-brightgreen">
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Ascend%20910C-red">
   <img alt="Domain" src="https://img.shields.io/badge/Domain-Operations%20Research-orange">
 </p>
 
-# ORProject: A Post-training Pipeline for OR-focused LLMs
+# SLAI T-Rex
+
+**SLAI T-Rex** is the open-source companion repository for the technical report:
 
 **Paper:** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](SLAI%20T-Rex.pdf)  
 **Model:** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)  
-**Code:** [SLAI-AITP/Deepseek-OR](https://github.com/SLAI-AITP/Deepseek-OR)
+**Code:** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
 
-ORProject is an open-source post-training project for large language models in Operations Research and Mathematical Optimization. The repository is organized as a five-stage pipeline, from domain corpus construction to continual pre-training, SFT data construction, SFT training, and finally model download and deployment.
+The report studies full-parameter post-training for the DeepSeek-V4 family on Ascend CloudMatrix384 SuperPOD with Ascend 910C NPUs. The repository exposes the reproducible parts of that work: OR-oriented data construction, MindSpeed-LLM CPT/SFT launch templates, checkpoint preparation, and documentation for the end-to-end post-training workflow.
 
-**Stage 3: SFT Data Construction** is ready to run. **Stage 2: CPT Training** and **Stage 4: SFT Training** now include MindSpeed-LLM launch templates. The remaining stages are scaffolded and will be filled in future releases.
+SLAI T-Rex has two connected goals:
+
+- **System scaling:** optimize trillion-parameter-class MoE training on Ascend SuperPOD through parallelism, communication orchestration, CPU-NPU coordination, and AscendC kernel optimization.
+- **Domain specialization:** adapt DeepSeek-V4-Flash to Operations Research (OR) with solver-grounded CPT data, self-distilled SFT data, contract-aware cleaning, and benchmark evaluation.
+
+## Report Highlights
 
 <p align="center">
-  <img src="assets/icons/workflow.svg" width="960" alt="ORProject workflow">
+  <img src="assets/overview_infra_and_acc.png" width="960" alt="SLAI T-Rex system and benchmark overview">
 </p>
 
-## 1. CPT Data Construction
+- **34.22% MFU on DeepSeek-V4-Pro training**, a **2.93x** improvement over the open-source baseline recipe on Ascend SuperPOD.
+- **AuraKernel**, an AscendC kernel optimization workflow for bottleneck operators in sparse attention, RMS normalization, lightning indexer gradients, RoPE, limited SwiGLU, and mHC-related chains.
+- **OR CPT-SFT specialization** for DeepSeek-V4-Flash, combining collected OR resources, solver-verified synthetic documents, self-distilled SFT samples, and Clean-CoT quality gates.
+- **10K high-quality SFT samples** across four OR task categories and three problem representations.
+- **71.81% average zero-shot Pass@1** across NL4OPT, OptiBench, B4O-Feasible, and B4O-ORGEval, outperforming GPT-5.4-Mini by 3.98 points and the base DeepSeek-V4-Flash by 11.27 points in the reported comparison.
+- **CPT-to-SFT transfer gain:** under identical SFT conditions, CPT-initialized SFT improves B4O-Feasible to 71.22% and B4O-ORGEval to 59.39%.
 
-<img src="assets/icons/cpt-data.svg" width="36" alt=""> Entry: [cpt_data_construction](cpt_data_construction/)
+## Repository Status
 
-Status: placeholder.
+| Module | Status | Purpose |
+| --- | --- | --- |
+| [cpt_data_construction](cpt_data_construction/) | design note | OR-CPT engine scope: solver-verified document synthesis and provenance requirements |
+| [cpt_training](cpt_training/) | scripts included | MindSpeed-LLM CPT data conversion, checkpoint conversion, and 4K training launcher |
+| [sft_data_construction](sft_data_construction/) | runnable | OR SFT self-distillation toolkit with seed IR, synthetic IR, rendering, quality gate, resume, cache, and multi-endpoint generation |
+| [sft_training](sft_training/) | scripts included | MindSpeed-LLM SFT data conversion and 8K multi-node training launcher |
+| [model_download_deployment](model_download_deployment/) | script included | DeepSeek-V4 FP8 HuggingFace checkpoint to BF16 HuggingFace checkpoint preparation |
+| [docs](docs/) | index | extended notes and future dataset/model cards |
+| [examples](examples/) | index | end-to-end workflow entry points |
 
-Planned contents:
-
-- OR-domain raw corpus collection;
-- document cleaning, deduplication, and normalization;
-- domain-relevance filtering;
-- tokenizer-length packing;
-- CPT dataset cards and release scripts.
-
-## 2. CPT Training
-
-<img src="assets/icons/cpt-train.svg" width="36" alt=""> Entry: [cpt_training](cpt_training/)
-
-Status: MindSpeed-LLM training template included.
-
-This stage provides DeepSeek-V4-Flash-style CPT scripts for:
-
-- converting CPT text corpora into MindSpeed indexed datasets;
-- converting checkpoints between HuggingFace and MindSpeed/Megatron-Core formats;
-- launching multi-node CPT jobs;
-- saving checkpoints, TensorBoard events, archives, and optional registry metadata.
-
-Minimal example:
-
-```bash
-cd ORproject/cpt_training
-
-export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
-export MINDSPEED_DIR=/path/to/MindSpeed
-export TOKENIZER_PATH=/path/to/DeepSeek-V4-Flash
-export CKPT_LOAD_DIR=/path/to/deepseek4_flash_mcore
-export OUTPUT_ROOT=/path/to/training_outputs/cpt
-export TRAIN_DATA_PATH=$'1.0 /path/to/processed/or_corpus_text_document'
-
-bash scripts/train_cpt_deepseek4_flash_4k.sh
-```
-
-See [cpt_training/README.md](cpt_training/README.md) for details.
-
-## 3. SFT Data Construction
-
-<img src="assets/icons/sft-data.svg" width="36" alt=""> Entry: [sft_data_construction](sft_data_construction/)
-
-Status: ready to run.
-
-This stage expands a small set of high-quality OR modeling problem-answer seeds into larger SFT datasets. The core flow is:
+## Workflow
 
 ```text
-problem-answer seeds
-  -> generic modeling IR
-  -> synthetic modeling IR
-  -> rendered problem
-  -> rendered answer
-  -> quality gate
-  -> SFT JSONL
+DeepSeek-V4 checkpoint
+  -> FP8/BF16 checkpoint preparation
+  -> HF <-> MindSpeed/Megatron-Core conversion
+  -> OR-CPT data construction
+  -> CPT on Ascend 910C
+  -> self-distilled OR SFT data
+  -> Clean-CoT / contract-aware filtering
+  -> SFT on Ascend 910C
+  -> HF export, serving, and OR benchmark evaluation
 ```
 
-Supported features:
+The runnable repository focuses on the public data and training scaffolding. Large-scale production inputs, private cluster configuration, and proprietary evaluation artifacts are intentionally excluded.
 
-- public seed pool: `sft_data_construction/seeds/public_seed.jsonl`;
-- DP / DT / DPS problem modes;
-- generic OR buckets: domain, structure, difficulty, data interface, answer style;
-- Synthetic IR -> problem -> answer generation;
-- target-bucket control to avoid domain collapse;
-- request caching;
-- accepted-target top-up: `target_count` means desired accepted rows;
-- multi-round generation: `generation_oversample` + `max_rounds`;
-- resumable runs: `resume: true`;
-- multi-endpoint generation: `llm.base_urls` + `workers_per_api`;
-- streaming outputs;
-- similarity filtering;
-- surplus pools for valid samples produced after the quota is filled.
+## Quick Start
 
-### 3.1 Installation
+Clone the renamed repository:
 
 ```bash
-cd ORproject/sft_data_construction
-python -m pip install -e .
+git clone https://github.com/SLAI-AITP/SLAI-T-Rex.git
+cd SLAI-T-Rex
 ```
 
-You can also run without installation:
+Install the SFT data construction toolkit:
 
 ```bash
-PYTHONPATH=src python -m or_data_distill --help
+cd sft_data_construction
+python3 -m pip install -e .
 ```
 
-### 3.2 Validate the Public Seed Pool
+Validate the public seed pool:
 
 ```bash
-cd ORproject/sft_data_construction
-python -m or_data_distill validate-sft --input seeds/public_seed.jsonl
+python3 -m or_data_distill validate-sft --input seeds/public_seed.jsonl
 ```
 
-Expected output:
-
-```json
-{
-  "rows": 200,
-  "rows_with_issues": 0
-}
-```
-
-### 3.3 Dry-run
+Run a dry-run without calling an LLM:
 
 ```bash
-python -m or_data_distill run \
+python3 -m or_data_distill run \
   --config examples/configs/demo.yaml \
   --dry-run
 ```
 
-Dry-run does not call an LLM. It only writes request payloads and a manifest, which is useful for checking config parsing.
-
-### 3.4 Generate SFT Data with a Real API
-
-Copy a local config:
+Generate SFT data with an OpenAI-compatible backend:
 
 ```bash
 cp configs/run.example.yaml configs/run.local.yaml
-```
-
-Edit `configs/run.local.yaml`:
-
-```yaml
-run:
-  run_id: sft_data_demo
-  output_root: runs
-  target_count: 200
-  max_rounds: 3
-  generation_oversample: 1.5
-  concurrency: 16
-  resume: true
-
-paths:
-  seeds: seeds/public_seed.jsonl
-  synthetic_pool: []
-
-llm:
-  base_url: http://YOUR_HOST:PORT/v1
-  model: your-model-name
-  api_key_env: LLM_API_KEY
-  temperature: 0.7
-  top_p: 0.9
-  max_tokens: 4096
-  timeout_seconds: 240
-  disable_proxy: true
-
-cache:
-  enabled: true
-  dir: cache/chat
-
-quality:
-  problem_similarity_threshold: 0.9
-  compare_to_seeds: true
-  compare_to_run: true
-```
-
-Run:
-
-```bash
 export LLM_API_KEY=YOUR_KEY_IF_NEEDED
-python -m or_data_distill run --config configs/run.local.yaml
+python3 -m or_data_distill run --config configs/run.local.yaml
 ```
 
-Inspect and validate:
+Convert the generated SFT JSONL and launch the MindSpeed-LLM SFT template:
 
 ```bash
-python tools/inspect_run.py --run-dir runs/sft_data_demo
-python -m or_data_distill validate-sft --input runs/sft_data_demo/sft.jsonl
-```
-
-Key outputs:
-
-```text
-runs/<run_id>/sft.jsonl                       accepted SFT rows
-runs/<run_id>/accepted_synthetic_pool.jsonl   Synthetic IR pool for later flywheel runs
-runs/<run_id>/surplus_sft.jsonl               valid rows generated after quota is full
-runs/<run_id>/surplus_synthetic_pool.jsonl    IR for surplus rows
-runs/<run_id>/rejected.jsonl                  rejected samples
-runs/<run_id>/attempts.jsonl                  per-attempt status
-runs/<run_id>/manifest.json                   run summary
-```
-
-### 3.5 Data Flywheel
-
-Use an earlier accepted pool as parent context for later expansion:
-
-```yaml
-paths:
-  seeds: seeds/public_seed.jsonl
-  synthetic_pool:
-    - runs/sft_data_demo/accepted_synthetic_pool.jsonl
-
-parent_pool:
-  parent_pool_mode: hybrid
-  synthetic_parent_share: 0.5
-  parent_match_top_k: 8
-  parent_usage_penalty: 0.25
-```
-
-For a more aggressive snowball mode:
-
-```yaml
-parent_pool:
-  parent_pool_mode: snowball
-  synthetic_parent_share: 0.75
-```
-
-### 3.6 Multi-API Generation
-
-```yaml
-llm:
-  base_urls:
-    - http://HOST_A:8000/v1
-    - http://HOST_B:8000/v1
-  workers_per_api: 32
-  model: your-model-name
-```
-
-Total concurrency is approximately:
-
-```text
-len(base_urls) * workers_per_api
-```
-
-## 4. SFT Training
-
-<img src="assets/icons/sft-train.svg" width="36" alt=""> Entry: [sft_training](sft_training/)
-
-Status: MindSpeed-LLM training template included.
-
-This stage converts the OpenAI-style `messages` JSONL from Stage 3 into a MindSpeed packed instruction dataset and launches SFT:
-
-```bash
-cd ORproject/sft_training
+cd ../sft_training
 
 export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
 export MINDSPEED_DIR=/path/to/MindSpeed
@@ -290,43 +135,91 @@ export DATA_PATH=/path/to/processed/or_sft/openai
 bash scripts/launch_sft_deepseek4_flash_8n16_910c.sh
 ```
 
-See [sft_training/README.md](sft_training/README.md) for details.
+For CPT scripts, see [cpt_training/README.md](cpt_training/README.md). For checkpoint preparation, see [model_download_deployment/README.md](model_download_deployment/README.md).
 
-## 5. Model Download and Deployment
+## SFT Data Construction
 
-<img src="assets/icons/model-deploy.svg" width="36" alt=""> Entry: [model_download_deployment](model_download_deployment/)
+The public SFT toolkit implements the data flywheel described in the report:
 
-Status: an FP8 -> BF16 checkpoint preparation script is included; model download, inference, and serving examples are still planned.
+```text
+problem-answer seeds
+  -> generic modeling IR
+  -> synthetic modeling IR
+  -> rendered problem
+  -> rendered answer
+  -> quality gate
+  -> OpenAI-style SFT JSONL
+```
 
-Included:
+Key capabilities:
 
-- `model_download_deployment/scripts/convert_ckpt_fp8_to_bf16.sh`: converts a DeepSeek-V4 FP8 HuggingFace checkpoint to a BF16 HuggingFace checkpoint.
+- public seed pool under `sft_data_construction/seeds/`;
+- DP, DT, and DPS problem representations;
+- controllable OR buckets for domain, structure, difficulty, data interface, and answer style;
+- accepted-target top-up with `target_count`, `generation_oversample`, and `max_rounds`;
+- request cache and resumable generation;
+- multi-endpoint OpenAI-compatible generation with `llm.base_urls` and `workers_per_api`;
+- similarity filtering against seeds and current run outputs;
+- accepted synthetic pools for later flywheel rounds;
+- surplus pools for valid samples generated after the quota is full.
 
-Planned contents:
+## Training Templates
 
-- released model list;
-- model download commands;
-- local inference serving commands;
-- OpenAI-compatible API deployment examples;
-- hardware-specific deployment notes.
+The training scripts are templates for an already prepared Ascend/MindSpeed environment. They do not vendor MindSpeed-LLM, MindSpeed, CANN, custom operators, cluster launchers, or private checkpoints.
+
+CPT defaults in `cpt_training/scripts/train_cpt_deepseek4_flash_4k.sh`:
+
+```text
+SEQ_LEN=4096
+GBS=128
+MBS=1
+TRAIN_ITERS=280
+LR=3.0e-6
+MIN_LR=3.0e-7
+TP=1, PP=4, EP=32, CP=1
+```
+
+SFT defaults in `sft_training/scripts/train_sft_deepseek4_flash_8k.sh`:
+
+```text
+SEQ_LEN=8192
+GBS=128
+MBS=1
+TRAIN_ITERS=250
+LR=5.0e-6
+MIN_LR=5.0e-8
+TP=1, PP=4, EP=32, CP=1
+PROMPT_TYPE=deepseek4
+```
+
+Adjust these values only after matching the hardware layout, checkpoint format, parallelism strategy, and data packing configuration.
 
 ## Repository Layout
 
 ```text
-ORproject/
-├── cpt_data_construction/       # 1. CPT data construction, placeholder
-├── cpt_training/                # 2. CPT training, MindSpeed template
-├── sft_data_construction/       # 3. SFT data construction, ready
-├── sft_training/                # 4. SFT training, MindSpeed template
-├── model_download_deployment/   # 5. model download and deployment, includes FP8 -> BF16 checkpoint preparation
-├── assets/icons/                # README icons and workflow figure
-├── docs/                        # extended documentation, placeholder
-├── examples/                    # end-to-end examples, placeholder
-├── README.md                    # English version
-├── README_en.md                 # English version, kept for compatibility
-└── README_zh.md                 # Chinese version
+SLAI-T-Rex/
+├── cpt_data_construction/       # OR-CPT engine design scope and release notes
+├── cpt_training/                # MindSpeed-LLM CPT conversion and launch templates
+├── sft_data_construction/       # Runnable OR SFT data distillation toolkit
+├── sft_training/                # MindSpeed-LLM SFT conversion and launch templates
+├── model_download_deployment/   # Checkpoint preparation and deployment notes
+├── docs/                        # Extended documentation index
+├── examples/                    # End-to-end workflow index
+├── assets/                      # README icons kept for compatibility
+├── latex.zip                    # LaTeX source archive for the technical report
+├── SLAI T-Rex.pdf               # Technical report PDF
+├── README.md                    # English entry
+├── README_en.md                 # English compatibility entry
+└── README_zh.md                 # Chinese entry
 ```
 
 ## Citation
 
-Citation information will be added after the CPT data construction and model release modules are completed. For now, please refer to the [technical report PDF](SLAI%20T-Rex.pdf).
+```bibtex
+@techreport{slai2026trex,
+  title  = {SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD},
+  author = {{AI Training Platform Team, Shenzhen Loop Area Institute}},
+  year   = {2026},
+  url    = {https://github.com/SLAI-AITP/SLAI-T-Rex}
+}
+```

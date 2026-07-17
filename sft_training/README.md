@@ -1,6 +1,8 @@
-# 4. SFT Training
+# SFT Training
 
-This module provides a MindSpeed-LLM supervised fine-tuning (SFT) example. It is designed to consume the OpenAI-style `messages` JSONL produced by `../sft_data_construction`, convert it into a MindSpeed packed instruction dataset, and launch DeepSeek-V4-Flash SFT.
+This module provides **SLAI T-Rex** MindSpeed-LLM templates for supervised fine-tuning (SFT) DeepSeek-V4-Flash on OR modeling data.
+
+It consumes OpenAI-style `messages` JSONL from `../sft_data_construction`, converts it into a MindSpeed packed instruction dataset, and launches an 8K SFT job on Ascend 910C environments.
 
 ## Files
 
@@ -8,24 +10,24 @@ This module provides a MindSpeed-LLM supervised fine-tuning (SFT) example. It is
 sft_training/
 ├── scripts/
 │   ├── convert_data.sh                         # OpenAI/ShareGPT/Alpaca JSONL -> MindSpeed instruction dataset
-│   ├── launch_sft_deepseek4_flash_8n16_910c.sh          # multi-node wrapper with optional indexmap preparation
-│   ├── train_sft_deepseek4_flash_8k.sh                  # DeepSeek-V4-Flash 8K SFT launcher
-│   └── convert_ckpt_mcore_to_hf.sh
+│   ├── launch_sft_deepseek4_flash_8n16_910c.sh # multi-node wrapper with optional indexmap preparation
+│   ├── train_sft_deepseek4_flash_8k.sh         # DeepSeek-V4-Flash 8K SFT launcher
+│   └── convert_ckpt_mcore_to_hf.sh             # MindSpeed/Megatron-Core -> HuggingFace
 ├── tools/
 │   └── prepare_sft_indexmap.py                 # prebuild packed SFT shuffle index map
 └── README.md
 ```
 
-## 0. Environment
+## Environment
 
-Required external repositories:
+Prepare external dependencies:
 
 ```bash
 export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
 export MINDSPEED_DIR=/path/to/MindSpeed
 ```
 
-Common runtime variables:
+Common variables:
 
 ```bash
 export TOKENIZER_PATH=/path/to/DeepSeek-V4-Flash
@@ -36,17 +38,17 @@ export CUSTOM_TRANSFORMER_ENV=/usr/local/Ascend/cann/opp/vendors/custom_transfor
 export CONDA_ENV=your_conda_env_name
 ```
 
-## 1. Prepare SFT JSONL
+## Prepare SFT JSONL
 
-From stage 3:
+From the data module:
 
 ```bash
-cd ORproject/sft_data_construction
-python -m or_data_distill run --config configs/run.local.yaml
-python -m or_data_distill validate-sft --input runs/sft_data_demo/sft.jsonl
+cd SLAI-T-Rex/sft_data_construction
+python3 -m or_data_distill run --config configs/run.local.yaml
+python3 -m or_data_distill validate-sft --input runs/sft_data_demo/sft.jsonl
 ```
 
-The expected row format is:
+Expected row format:
 
 ```json
 {
@@ -57,12 +59,14 @@ The expected row format is:
 }
 ```
 
-## 2. Convert SFT JSONL to MindSpeed Instruction Dataset
+The report's strongest SFT setting uses cleaned OR data with concise modeling checklists. This repository exposes the conversion and launch path; private large-scale cleaned datasets are not included.
+
+## Convert SFT JSONL
 
 Use `SharegptStyleInstructionHandler` with OpenAI-style field mapping:
 
 ```bash
-cd ORproject/sft_training
+cd SLAI-T-Rex/sft_training
 
 export SFT_JSONL=../sft_data_construction/runs/sft_data_demo/sft.jsonl
 export SFT_PREFIX=/path/to/processed/or_sft/openai
@@ -94,7 +98,7 @@ For Alpaca-style data, switch to:
 --map-keys '{"prompt":"instruction","query":"input","response":"output","system":"system","history":"history"}'
 ```
 
-## 3. Optional: Prebuild Packed Index Map
+## Optional: Prebuild Packed Index Map
 
 Large multi-node SFT jobs can race while creating the packed shuffle index map. The wrapper can prepare it once on rank 0 while other ranks wait:
 
@@ -111,15 +115,15 @@ If the source JSONL is unavailable, provide the number of training examples:
 export INDEXMAP_DOC_COUNT=100000
 ```
 
-## 4. Run SFT
+## Run SFT
 
 Multi-node wrapper:
 
 ```bash
-cd ORproject/sft_training
+cd SLAI-T-Rex/sft_training
 
 export DATA_PATH="$SFT_PREFIX"
-export RUN_ID=or_sft_demo
+export RUN_ID=slai_trex_sft_demo
 
 export NNODES=8
 export NPUS_PER_NODE=16
@@ -136,7 +140,7 @@ Direct inner launcher:
 bash scripts/train_sft_deepseek4_flash_8k.sh
 ```
 
-Important defaults in `scripts/train_sft_deepseek4_flash_8k.sh`:
+Important defaults:
 
 ```text
 SEQ_LEN=8192
@@ -149,7 +153,7 @@ TP=1, PP=4, EP=32, CP=1
 PROMPT_TYPE=deepseek4
 ```
 
-## 5. Outputs
+## Outputs
 
 ```text
 $OUTPUT_ROOT/checkpoints/<run_id>/      MCore SFT checkpoints
@@ -158,7 +162,9 @@ $OUTPUT_ROOT/archive/<run_id>/          copied script, config.json, logs, metric
 $OUTPUT_ROOT/model_registry/            optional registry metadata
 ```
 
-Optional HF conversion after training:
+## Convert to HuggingFace
+
+Enable conversion in the launcher:
 
 ```bash
 export ENABLE_HF_CONVERT=1
