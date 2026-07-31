@@ -219,25 +219,12 @@ SLAI-T-Rex/
 ## Citation
 
 ```bibtex
-@techreport{slai2026trex,
-  title  = {SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD},
-  author = {Dongfang Li and Xiaodong Luo and Ruoyu Sun and Xuhui Chen and
-            Linyuan Qiu and Jian Meng and Zhengxuan Lu and Yiting Wang and
-            Yucheng Xie and Tao Guo and Tianxiang Fang and Jing Li and
-            Sihang Chen and Shihao Hong and Chang Liu and Weihua Dai and
-            Zirong Zeng and Ziwei Zhu and Zhuohan Wang and Zhengjun Yue and
-            Igor Vasilyev and Min Liu and Weijian Sun and Xin Chen and
-            Yingmeng Gao and Jinhua Zhou and Taolue Chen and Chenwei Wu and
-            Dong Zhang and Wenlong Jin and Jinmin Xiang and Barkova Maria and
-            Ushakov Anton and Xianfei Jin and Tian Ding and Zhihang Lin and
-            Qian Chen and Linxin Yang and Mingzhe Yang and Bingwei Zhang and
-            Hongzhang Yang and Fangxue Zhang and Shijun Qin and Jie Yu and
-            Cuihua Hu and Tolstykh Vasiliy and Nosov Ivan and Abdullin Amir and
-            Zhichen Zhou and Xin Zhang and Zhixiong Ning and Xutong Zhao and
-            Junjie Huang and Jiajun Liu and Weiyan Kong and Zheng Zhang and
-            Wenhan Luo and Lin Hu and Yangbo Guo and Li Zeng and Shihao Zeng and
-            Baotian Hu and Min Zhang and Haizhou Li and Zhiquan Luo},
-  year   = {2026},
-  url    = {https://github.com/SLAI-AITP/SLAI-T-Rex}
+@misc{li2026slaitrexfullparameterposttraining,
+      title={SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD}, 
+      author={Dongfang Li and Xiaodong Luo and Ruoyu Sun and Xuhui Chen and Linyuan Qiu and Jian Meng and Zhengxuan Lu and Yiting Wang and Yucheng Xie and Tao Guo and Tianxiang Fang and Jing Li and Sihang Chen and Shihao Hong and Chang Liu and Weihua Dai and Zirong Zeng and Ziwei Zhu and Zhuohan Wang and Zhengjun Yue and Igor Vasilyev and Min Liu and Weijian Sun and Xin Chen and Yingmeng Gao and Jinhua Zhou and Taolue Chen and Chenwei Wu and Dong Zhang and Wenlong Jin and Jinmin Xiang and Barkova Maria and Ushakov Anton and Xianfei Jin and Tian Ding and Zhihang Lin and Qian Chen and Linxin Yang and Mingzhe Yang and Bingwei Zhang and Hongzhang Yang and Fangxue Zhang and Shijun Qin and Jie Yu and Cuihua Hu and Tolstykh Vasiliy and Nosov Ivan and Abdullin Amir and Zhicheng Zhou and Xin Zhang and Zhixiong Ning and Xutong Zhao and Junjie Huang and Jiajun Liu and Weiyan Kong and Zheng Zhang and Wenhan Luo and Lin Hu and Yangbo Guo and Li Zeng and Shihao Zhang and Baotian Hu and Min Zhang and Haizhou Li and Zhiquan Luo},
+      year={2026},
+      eprint={2607.20145},
+      archivePrefix={arXiv},
+      url={https://arxiv.org/abs/2607.20145}, 
 }
 ```
