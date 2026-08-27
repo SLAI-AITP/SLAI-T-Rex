@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "or-cpt-engine"
+version = "0.1.0"
+description = "Solver-verified OR-CPT data factory for SLAI T-Rex."
+requires-python = ">=3.10"
+dependencies = [
+  "httpx>=0.27.0",
+  "orjson>=3.10.0",
+  "pydantic>=2.7.0",
+  "PyYAML>=6.0.1",
+  "tenacity>=8.2.3",
+  "typer>=0.12.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+]
+
+[project.scripts]
+or-cpt-engine = "or_cpt_engine.cli.main:app"
+
+[tool.setuptools.packages.find]
+include = ["or_cpt_engine*", "cpt_cleaner*"]
+
+[tool.setuptools.package-data]
+or_cpt_engine = [
+  "prompts/*.md",
+  "prompts/*.yaml",
+]
+cpt_cleaner = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

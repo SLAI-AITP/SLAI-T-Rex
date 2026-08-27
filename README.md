@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="SLAI%20T-Rex.pdf"><img alt="Paper" src="https://img.shields.io/badge/Paper-SLAI%20T--Rex-B34A78?logo=readthedocs&logoColor=white"></a>
+  <a href="docs/SLAI-T-Rex.pdf"><img alt="Paper" src="https://img.shields.io/badge/Paper-SLAI%20T--Rex-B34A78?logo=readthedocs&logoColor=white"></a>
   <a href="https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR"><img alt="ModelScope checkpoint" src="https://img.shields.io/badge/ModelScope-Checkpoint-624AFF?logo=modelscope&logoColor=white"></a>
   <a href="https://github.com/SLAI-AITP/SLAI-T-Rex"><img alt="GitHub repository" src="https://img.shields.io/badge/GitHub-SLAI--T--Rex-181717?logo=github&logoColor=white"></a>
   <br>
@@ -21,7 +21,7 @@
 
 **SLAI T-Rex** is the open-source companion repository for the technical report:
 
-**Paper:** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](SLAI%20T-Rex.pdf)  
+**Paper:** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](docs/SLAI-T-Rex.pdf)  
 **Model:** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)  
 **Code:** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
 
@@ -49,13 +49,13 @@ SLAI T-Rex has two connected goals:
 
 | Module | Status | Purpose |
 | --- | --- | --- |
-| [cpt_data_construction](cpt_data_construction/) | design note | OR-CPT engine scope: solver-verified document synthesis and provenance requirements |
-| [cpt_training](cpt_training/) | scripts included | MindSpeed-LLM CPT data conversion, checkpoint conversion, and 4K training launcher |
-| [sft_data_construction](sft_data_construction/) | runnable | OR SFT self-distillation toolkit with seed IR, synthetic IR, rendering, quality gate, resume, cache, and multi-endpoint generation |
-| [sft_training](sft_training/) | scripts included | MindSpeed-LLM SFT data conversion and 8K multi-node training launcher |
-| [model_download_deployment](model_download_deployment/) | script included | DeepSeek-V4 FP8 HuggingFace checkpoint to BF16 HuggingFace checkpoint preparation |
-| [docs](docs/) | index | extended notes and future dataset/model cards |
-| [examples](examples/) | index | end-to-end workflow entry points |
+| [data/cpt](data/cpt/) | runnable | OR-CPT engine: solver-verified instance synthesis, Gurobi checks, NL backtranslation, and CPT document export |
+| [data/sft](data/sft/) | runnable | OR SFT self-distillation toolkit with seed IR, synthetic IR, rendering, quality gate, resume, cache, and multi-endpoint generation |
+| [training/convert](training/convert/) | scripts included | Shared MindSpeed data conversion and HF/MCore/FP8 checkpoint conversion |
+| [training/cpt](training/cpt/) | scripts included | MindSpeed-LLM 4K CPT launcher |
+| [training/sft](training/sft/) | scripts included | MindSpeed-LLM 8K SFT launcher and multi-node wrapper |
+| [eval](eval/) | runnable | OR benchmark evaluation for NL4OPT, OptiBench, B4O-Feasible, and B4O-ORGEval |
+| [docs](docs/) | notes | technical report PDF and documentation index |
 
 ## Workflow
 
@@ -85,7 +85,7 @@ cd SLAI-T-Rex
 Install the SFT data construction toolkit:
 
 ```bash
-cd sft_data_construction
+cd data/sft
 python3 -m pip install -e .
 ```
 
@@ -114,7 +114,7 @@ python3 -m or_data_distill run --config configs/run.local.yaml
 Convert the generated SFT JSONL and launch the MindSpeed-LLM SFT template:
 
 ```bash
-cd ../sft_training
+cd ../../training/sft
 
 export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
 export MINDSPEED_DIR=/path/to/MindSpeed
@@ -122,9 +122,9 @@ export TOKENIZER_PATH=/path/to/DeepSeek-V4-Flash
 export CKPT_LOAD_DIR=/path/to/source_mcore_checkpoint
 export OUTPUT_ROOT=/path/to/training_outputs/sft
 
-bash scripts/convert_data.sh \
+bash ../convert/convert_data.sh \
   --mindspeed-llm-dir "$MINDSPEED_LLM_DIR" \
-  --input ../sft_data_construction/runs/sft_data_demo/sft.jsonl \
+  --input ../../data/sft/runs/sft_data_demo/sft.jsonl \
   --output-prefix /path/to/processed/or_sft/openai \
   --tokenizer "$TOKENIZER_PATH" \
   --handler-name SharegptStyleInstructionHandler \
@@ -136,10 +136,10 @@ bash scripts/convert_data.sh \
   --no-append-eod
 
 export DATA_PATH=/path/to/processed/or_sft/openai
-bash scripts/launch_sft_deepseek4_flash_8n16_910c.sh
+bash launch_sft_deepseek4_flash_8n16_910c.sh
 ```
 
-For CPT scripts, see [cpt_training/README.md](cpt_training/README.md). For checkpoint preparation, see [model_download_deployment/README.md](model_download_deployment/README.md).
+For CPT scripts, see [training/cpt/README.md](training/cpt/README.md). For checkpoint conversion, see [training/convert](training/convert/).
 
 ## SFT Data Construction
 
@@ -157,7 +157,7 @@ problem-answer seeds
 
 Key capabilities:
 
-- public seed pool under `sft_data_construction/seeds/`;
+- public seed pool under `data/sft/seeds/`;
 - DP, DT, and DPS problem representations;
 - controllable OR buckets for domain, structure, difficulty, data interface, and answer style;
 - accepted-target top-up with `target_count`, `generation_oversample`, and `max_rounds`;
@@ -171,7 +171,7 @@ Key capabilities:
 
 The training scripts are templates for an already prepared Ascend/MindSpeed environment. They do not vendor MindSpeed-LLM, MindSpeed, CANN, custom operators, cluster launchers, or private checkpoints.
 
-CPT defaults in `cpt_training/scripts/train_cpt_deepseek4_flash_4k.sh`:
+CPT defaults in `training/cpt/train_cpt_deepseek4_flash_4k.sh`:
 
 ```text
 SEQ_LEN=4096
@@ -183,7 +183,7 @@ MIN_LR=3.0e-7
 TP=1, PP=4, EP=32, CP=1
 ```
 
-SFT defaults in `sft_training/scripts/train_sft_deepseek4_flash_8k.sh`:
+SFT defaults in `training/sft/train_sft_deepseek4_flash_8k.sh`:
 
 ```text
 SEQ_LEN=8192
@@ -202,17 +202,15 @@ Adjust these values only after matching the hardware layout, checkpoint format, 
 
 ```text
 SLAI-T-Rex/
-├── cpt_data_construction/       # OR-CPT engine design scope and release notes
-├── cpt_training/                # MindSpeed-LLM CPT conversion and launch templates
-├── sft_data_construction/       # Runnable OR SFT data distillation toolkit
-├── sft_training/                # MindSpeed-LLM SFT conversion and launch templates
-├── model_download_deployment/   # Checkpoint preparation and deployment notes
-├── docs/                        # Extended documentation index
-├── examples/                    # End-to-end workflow index
-├── assets/                      # README icons kept for compatibility
-├── SLAI T-Rex.pdf               # Technical report PDF
+├── data/cpt/                    # Runnable OR-CPT engine (solver-verified synthesis)
+├── data/sft/                    # Runnable OR SFT data distillation toolkit
+├── training/convert/            # Shared data and checkpoint conversion scripts
+├── training/cpt/                # MindSpeed-LLM CPT launch template
+├── training/sft/                # MindSpeed-LLM SFT launch templates
+├── eval/                        # OR benchmark evaluation
+├── docs/                        # Technical report PDF and documentation index
+├── assets/                      # README images
 ├── README.md                    # English entry
-├── README_en.md                 # English compatibility entry
 └── README_zh.md                 # Chinese entry
 ```
 

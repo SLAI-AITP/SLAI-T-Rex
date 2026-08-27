@@ -1,0 +1,20 @@
+run_name: or_cpt_mvp
+source:
+  type: optmath_generators
+generation:
+  num_instances_per_generator: 5
+  max_iter_per_generator: 200
+  num_workers: 4
+filters:
+  var_num_max: 200
+  constraint_num_max: 500
+  solve_timeout_sec: 60
+  # Stage 04 runs each Gurobi check in an isolated subprocess.
+  # On large CPU machines, set this to 24-32 first and tune upward if stable.
+  solver_concurrency: 24
+  # Keep per-process Gurobi threading low when many solver subprocesses run in parallel.
+  solver_threads_per_process: 1
+difficulty_mix:
+  level_1: 0.60
+  level_2: 0.30
+  level_3: 0.10

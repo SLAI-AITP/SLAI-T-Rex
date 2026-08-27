@@ -1,0 +1,8 @@
+{
+  "subclass": "Set Multi-Cover",
+  "reference": "Caprara, A., Toth, P., & Fischetti, M. (2000). Algorithms for the set covering problem. Annals of Operations Research, 98(1), 353-371.",
+  "reference_url": "https://www.dei.unipd.it/~fisch/papers/survey_set_covering_problem.pdf",
+  "math_formula": "Let I be candidate sets and E be elements. Binary variable x_i equals 1 if candidate set i is selected. Each set i has cost c_i and covers a listed subset S_i of elements. Each element e has required coverage count r_e. Minimize sum_i c_i x_i subject to sum_{i: e in S_i} x_i >= r_e for every element e, with x_i binary. This is multicover: r_e may be greater than one, and coverage constraints are lower bounds rather than exact coverage counts.",
+  "natural_language_example": "A resilience planning team chooses which candidate safeguards to fund. Each safeguard has a selection cost and covers a listed subset of risk categories. Each risk category has a required number of independent safeguards that must cover it. The decision variable is binary: select a safeguard or do not select it. The objective is to minimize total selection cost while ensuring every risk category is covered by at least its required coverage count. The complete safeguard-to-risk coverage membership and all coverage requirements must be preserved.",
+  "local_modification_notes": "Internal OR-CPT version keeps the full multicover matrix compact enough for LLM prompts, exposes set_table and element_coverage_table metadata, records coverage requirements as lower bounds, and forbids exact-cover, routing, flow, or continuous-count reinterpretations."
+}

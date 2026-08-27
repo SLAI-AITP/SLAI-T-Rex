@@ -1,0 +1,51 @@
+language: en
+
+# Million-scale production should not rely on one Markdown template. These
+# ratios create a controlled document-type mix while preserving solver-truth
+# grounding for every accepted sample.
+doc_type_policy:
+  final_model_report:
+    ratio: 0.50
+    goal: complete modeling report with formulation, code, solution, and validation
+  modeling_rationale:
+    ratio: 0.50
+    goal: business-to-model reasoning and code-to-model mapping
+  solver_validation_note:
+    ratio: 0
+    goal: compact verification-focused CPT document
+
+# Limit how many rendered documents can reuse the same solved seed instance.
+# This prevents a single numerical instance from producing too many near-duplicate
+# views at million-sample scale.
+max_views_per_seed_instance: 12
+
+numeric_rendering:
+  enabled: true
+  max_decimal_places: 2
+  # Keep executable code unchanged after 08 validation; normalize prose, tables,
+  # solution summaries, and validation text only.
+  apply_to_code_blocks: false
+
+# Rendering style mix. The renderer deterministically rotates these values by
+# sample index and records them in each document's metadata. `verbosity_levels`
+# lightly changes solution/validation detail, and `section_order_variants`
+# changes the section ordering while preserving required validation content.
+style_policy:
+  verbosity_levels:
+    - concise
+    - standard
+    - detailed
+  writing_styles:
+    - operations analyst memo
+    - modeling notebook
+    - solver validation note
+    - implementation walkthrough
+  audiences:
+    - operations research practitioner
+    - implementation engineer
+    - data science trainee
+    - planning executive
+  section_order_variants:
+    - formulation_first
+    - implementation_first
+    - validation_first

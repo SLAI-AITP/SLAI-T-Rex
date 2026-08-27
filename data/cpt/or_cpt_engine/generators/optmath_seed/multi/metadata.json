@@ -1,0 +1,8 @@
+{
+  "subclass": "Balanced Multi-Commodity Transportation",
+  "reference": "Operations Research: Applications and Algorithms",
+  "reference_url": "https://www.academia.edu/download/43587201/Winston.OperationsResearch.pdf",
+  "math_formula": "Let I be origins, J destinations, and P products. Continuous variable Transport[i,j,p] is the amount of product p shipped from origin i to destination j. Minimize sum_{i,j,p} ShippingCost[i,j,p] Transport[i,j,p]. For every origin-product pair, sum_j Transport[i,j,p] = Supply[i,p]. For every destination-product pair, sum_i Transport[i,j,p] = Demand[j,p]. For every origin-destination lane, sum_p Transport[i,j,p] <= Limit[i,j]. Transport variables are nonnegative.",
+  "natural_language_example": "A distributor ships several product categories from supply origins to demand destinations. Each origin has a specific supply of each product, and each destination requires a specific demand of each product. Each origin-destination lane has a shared capacity across all products, and the unit shipping cost depends on the origin, destination, and product. The goal is to choose continuous shipment quantities for every origin-destination-product combination that minimize total shipping cost while exactly shipping all supply, exactly satisfying all demand, and respecting shared lane capacities.",
+  "local_modification_notes": "Internal OR-CPT version derives balanced supply, demand, and lane capacities from a latent feasible multi-commodity shipment; exposes complete supply/demand/cost/capacity tables; and forbids fixed-charge network design, line planning, vehicle routing, inventory, reserve-penalty, or single-commodity reinterpretations."
+}

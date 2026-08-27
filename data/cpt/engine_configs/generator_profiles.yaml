@@ -1,0 +1,5884 @@
+version: v1.1.0
+description: Project-local generator profiles for OR-CPT production.
+defaults:
+  difficulty_mix:
+    level_1: 0.5
+    level_2: 0.3
+    level_3: 0.15
+    level_4: 0.05
+  expected_acceptance_rate: 0.35
+profiles:
+  optmath_aircraftassignment:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: assignment
+    sub_family: integer_aircraft_fleet_assignment
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - integer_allocation
+    - fleet_availability_limit
+    - route_demand_requirement
+    - capacity_contribution_matrix
+    - cost_minimization
+    canonical_math_signature:
+      variable_types:
+      - nonnegative_integer_allocation
+      objective_sense: minimize
+      objective_terms:
+      - aircraft_route_operating_cost_times_allocation
+      core_constraints:
+      - aircraft_type_availability_limit
+      - route_capacity_meets_or_exceeds_demand
+      - nonnegative_integer_allocation
+      required_tables:
+      - aircraft_type_availability_vector
+      - route_demand_vector
+      - aircraft_route_capacity_contribution_matrix
+      - aircraft_route_cost_matrix
+      - compact_aircraft_assignment_tables
+      forbidden_changes:
+      - do not model this as binary one-aircraft-to-one-route matching
+      - do not add aircraft route continuity or time-expanded balance constraints
+      - do not add passenger spill, recapture, or revenue-management variables
+      - do not omit aircraft availability limits or route demand requirements
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Integer fleet-to-route allocation with aircraft availability limits, route demand requirements, capacity contribution matrix, and operating-cost minimization.
+    quality_risks:
+    - LLM may convert integer allocation counts into binary assignment variables
+    - LLM may require exact capacity equality instead of meet-or-exceed demand
+    - LLM may add aircraft routing, sequencing, or time-expanded balance constraints
+    - LLM may omit aircraft-route capacity contribution coefficients
+    rationale_requirements:
+    - explain integer aircraft-route allocation variables
+    - explain aircraft type availability constraints
+    - explain route capacity meeting or exceeding demand
+    - explain aircraft-route cost and capacity contribution matrices
+    - explicitly state that the model has no route sequencing or aircraft-flow continuity
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_integer_allocation
+      - preserve_availability_limits
+      - preserve_route_demand_requirements
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: AircraftAssignment
+    source: optmath_internal
+  optmath_aircraftlanding:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: scheduling
+    sub_family: aircraft_landing_scheduling
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_landing_time
+    - binary_pairwise_order
+    - runway_separation
+    - landing_time_window
+    - early_late_deviation_penalty
+    canonical_math_signature:
+      variable_types:
+      - continuous_landing_time
+      - binary_pairwise_order
+      - continuous_early_deviation
+      - continuous_late_deviation
+      objective_sense: minimize
+      objective_terms:
+      - early_landing_penalty
+      - late_landing_penalty
+      core_constraints:
+      - one_precedence_order_for_each_aircraft_pair
+      - minimum_separation_time_between_ordered_landings
+      - aircraft_landing_time_window
+      - early_deviation_lower_bound
+      - late_deviation_lower_bound
+      required_tables:
+      - aircraft_target_landing_times
+      - aircraft_earliest_latest_landing_windows
+      - aircraft_early_late_penalties
+      - ordered_pair_separation_times
+      - compact_aircraft_landing_tables
+      forbidden_changes:
+      - do not rewrite as fleet assignment, route allocation, transportation, or facility location
+      - do not add aircraft type availability or route demand constraints
+      - do not omit pairwise landing separation constraints
+      - do not replace early/late penalty objective with makespan or completion time
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Static aircraft landing sequencing with pairwise order binaries, separation times, landing windows, and early/late penalty minimization.
+    quality_risks:
+    - LLM may confuse landing sequencing with fleet assignment
+    - LLM may omit ordered-pair separation times
+    - LLM may replace early/late penalty with makespan or delay-only objective
+    - LLM may omit earliest/latest landing windows
+    rationale_requirements:
+    - explain actual landing time variables
+    - explain binary pairwise order variables
+    - explain minimum separation constraints
+    - explain earliest/target/latest landing times
+    - explain early and late deviation penalty objective
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: AircraftLanding
+    source: optmath_internal
+  optmath_binpacking_problem:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: packing
+    sub_family: bin_packing
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_selection
+    - capacity_constraint
+    - value_or_cost_tradeoff
+    canonical_math_signature:
+      variable_types:
+      - binary
+      core_constraints:
+      - capacity_limit
+      required_tables:
+      - item_size_or_weight_vector
+      - item_value_or_cost_vector
+      forbidden_changes:
+      - do not introduce flow balance or routing constraints
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: Binpacking_Problem
+    source: optmath_internal
+  optmath_blending_problem:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: blending
+    sub_family: blending_problem
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_blend
+    - quality_bounds
+    - composition_constraint
+    - least_cost_mix
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: Blending_problem
+    source: optmath_internal
+  optmath_carselection:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: assignment
+    sub_family: assignment
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_bipartite_matching
+    - eligibility_constraint
+    - participant_at_most_one
+    - car_at_most_one
+    - maximum_cardinality_assignment
+    canonical_math_signature:
+      variable_types:
+      - binary_participant_car_assignment
+      objective_sense: maximize
+      objective_terms:
+      - one_unit_value_per_selected_assignment
+      core_constraints:
+      - assignment_only_if_eligible
+      - participant_at_most_one_car
+      - car_at_most_one_participant
+      required_tables:
+      - participant_set
+      - car_set
+      - participant_car_eligibility_matrix
+      - compact_car_selection_tables
+      forbidden_changes:
+      - do not add route continuity unless arcs and paths exist
+      - do not introduce assignment costs or scores absent from the source
+      - do not require every participant or every car to be assigned
+      - do not reinterpret the problem as transportation, routing, or scheduling
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: CarSelection
+    source: optmath_internal
+  optmath_cell_tower:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: facility_location
+    sub_family: coverage_facility_location
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_site_selection
+    - budgeted_maximum_coverage
+    - coverage_linking_constraint
+    - population_weighted_objective
+    - knapsack_budget
+    canonical_math_signature:
+      variable_types:
+      - binary_tower_build
+      - binary_region_covered
+      objective_sense: maximize
+      objective_terms:
+      - region_population_times_covered_binary
+      core_constraints:
+      - region_coverage_linking
+      - tower_budget_limit
+      required_tables:
+      - tower_setup_cost_vector
+      - region_population_vector
+      - tower_region_coverage_matrix
+      - total_tower_budget
+      - compact_cell_tower_tables
+      forbidden_changes:
+      - do not require every region to be covered
+      - do not turn site selection into capacitated facility location or pure transportation
+      - do not add customer assignment, shipment, capacity, vehicle, tour, time-window, or route-sequencing variables
+      - do not change covered-population maximization into cost minimization
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      tower_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      tower_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Budgeted maximum-coverage MILP with binary tower build decisions, binary region coverage indicators, setup-cost budget, tower-region coverage matrix, and covered-population maximization.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    - LLM may incorrectly require all regions to be covered
+    - LLM may reinterpret coverage as capacitated facility location
+    - LLM may omit the tower budget or coverage matrix
+    rationale_requirements:
+    - explain binary tower-build variables
+    - explain binary region-covered variables
+    - explain tower-region coverage linking
+    - explain tower setup budget
+    - explain covered-population objective
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_fixed_costs
+      - preserve_capacity_constraints
+      - preserve_open_before_serve_linking
+      - preserve_new_scooter_budget_and_linking
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: cell_tower
+    source: optmath_internal
+  optmath_cflp:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: facility_location
+    sub_family: capacitated_facility_location
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_opening_decision
+    - customer_assignment
+    - fixed_cost
+    - capacity_constraint
+    - linking_constraint
+    canonical_math_signature:
+      variable_types:
+      - binary_opening
+      - continuous_or_binary_assignment
+      core_constraints:
+      - demand_satisfaction
+      - capacity_limit
+      - open_before_serve_linking
+      required_tables:
+      - fixed_cost_vector
+      - assignment_or_shipping_cost_matrix
+      - demand_vector
+      forbidden_changes:
+      - do not remove fixed opening costs
+      - do not turn site opening into pure transportation
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      facility_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      facility_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    - LLM may omit fixed opening costs
+    - LLM may miss open-before-serve linking constraints
+    rationale_requirements:
+    - explain binary opening variables
+    - explain assignment or shipment variables
+    - explain capacity and linking constraints
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_fixed_costs
+      - preserve_capacity_constraints
+      - preserve_open_before_serve_linking
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: CFLP
+    source: optmath_internal
+  optmath_clsp_expand_capacity:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: lot_sizing
+    sub_family: capacitated_lot_sizing
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - inventory_balance
+    - setup_decision
+    - holding_cost
+    - period_capacity
+    - remaining_demand_big_m
+    - time_indexed_decision
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_quantity
+      - binary_order_setup
+      objective_sense: minimize
+      objective_terms:
+      - fixed_ordering_setup_cost
+      - unit_order_cost
+      - inventory_holding_cost
+      core_constraints:
+      - cumulative_inventory_balance_without_backlog
+      - demand_satisfaction
+      - order_quantity_linked_to_binary_setup
+      - period_capacity_limit
+      - nonnegative_inventory
+      required_tables:
+      - period_demand
+      - cumulative_demand
+      - fixed_ordering_cost
+      - unit_order_cost
+      - holding_cost
+      - capacity_consumption
+      - period_capacity
+      - setup_big_m_remaining_demand
+      forbidden_changes:
+      - do not remove time periods or inventory carryover
+      - do not introduce backlog or lost-sales variables
+      - do not introduce capacity-expansion variables
+      - do not omit period capacity constraints
+      - do not add zero final inventory as a separate hard constraint
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      period_count:
+        level_1:
+        - 4
+        - 8
+        level_2:
+        - 9
+        - 20
+        level_3:
+        - 21
+        - 52
+        level_4:
+        - 53
+        - 120
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      period_count:
+        level_1:
+        - 4
+        - 8
+        level_2:
+        - 9
+        - 20
+        level_3:
+        - 21
+        - 52
+        level_4:
+        - 53
+        - 120
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Capacitated lot-sizing formulation with production, setup, inventory, fixed period capacities, and no backlog or capacity-expansion decision.
+    quality_risks:
+    - LLM may mistake cumulative demand values for period demand values
+    - LLM may invent backlog variables because this is a lot-sizing problem
+    - LLM may invent capacity-expansion variables from the generator name
+    - LLM may add zero final inventory as a hard constraint even though the source only enforces nonnegative inventory
+    rationale_requirements:
+    - explain cumulative inventory balance or its equivalent recursive inventory balance without backlog
+    - explain setup-linked production upper bound using remaining-demand big-M
+    - explain fixed setup, unit production, and holding costs
+    - explain fixed period capacity limits and product capacity consumption rates
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_inventory_balance
+      - preserve_period_demand
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: CLSP_expand_capacity
+    source: optmath_internal
+  optmath_contractallocation:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: contract_allocation
+    sub_family: split_award_contract_quantity_allocation
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_delivery_quantity
+    - binary_producer_contract_incidence
+    - producer_capacity
+    - exact_contract_fulfillment
+    - minimum_contributors
+    - minimum_delivery_activation
+    canonical_math_signature:
+      variable_types:
+      - continuous_nonnegative_delivery_quantity
+      - binary_producer_contract_incidence
+      objective_sense: minimize
+      objective_terms:
+      - unit_production_cost_times_delivered_quantity
+      core_constraints:
+      - producer_capacity
+      - exact_contract_fulfillment
+      - minimum_contributors_per_contract
+      - delivery_activation_lower_bound_minimum_delivery
+      - delivery_activation_upper_bound_contract_size
+      required_tables:
+      - compact_contract_allocation_tables
+      - producer_capacities
+      - contract_sizes
+      - minimum_delivery_by_producer
+      - minimum_contributors_by_contract
+      - production_cost_matrix
+      forbidden_changes:
+      - do not omit binary producer-contract incidence variables
+      - do not weaken exact fulfillment into optional fulfillment
+      - do not change delivered quantities into binary award-only decisions
+      - do not add facility-location or routing structure
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit binary incidence variables
+    - LLM may weaken exact contract fulfillment to at-least fulfillment
+    - LLM may miss minimum contributor requirements
+    - LLM may omit minimum delivery lower bounds
+    - LLM may output placeholder Gurobi code instead of constructing all producer-contract variables
+    rationale_requirements:
+    - explain continuous delivered quantity variables
+    - explain binary producer-contract incidence variables
+    - explain producer capacity constraints
+    - explain exact contract fulfillment
+    - explain minimum contributor and minimum delivery activation constraints
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: ContractAllocation
+    source: optmath_internal
+  optmath_cut_edited:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: cutting_stock
+    sub_family: integer_cutting_stock_pattern_count
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - nonnegative_integer_pattern_count
+    - exact_order_width_fulfillment
+    - cutting_pattern_matrix
+    - raw_roll_count_minimization
+    - stock_roll_width_feasibility
+    canonical_math_signature:
+      variable_types:
+      - nonnegative_integer_pattern_count
+      objective_sense: minimize
+      objective_terms:
+      - total_raw_roll_count
+      core_constraints:
+      - exact_order_width_fulfillment
+      - pattern_width_feasibility
+      required_tables:
+      - compact_cutting_stock_tables
+      - stock_roll_width
+      - order_width_demand_vector
+      - cutting_pattern_piece_matrix
+      forbidden_changes:
+      - do not make pattern-count variables binary
+      - do not weaken exact order fulfillment to optional fulfillment
+      - do not invent cutting patterns or piece counts
+      - do not reinterpret as set cover, bin packing, routing, or scheduling
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Integer cutting-stock pattern-count formulation with exact order-width fulfillment and stock-roll-width-feasible listed patterns.
+    quality_risks:
+    - LLM may turn nonnegative integer pattern counts into binary set selection
+    - LLM may replace exact order fulfillment with at-least fulfillment
+    - LLM may omit pattern piece counts or stock roll width
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain nonnegative integer pattern-count variables
+    - explain total raw-roll-count minimization
+    - explain exact order-width fulfillment constraints
+    - explain each listed cutting pattern and stock roll width feasibility
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_pattern_count_integrality
+      - preserve_exact_order_width_fulfillment
+      - preserve_complete_pattern_matrix
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - binary_pattern_selection_reinterpretation
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: cut_edited
+    source: optmath_internal
+  optmath_diet:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: diet
+    sub_family: diet_problem
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_quantity
+    - nutrient_bounds
+    - ingredient_cost
+    - lower_upper_requirements
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: diet
+    source: optmath_internal
+  optmath_diet_problem:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: diet
+    sub_family: diet_problem
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_quantity
+    - nutrient_bounds
+    - ingredient_cost
+    - lower_upper_requirements
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: Diet_Problem
+    source: optmath_internal
+  optmath_dietu:
+    enabled: true
+    priority: cautious
+    recommended_weight: 0.35
+    sampling_weight:
+      cpt_weight: 0.35
+      max_daily_samples: 800
+      min_quality_score: 0.7
+      solver_timeout_seconds: 30
+    task_family: diet
+    sub_family: diet_problem
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_quantity
+    - nutrient_bounds
+    - ingredient_cost
+    - lower_upper_requirements
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.2
+    source_generator_name: dietu
+    source: optmath_internal
+  optmath_electrical_power:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: energy
+    sub_family: energy
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - dispatch_balance
+    - generation_capacity
+    - energy_cost
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: electrical_power
+    source: optmath_internal
+  optmath_facility_location:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: facility_location
+    sub_family: multi_commodity_distribution_center_selection
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_distribution_center_selection
+    - binary_zone_assignment
+    - open_before_zone_assignment_linking
+    - continuous_multi_commodity_shipment
+    - fixed_opening_cost
+    - throughput_cost_and_bounds
+    canonical_math_signature:
+      variable_types:
+      - binary_distribution_center_selection
+      - binary_zone_assignment
+      - continuous_nonnegative_shipment
+      objective_sense: minimize
+      objective_terms:
+      - plant_to_dc_to_zone_variable_shipping_cost
+      - fixed_distribution_center_selection_cost
+      - unit_distribution_center_throughput_cost
+      core_constraints:
+      - plant_commodity_supply_capacity
+      - served_zone_commodity_demand_exactly_shipped
+      - each_zone_assigned_to_exactly_one_distribution_center
+      - explicit_distribution_center_open_before_zone_assignment
+      - distribution_center_minimum_throughput_if_selected
+      - distribution_center_maximum_throughput_if_selected
+      required_tables:
+      - compact_facility_location_tables
+      - commodity_plant_supply
+      - commodity_zone_demand
+      - variable_shipping_cost_by_commodity_plant_dc_zone
+      - fixed_unit_and_throughput_bounds_by_distribution_center
+      forbidden_changes:
+      - do not remove fixed opening costs
+      - do not turn site opening into pure transportation
+      - do not omit unit throughput costs
+      - do not omit explicit Served[d,z] <= Selected[d] linking
+      - do not add vehicle routes or customer visit sequencing
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      facility_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      facility_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - Generation params may be truncated unless compact_facility_location_tables is used
+    - LLM may omit fixed selection or unit throughput costs
+    - LLM may collapse four-index shipments into a simple assignment model
+    - LLM may miss exact served-demand shipment equalities
+    - LLM may omit explicit open-before-assignment linking and rely on unstated intuition
+    - LLM may add routing constraints that are not present
+    rationale_requirements:
+    - explain binary selected distribution-center variables
+    - explain binary served zone-to-center assignment variables
+    - explain continuous commodity plant-center-zone shipment variables
+    - explain exact served-demand shipment equalities
+    - explain explicit Served[d,z] <= Selected[d] open-before-assignment links
+    - explain minimum and maximum throughput/opening links
+    - explain fixed, throughput, and variable shipping cost terms
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_fixed_costs
+      - preserve_capacity_constraints
+      - preserve_open_before_serve_linking
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: facility_location
+    source: optmath_internal
+  optmath_factory_planning_problem:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: production_planning
+    sub_family: multi_period_factory_production_inventory
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - multi_period_production
+    - inventory_balance
+    - machine_hour_capacity
+    - product_period_sales_upper_bound
+    - final_inventory_target
+    - sales_revenue_minus_holding_cost
+    canonical_math_signature:
+      variable_types:
+      - continuous_production_quantity
+      - continuous_sales_quantity
+      - continuous_ending_inventory
+      objective_sense: maximize
+      objective_terms:
+      - product_sales_revenue
+      - inventory_holding_cost_penalty
+      core_constraints:
+      - initial_inventory_balance
+      - period_to_period_inventory_balance
+      - machine_hour_capacity_after_maintenance
+      - sales_upper_bound_by_period_product
+      - inventory_upper_bound_by_period_product
+      - required_final_inventory_target
+      required_tables:
+      - compact_factory_planning_tables
+      - profit_per_product
+      - holding_cost
+      - machine_time_by_machine_product
+      - available_machine_hours_by_period_machine
+      - sales_upper_bound_by_period_product
+      - inventory_upper_bound
+      - final_inventory_target_by_product
+      forbidden_changes:
+      - do not describe production, sales, or inventory as unbounded
+      - do not omit machine-hour capacity constraints
+      - do not omit product-period sales upper bounds
+      - do not aggregate product-period sales limits into one total demand number
+      - do not infer missing demand totals from the reference answer
+      - do not omit final inventory target constraints
+      - do not replace inventory balance with independent per-period product-mix constraints
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Multi-period factory production, sales, and inventory planning with machine-hour capacity and final inventory targets.
+    quality_risks:
+      - LLM may omit machine-hour capacity and produce an unconstrained sales model
+      - LLM may omit product-period sales upper bounds
+      - LLM may collapse product-period sales limits into total demand by product
+      - LLM may infer artificial demand totals when sales caps are already given by period-product
+      - LLM may omit final inventory targets or inventory upper bounds
+      - Natural-language statement may become generic product-mix instead of multi-period planning
+    rationale_requirements:
+    - explain production, sales, and ending-inventory variables separately
+    - explain inventory flow balance with zero initial inventory
+    - explain machine-hour capacity after maintenance
+    - explain product-period sales upper bounds
+    - explain inventory upper bound and final inventory target
+    - explain sales revenue minus holding cost objective
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_inventory_balance
+      - preserve_machine_hour_capacity
+      - preserve_sales_limit_table
+      - preserve_final_inventory_target
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: Factory_Planning_Problem
+    source: optmath_internal
+  optmath_farmplanning:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: agriculture
+    sub_family: continuous_farm_resource_planning
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_crop_area
+    - sales_revenue_maximization
+    - labor_cost
+    - water_cost
+    - monthly_land_capacity
+    - monthly_water_capacity
+    - annual_water_capacity
+    - family_consumption_bundle_balance
+    - crop_yield_split
+    canonical_math_signature:
+      variable_types:
+      - continuous_planted_area
+      - continuous_crop_sales
+      - continuous_consumption_bundle_fraction
+      - continuous_labor_level
+      objective_sense: maximize
+      objective_terms:
+      - crop_sales_revenue
+      - labor_cost_penalty
+      - water_cost_penalty
+      core_constraints:
+      - monthly_land_occupation_capacity
+      - monthly_labor_requirement_coverage
+      - monthly_water_limit
+      - annual_water_availability
+      - crop_yield_split_between_family_consumption_and_sales
+      - family_consumption_bundle_fraction_sum
+      required_tables:
+      - compact_farm_planning_tables
+      - crop_yield_vector
+      - crop_price_vector
+      - monthly_crop_land_occupation_matrix
+      - monthly_crop_labor_requirement_matrix
+      - monthly_crop_water_requirement_matrix
+      - crop_bundle_consumption_matrix
+      - wage_rates_and_water_price
+      forbidden_changes:
+      - do not introduce binary crop-selection or fixed planting setup costs
+      - do not add crop rotation, inventory carryover, or minimum planting constraints
+      - do not omit family consumption bundle balance
+      - do not change net-earnings maximization into resource-use minimization
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Continuous farm resource planning LP with monthly land/labor/water limits, annual water availability, crop yield split, and family consumption bundle balance.
+    quality_risks:
+    - LLM may collapse the model into a generic crop acreage product-mix problem
+    - LLM may omit family consumption bundle fractions and yield split constraints
+    - LLM may omit water cost or annual water availability
+    - LLM may add binary crop-selection, fixed setup, crop rotation, or inventory constraints
+    rationale_requirements:
+    - explain planted area, sales, labor, and consumption-bundle variables
+    - explain sales revenue minus labor and water costs
+    - explain monthly land occupation limits
+    - explain monthly labor coverage with family, permanent, and temporary labor
+    - explain monthly and annual water limits
+    - explain crop yield split between family consumption and sales
+    - explain consumption bundle fractions sum to one
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_yield_split
+      - preserve_consumption_bundle_balance
+      - preserve_monthly_land_labor_water_constraints
+      - forbid_binary_crop_selection
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: farmplanning
+    source: optmath_internal
+  optmath_fleet_routing:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: network_flow
+    sub_family: time_expanded_fleet_flow
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - integer_fleet_assignment
+    - active_leg_selection_indicator
+    - time_expanded_flow_conservation
+    - fleet_availability
+    - active_leg_demand_satisfaction
+    - inactive_leg_route_restriction
+    canonical_math_signature:
+      variable_types:
+      - nonnegative_integer_flight_leg_count
+      - nonnegative_integer_idle_fleet_count
+      - nonnegative_integer_initial_fleet_placement
+      objective_sense: minimize
+      objective_terms:
+      - fleet_type_operating_cost_per_assigned_leg
+      core_constraints:
+      - initial_fleet_balance_by_location
+      - time_expanded_fleet_flow_conservation
+      - fleet_availability_by_type
+      - active_leg_passenger_demand_satisfaction
+      - inactive_leg_route_restriction
+      required_tables:
+      - compact_fleet_flow_tables
+      - fleet_type_capacity
+      - fleet_type_operating_cost
+      - available_fleet_by_type
+      - feasible_flight_legs
+      - active_flight_leg_passenger_demand
+      - leg_is_active_indicator
+      forbidden_changes:
+      - do not model as a visit-once VRP
+      - do not add subtour elimination or customer visit constraints
+      - do not require binary route variables
+      - do not add time windows beyond the listed departure and arrival periods
+      - do not omit idle fleet variables or initial fleet placement variables
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      customer_count:
+        level_1:
+        - 5
+        - 12
+        level_2:
+        - 13
+        - 30
+        level_3:
+        - 31
+        - 80
+        level_4:
+        - 81
+        - 200
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      customer_count:
+        level_1:
+        - 5
+        - 12
+        level_2:
+        - 13
+        - 30
+        level_3:
+        - 31
+        - 80
+        level_4:
+        - 81
+        - 200
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Locally refined to generate time windows from a latent feasible route and expose route, time-window, demand, distance, and capacity source data.
+    quality_risks:
+    - Generic routing language may cause an incorrect VRP reinterpretation
+    - LLM may misread this as a VRP with visit-once customer constraints
+    - LLM may introduce binary arc variables instead of integer fleet counts
+    - LLM may omit aircraft flow conservation across periods
+    - LLM may create demand on inactive flight legs
+    - LLM may omit idle fleet variables and turn the model into independent leg covering
+    rationale_requirements:
+    - explain integer flight-leg count variables
+    - explain idle fleet and initial fleet placement variables
+    - explain time-expanded fleet balance by type, location, and period
+    - explain fleet availability by type
+    - explain passenger demand satisfaction only on active legs
+    - explain inactive-leg route restrictions
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_integer_flight_leg_counts
+      - preserve_idle_fleet_state_variables
+      - preserve_initial_fleet_placement_variables
+      - preserve_time_expanded_fleet_balance
+      - preserve_active_leg_demand_only
+      - preserve_inactive_leg_restrictions
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: fleet_routing
+    source: optmath_internal
+  optmath_flowshop_2:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: scheduling
+    sub_family: permutation_flow_shop_makespan
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - permutation_sequence_assignment
+    - common_sequence_across_all_machines
+    - start_time_variables
+    - explicit_makespan_variable
+    - machine_stage_precedence
+    - adjacent_position_nonoverlap
+    - makespan_minimization
+    canonical_math_signature:
+      variable_types:
+      - binary_job_sequence_position_assignment_x[j,k]
+      - continuous_start_time_by_position_machine_t[k,m]
+      - continuous_makespan_Cmax
+      objective_sense: minimize
+      objective_terms:
+      - explicit_makespan_variable
+      - final_position_completion_bound_on_last_machine
+      core_constraints:
+      - one_job_per_sequence_position
+      - one_sequence_position_per_job
+      - same_job_machine_order_precedence
+      - adjacent_sequence_nonoverlap_on_each_machine
+      - makespan_completion_bound
+      required_tables:
+      - processing_time_table_by_job_machine
+      - shared_sequence_positions_equal_jobs
+      - ordered_machine_stages
+      - last_sequence_position_and_last_machine
+      forbidden_changes:
+      - do not rewrite as transportation or facility location
+      - do not add due dates, release dates, or tardiness costs
+      - do not convert into job shop with job-specific machine routes
+      - do not replace the common permutation sequence with independent machine sequences
+      - do not create JobSchedule[j,k,m] or machine-specific assignment variables
+      - do not reinterpret final-machine processing-time coefficients as assignment costs or delay weights
+      - do not omit the explicit Makespan variable and its final-position completion bound
+      - do not minimize total processing time, total completion time, or weighted completion time
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Locally refined permutation flow shop with shared sequence-position metadata and makespan objective guardrails.
+    quality_risks:
+    - LLM may optimize total processing time instead of makespan
+    - LLM may forget that every machine uses the same job sequence
+    - LLM may create machine-specific assignment variables x[j,k,m]
+    - LLM may treat final-machine processing times in the objective as assignment or delay costs
+    - LLM may invent due dates or release dates not present in the seed
+    rationale_requirements:
+    - explain binary job-to-sequence-position variables
+    - explain start-time variables for each sequence position and machine
+    - explain one-job-per-position and one-position-per-job constraints
+    - explain machine-stage precedence and same-machine adjacent-position ordering
+    - explain the makespan objective as final-position completion time on the final machine
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_common_permutation_sequence
+      - preserve_makespan_objective
+      - preserve_job_position_assignment_not_machine_specific
+      - preserve_processing_time_table
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: Flowshop_2
+    source: optmath_internal
+  optmath_jopshop:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: scheduling
+    sub_family: job_shop_scheduling
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - operation_start_time_variables
+    - job_operation_precedence
+    - machine_nonoverlap_disjunction
+    - makespan_minimization
+    canonical_math_signature:
+      variable_types:
+      - binary
+      - integer_or_continuous_start_time
+      objective_sense: minimize
+      objective_terms:
+      - makespan_variable
+      core_constraints:
+      - within_job_operation_precedence
+      - same_machine_pairwise_nonoverlap
+      - makespan_completion_bounds
+      required_tables:
+      - operations_by_job
+      - machine_route_by_operation
+      - processing_time_by_operation
+      forbidden_changes:
+      - do not rewrite as transportation or facility location
+      - do not convert into permutation flow shop with a single global sequence
+      - do not add due dates, release dates, or tardiness costs
+      - do not optimize assignment cost or total processing time instead of makespan
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may collapse job-specific machine routes into one common flow-shop route
+    - LLM may omit pairwise non-overlap binaries for operations sharing a machine
+    - LLM may optimize total processing time instead of makespan
+    rationale_requirements:
+    - explain operation start-time variables
+    - explain within-job operation precedence
+    - explain same-machine pairwise ordering binaries and non-overlap constraints
+    - explain makespan completion bounds
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: JopShop
+    source: optmath_internal
+  optmath_knapsack:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: packing
+    sub_family: knapsack
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_selection
+    - capacity_constraint
+    - value_or_cost_tradeoff
+    canonical_math_signature:
+      variable_types:
+      - binary
+      core_constraints:
+      - capacity_limit
+      required_tables:
+      - item_size_or_weight_vector
+      - item_value_or_cost_vector
+      forbidden_changes:
+      - do not introduce flow balance or routing constraints
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: KnapSack
+    source: optmath_internal
+  optmath_marketshare:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: marketing
+    sub_family: marketing
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - integer_supply_allocation
+    - exact_market_product_demand
+    - company_market_product_profit
+    - three_index_linear_assignment
+    canonical_math_signature:
+      variable_types:
+      - nonnegative_integer_company_market_product_supply
+      objective_sense: maximize
+      objective_terms:
+      - net_profit_times_integer_supply
+      core_constraints:
+      - market_product_demand_exactly_satisfied
+      - nonnegative_integer_supply
+      required_tables:
+      - market_product_demand_table
+      - company_market_product_profit_table
+      - compact_marketshare_tables
+      forbidden_changes:
+      - do not introduce resource capacity, budget, channel capacity, eligibility, or nonlinear market-response constraints absent from the source
+      - do not relax exact market-product demand fulfillment into optional market coverage
+      - do not convert integer supply quantities into binary campaign-selection variables
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may confuse this source model with revenue-management capacity allocation
+    - LLM may invent budget, channel-capacity, or market-response constraints
+    - LLM may relax exact market-product demand fulfillment into optional demand coverage
+    - LLM may convert integer supply quantities into binary campaign selections
+    rationale_requirements:
+    - explain Supply[i,j,k] as nonnegative integer quantity supplied by company i to market j for product k
+    - explain objective as net profit times supply over every company-market-product triple
+    - explain exact market-product demand fulfillment constraints
+    - explicitly state that the source model has no resource capacity, budget, channel capacity, eligibility, or nonlinear market-response constraints
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: MarketShare
+    source: optmath_internal
+  optmath_mcnd:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: network_design
+    sub_family: multi_commodity_network_design
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - integer_arc_facility_count
+    - continuous_commodity_flow_fraction
+    - demand_weighted_capacity_linking
+    - commodity_flow_conservation
+    - fixed_facility_installation_cost
+    - commodity_arc_routing_cost
+    canonical_math_signature:
+      variable_types:
+      - nonnegative_integer_arc_facility_count
+      - continuous_commodity_flow_fraction
+      objective_sense: minimize
+      objective_terms:
+      - demand_weighted_commodity_arc_routing_cost
+      - fixed_facility_installation_cost
+      core_constraints:
+      - commodity_flow_conservation
+      - arc_capacity_linked_to_integer_facility_count
+      - flow_fraction_bounds_zero_to_one
+      required_tables:
+      - compact_mcnd_tables
+      - commodity_origin_destination_demand_table
+      - directed_arc_capacity_and_fixed_cost_table
+      - commodity_arc_routing_cost_table
+      forbidden_changes:
+      - do not make y[i,j] binary; it is a nonnegative integer facility count
+      - do not collapse commodities into one aggregate commodity
+      - do not omit commodity-specific origins, destinations, demands, or arc routing costs
+      - do not add vehicle routing, time windows, inventory, node opening, or customer assignment
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Multicommodity capacitated network design with continuous commodity-flow fractions and nonnegative integer arc facility counts.
+    quality_risks:
+    - LLM may make y[i,j] binary instead of a nonnegative integer facility count
+    - LLM may collapse commodities into one aggregate commodity
+    - LLM may omit commodity-specific routing costs or OD demand
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain continuous commodity-flow fraction variables
+    - explain nonnegative integer arc facility-count variables
+    - explain demand-weighted routing cost and fixed facility installation cost
+    - explain commodity flow conservation
+    - explain arc capacity linked to integer facility counts
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_integer_facility_count
+      - preserve_commodity_dimension
+      - preserve_demand_weighted_capacity_linking
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - binary_activation_reinterpretation
+      - missing_commodity_dimension
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: MCND
+    source: optmath_internal
+  optmath_multi:
+    enabled: true
+    priority: medium
+    recommended_weight: 0.8
+    sampling_weight:
+      cpt_weight: 0.8
+      max_daily_samples: 1800
+      min_quality_score: 0.68
+      solver_timeout_seconds: 30
+    task_family: transportation
+    sub_family: balanced_multi_commodity_transportation
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_multicommodity_shipment
+    - origin_product_supply_balance
+    - destination_product_demand_balance
+    - shared_origin_destination_lane_capacity
+    - product_specific_unit_shipping_cost
+    canonical_math_signature:
+      variable_types:
+      - continuous_transport_quantity_x[i,j,p]
+      objective_sense: minimize
+      objective_terms:
+      - unit_shipping_cost_times_transport_quantity
+      core_constraints:
+      - origin_product_supply_equality
+      - destination_product_demand_equality
+      - origin_destination_joint_capacity_across_products
+      required_tables:
+      - compact_multi_commodity_transportation_tables
+      - origin_product_supply_table
+      - destination_product_demand_table
+      - origin_destination_lane_capacity_table
+      - origin_destination_product_shipping_cost_table
+      forbidden_changes:
+      - do not add binary lane activation or fixed costs
+      - do not collapse products into a single aggregate commodity
+      - do not turn supply/demand equalities into inequalities
+      - do not reveal or force internally generated feasible flow certificates
+      - do not add vehicle routes, time windows, service frequencies, reserve penalties, or fleet capacity
+      - do not add inventory, backlog, or time-period carryover
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios:
+    - multi_product_warehouse_to_store
+    - relief_supplies_origin_destination
+    - spare_parts_multi_category_distribution
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Balanced continuous multi-commodity transportation with shared lane capacity across products.
+    quality_risks:
+    - LLM may omit part of the cost tensor or replace it with lane-only costs
+    - LLM may aggregate products into one commodity
+    - Natural-language statement may invent binary lane opening or vehicle routing
+    rationale_requirements:
+    - explain continuous shipment variables by origin, destination, and product
+    - explain exact supply balance for every origin-product pair
+    - explain exact demand balance for every destination-product pair
+    - explain shared lane capacity across all products on each origin-destination lane
+    - explain product-specific shipping costs
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - preserve_product_dimension
+      - preserve_supply_demand_equalities
+      - preserve_shared_lane_capacity
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - missing_product_dimension
+      - invented_fixed_charge_or_routing
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    quality_controller:
+      business_variable_patterns:
+      - ^Transport\[
+      slack_variable_patterns:
+      - ^s\[
+      - reserve
+      - slack
+      - unmet
+      - short
+      activation_variable_patterns:
+      - ^$
+      core_constraint_patterns:
+      - Supply
+      - Demand
+      - Limit
+      hard_reject_rules:
+      - reject_slack_dominates_business
+      - reject_no_business_nonzero
+      review_rules:
+      - review_low_business_nonzero_count
+      family_specific_thresholds:
+        max_slack_solution_ratio: 0.25
+        min_business_nonzero_count: 1
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: multi
+    source: optmath_internal
+  optmath_multisetcover:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: covering
+    sub_family: set_multicover
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_set_selection
+    - set_multicover_requirement
+    - coverage_membership_matrix
+    - selected_set_cost_minimization
+    - coverage_lower_bound
+    canonical_math_signature:
+      variable_types:
+      - binary_selected_set_x[i]
+      objective_sense: minimize
+      objective_terms:
+      - selected_set_cost
+      core_constraints:
+      - element_multicover_requirement_lower_bound
+      required_tables:
+      - compact_multisetcover_tables
+      - candidate_set_costs
+      - set_to_element_coverage_membership
+      - element_required_coverage_count
+      - element_available_covering_set_count
+      forbidden_changes:
+      - do not convert binary set selection into continuous coverage quantities
+      - do not replace multicover requirements with ordinary single-cover requirements
+      - do not replace >= required coverage lower bounds with exact equality
+      - do not omit coverage memberships or invent unlisted memberships
+      - do not add routing, flow, assignment, scheduling, budget, or capacity constraints
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Locally refined set multicover with compact complete coverage matrix metadata.
+    quality_risks:
+    - LLM may omit part of the coverage matrix and make the forward model infeasible
+    - LLM may downgrade multicover requirements to ordinary one-cover set cover
+    - LLM may change coverage lower bounds into exact equality
+    - LLM may invent coverage memberships not listed in the source data
+    rationale_requirements:
+    - explain binary set-selection variables
+    - explain total selected-set cost minimization
+    - explain each element's required coverage count
+    - explain coverage constraints as lower bounds
+    - explain the complete set-to-element coverage membership table
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_complete_coverage_matrix
+      - preserve_multicover_requirements
+      - preserve_binary_set_selection
+      - preserve_selected_set_cost_objective
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: MultiSetCover
+    source: optmath_internal
+  optmath_net1:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 1500
+      min_quality_score: 0.7
+      solver_timeout_seconds: 30
+    task_family: network_flow
+    sub_family: capacitated_min_cost_network_flow
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_arc_flow
+    - node_flow_balance
+    - arc_capacity_limit
+    - min_cost_flow
+    - supply_demand_balance
+    canonical_math_signature:
+      variable_types:
+      - continuous_nonnegative_arc_flow
+      objective_sense: minimize
+      objective_terms:
+      - arc_shipping_cost_times_flow
+      core_constraints:
+      - node_flow_balance
+      - arc_capacity_limit
+      required_tables:
+      - node_set
+      - directed_arc_set
+      - node_supply_demand
+      - arc_cost_vector
+      - arc_capacity_vector
+      forbidden_changes:
+      - do not add binary arc activation variables or fixed activation costs
+      - do not convert to vehicle routing, time windows, subtour constraints, or route sequencing
+      - do not add unmet-demand slack or optional demand satisfaction
+      - do not omit directed arc capacity limits
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Continuous capacitated min-cost flow on a sparse directed network generated from a latent feasible flow.
+    quality_risks:
+    - LLM may reinterpret the directed network as vehicle routing
+    - LLM may omit node flow-balance equations
+    - LLM may omit hard arc capacity limits
+    - LLM may add unstated binary arc activation or fixed charges
+    rationale_requirements:
+    - explain continuous directed arc-flow variables
+    - explain supply plus inbound equals demand plus outbound at every node
+    - explain per-arc capacity limits
+    - explain total cost as cost per unit times arc flow
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.2
+    source_generator_name: net1
+    source: optmath_internal
+  optmath_netasgn:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: assignment
+    sub_family: continuous_resource_assignment
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_assignment_hours
+    - balanced_supply_demand_hours
+    - person_supply_equality
+    - project_demand_equality
+    - person_project_contribution_upper_bound
+    - min_cost_allocation
+    canonical_math_signature:
+      variable_types:
+      - continuous_nonnegative_assigned_hours_x[i,j]
+      objective_sense: minimize
+      objective_terms:
+      - cost_per_hour_times_assigned_hours
+      core_constraints:
+      - person_supply_hours_equality
+      - project_demand_hours_equality
+      - person_project_contribution_upper_bound
+      required_tables:
+      - person_supply_hours
+      - project_demand_hours
+      - total_supply_equals_total_demand
+      - complete_cost_per_hour_matrix
+      - complete_max_contribution_hours_matrix
+      forbidden_changes:
+      - do not convert to binary one-to-one matching
+      - do not relax supply equality to <=
+      - do not relax demand equality to >=
+      - do not omit person-project contribution upper bounds
+      - do not invent missing eligibility binaries or pair exclusions
+      - do not add route continuity unless arcs and paths exist
+      - do not reveal or force internally generated feasible allocation certificates
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Locally refined as a continuous hours-allocation model generated from an internal feasible allocation; the allocation certificate is not exposed to LLM-facing prompts.
+    quality_risks:
+    - LLM may incorrectly convert continuous assigned hours into binary matching
+    - LLM may omit person-project contribution upper bounds
+    - LLM may change equality supply/demand balances into inequalities
+    - LLM may treat total supply and total demand as inconsistent if it omits zero or low-demand rows
+    - LLM may mistake an internal feasible allocation certificate for a required answer if it is ever exposed
+    rationale_requirements:
+    - explain continuous assigned-hour decision variables
+    - explain cost-per-hour objective
+    - explain person supply equality constraints
+    - explain project demand equality constraints
+    - explain person-project contribution limits as a complete pairwise upper-bound matrix
+    - explain total supply equals total demand
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_continuous_assignment_hours
+      - preserve_supply_demand_equalities
+      - preserve_complete_pairwise_upper_bounds
+      - preserve_cost_per_hour_objective
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: netasgn
+    source: optmath_internal
+  optmath_netmcol:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: network_flow
+    sub_family: continuous_multi_commodity_flow
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_multi_commodity_flow
+    - city_product_flow_balance
+    - joint_link_capacity
+    - product_specific_link_capacity
+    - min_cost_flow
+    canonical_math_signature:
+      variable_types:
+      - continuous_nonnegative_product_flow
+      objective_sense: minimize
+      objective_terms:
+      - product_link_shipping_cost
+      core_constraints:
+      - city_product_flow_balance
+      - directed_link_joint_capacity
+      - directed_link_product_capacity
+      required_tables:
+      - compact_netmcol_tables
+      - city_set
+      - product_set
+      - directed_link_set
+      - city_product_supply_demand
+      - product_link_cost_matrix
+      - product_link_capacity_matrix
+      - joint_link_capacity_vector
+      forbidden_changes:
+      - do not add binary activation variables or fixed-charge costs
+      - do not omit city-product flow balance
+      - do not omit joint link capacity or product-specific link capacity
+      - do not convert to vehicle routing or single-commodity transportation
+      - do not reveal or force internally generated feasible flow certificates
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Locally refined continuous multi-commodity min-cost flow with latent feasible product flows and joint/product link capacities.
+    quality_risks:
+    - LLM may add binary fixed-charge activation that is not present
+    - LLM may collapse product-specific flow balance into aggregate flow balance
+    - LLM may omit joint link capacity or product-specific link capacity
+    - LLM may convert to vehicle routing or path selection
+    rationale_requirements:
+    - explain continuous product flow variables on directed links
+    - explain city-product flow balance
+    - explain product-specific capacity and joint link capacity separately
+    - explain product-link shipping cost objective
+    - explicitly state there are no binary activation variables or fixed charges
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: netmcol
+    source: optmath_internal
+  optmath_netthru:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.2
+    sampling_weight:
+      cpt_weight: 1.2
+      max_daily_samples: 2000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: network_flow
+    sub_family: node_throughput_capacitated_min_cost_flow
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_arc_flow
+    - node_flow_balance
+    - min_cost_flow
+    - directed_link_capacity
+    - node_throughput_capacity
+    - supply_demand_balance
+    canonical_math_signature:
+      variable_types:
+      - continuous_nonnegative_arc_flow
+      objective_sense: minimize
+      objective_terms:
+      - directed_link_unit_cost_times_shipment
+      core_constraints:
+      - node_flow_balance
+      - directed_link_capacity
+      - node_throughput_capacity
+      required_tables:
+      - node_set
+      - directed_link_set
+      - node_supply_demand
+      - directed_link_cost_vector
+      - directed_link_capacity_vector
+      - node_throughput_capacity
+      forbidden_changes:
+      - do not introduce binary link activation variables
+      - do not introduce fixed-charge opening costs
+      - do not change the objective to maximum throughput
+      - do not reinterpret as vehicle routing, route sequencing, or path selection
+      - do not omit node throughput capacity constraints
+      - do not reveal or force internally generated feasible flow certificates
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Sparse continuous minimum-cost flow with hard directed-link capacities and node throughput capacities generated from an internal feasible flow; the flow certificate is not exposed to LLM-facing prompts.
+    quality_risks:
+    - LLM may incorrectly add binary arc activation or fixed charges
+    - LLM may change minimum-cost routing into maximum-throughput optimization
+    - LLM may omit node balance, directed-link capacity, or node throughput capacity constraints
+    - LLM may expand the sparse directed link set into a complete graph
+    - LLM may mistake an internal feasible flow certificate for a required answer if it is ever exposed
+    rationale_requirements:
+    - explain continuous shipment variables on directed links
+    - explain minimum shipping cost objective
+    - explain node flow balance
+    - explain link capacity limits
+    - explain city throughput capacity limits
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: netthru
+    source: optmath_internal
+  optmath_nltrans:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 30
+    task_family: transportation
+    sub_family: capacitated_balanced_transportation
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - nonnegative_shipment
+    - exact_supply_balance
+    - exact_demand_balance
+    - lane_capacity_limit
+    - cost_matrix
+    canonical_math_signature:
+      variable_types:
+      - continuous_nonnegative_shipment
+      objective_sense: minimize
+      objective_terms:
+      - lane_rate_times_shipping_quantity
+      core_constraints:
+      - origin_supply_exactly_shipped
+      - destination_demand_exactly_received
+      - lane_capacity_limit
+      required_tables:
+      - compact_transportation_tables
+      - supply_vector
+      - demand_vector
+      - lane_cost_matrix
+      - lane_capacity_matrix
+      forbidden_changes:
+      - do not add vehicles, tours, time windows, or subtour constraints
+      - do not weaken supply equality into optional unused supply
+      - do not weaken demand equality into unmet-demand slack
+      - do not omit lane capacity limits
+      - do not reveal or force internally generated feasible shipment certificates
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      node_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      node_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Locally refined as capacitated balanced transportation with positive supply/demand and latent feasible lane shipments.
+    quality_risks:
+    - LLM may describe supply as a loose capacity instead of exact shipped supply
+    - LLM may omit lane capacity limits
+    - LLM may confuse transportation with vehicle routing
+    - Natural-language statement may become too generic
+    - LLM may confuse transportation flow with vehicle routing
+    rationale_requirements:
+    - explain exact origin supply constraints
+    - explain exact destination demand constraints
+    - explain nonnegative lane shipment variables
+    - explain lane capacity limits
+    - explicitly state there are no vehicles, tours, time windows, or subtour constraints
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_supply_vector
+      - preserve_demand_vector
+      - preserve_lane_cost_matrix
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.2
+    source_generator_name: nltrans
+    source: optmath_internal
+  optmath_portfolio:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: portfolio
+    sub_family: continuous_mean_variance_portfolio
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_asset_weight
+    - full_investment_budget
+    - target_return_constraint
+    - quadratic_variance_objective
+    - covariance_matrix
+    - weight_bounds
+    canonical_math_signature:
+      variable_types:
+      - continuous_asset_weight
+      objective_sense: minimize
+      objective_terms:
+      - portfolio_variance_quadratic_form
+      core_constraints:
+      - full_investment_budget_weights_sum_to_one
+      - minimum_expected_return_requirement
+      - continuous_asset_weight_bounds
+      required_tables:
+      - compact_portfolio_tables
+      - expected_return_vector
+      - covariance_matrix
+      - target_return
+      - weight_bounds
+      forbidden_changes:
+      - do not introduce binary asset-selection or cardinality variables
+      - do not maximize expected return; expected return is a minimum-return constraint
+      - do not omit the covariance matrix or replace variance with independent risk scores
+      - do not add transaction costs, minimum lots, or buy/sell variables unless present in source
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - Full covariance data may be truncated unless compact_portfolio_tables is used
+    - LLM may misread the task as binary project or asset selection
+    - LLM may maximize return instead of minimizing portfolio variance
+    - LLM may omit off-diagonal covariance terms
+    - LLM may invent cardinality or transaction-cost constraints
+    rationale_requirements:
+    - explain continuous asset-weight variables
+    - explain the full-investment budget equality
+    - explain the target expected-return inequality
+    - explain covariance-based quadratic variance minimization
+    - explain upper and lower weight bounds
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: Portfolio
+    source: optmath_internal
+  optmath_prod:
+    enabled: true
+    priority: cautious
+    recommended_weight: 0.35
+    sampling_weight:
+      cpt_weight: 0.35
+      max_daily_samples: 800
+      min_quality_score: 0.7
+      solver_timeout_seconds: 30
+    task_family: production_planning
+    sub_family: production_planning
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - product_mix
+    - resource_capacity
+    - profit_or_cost_objective
+    - demand_bound
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.2
+    source_generator_name: prod
+    source: optmath_internal
+  optmath_revenue:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: revenue_management
+    sub_family: revenue_management
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - capacity_allocation
+    - demand_upper_bound
+    - revenue_maximization
+    canonical_math_signature:
+      variable_types:
+      - nonnegative_integer_package_sales
+      objective_sense: maximize
+      objective_terms:
+      - package_revenue_times_package_sales
+      core_constraints:
+      - package_demand_upper_bound
+      - resource_capacity_consumption_limit
+      - nonnegative_integer_package_sales
+      required_tables:
+      - package_revenue_vector
+      - package_demand_upper_bound_vector
+      - resource_capacity_vector
+      - package_resource_usage_matrix
+      - compact_revenue_tables
+      - compact_revenue_management_tables
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+      - do not introduce dynamic pricing, booking periods, stochastic arrivals, or bid-price controls
+      - do not change revenue maximization into cost minimization
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Static revenue-management capacity-allocation IP with integer package sales, demand upper bounds, resource capacities, package-resource usage matrix, and revenue maximization.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: revenue
+    source: optmath_internal
+  optmath_revenue_management:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: revenue_management
+    sub_family: revenue_management
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - capacity_allocation
+    - demand_upper_bound
+    - revenue_maximization
+    canonical_math_signature:
+      variable_types:
+      - nonnegative_integer_package_sales
+      objective_sense: maximize
+      objective_terms:
+      - package_revenue_times_package_sales
+      core_constraints:
+      - package_demand_upper_bound
+      - resource_capacity_consumption_limit
+      - nonnegative_integer_package_sales
+      required_tables:
+      - package_revenue_vector
+      - package_demand_upper_bound_vector
+      - resource_capacity_vector
+      - package_resource_usage_matrix
+      - compact_revenue_management_tables
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+      - do not introduce dynamic pricing, booking periods, stochastic arrivals, or bid-price controls
+      - do not change revenue maximization into cost minimization
+      - do not omit package demand upper bounds or resource capacity constraints
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: Revenue_management
+    source: optmath_internal
+  optmath_schedulingproblem:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: scheduling
+    sub_family: staff_shift_coverage_assignment
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_staff_assignment
+    - skill_eligibility
+    - shift_availability
+    - shortage_penalty_slack
+    canonical_math_signature:
+      variable_types:
+      - binary
+      - nonnegative_integer_shortage
+      objective_sense: minimize
+      objective_terms:
+      - employee_skill_preference_assignment_cost
+      - unfilled_position_penalty
+      core_constraints:
+      - coverage_equal_demand_with_shortage
+      - employee_shift_availability
+      - employee_skill_eligibility
+      - at_most_one_total_assignment_per_employee
+      required_tables:
+      - site_shift_skill_demand
+      - employee_shift_availability
+      - employee_skill_matrix
+      - employee_skill_preference_cost
+      - unfilled_position_penalty
+      forbidden_changes:
+      - do not rewrite as transportation or facility location
+      - do not introduce machine sequencing, processing times, or non-overlap constraints
+      - do not add due dates, time windows, or routing constraints
+      - do not remove the shortage slack variable or its penalty term
+      - do not reveal or force internal demand-generation staff samples
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Compact staff coverage assignment with named site/employee/shift/skill indices, positive-demand presentation, availability and skill eligibility, and shortage slack.
+    quality_risks:
+    - LLM may misread this staff coverage assignment as machine scheduling
+    - LLM may omit the unfilled-position slack variables
+    - LLM may ignore skill eligibility or shift availability
+    - LLM may list every zero-demand site-shift-skill combination and make the prompt too long
+    rationale_requirements:
+    - explain binary assignment variables indexed by site, employee, shift, and skill
+    - explain integer unfilled-position variables
+    - explain coverage equalities with shortage slack
+    - explain employee availability and skill eligibility constraints
+    - explain at-most-one-assignment-per-employee rule
+    - explain that omitted site-shift-skill demand combinations have zero demand
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: SchedulingProblem
+    source: optmath_internal
+  optmath_scooter_location:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: facility_location
+    sub_family: micromobility_facility_location
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_opening_decision
+    - customer_assignment
+    - fixed_cost
+    - capacity_constraint
+    - linking_constraint
+    - integer_new_scooter_deployment
+    - station_count_budget
+    - total_new_scooter_budget
+    canonical_math_signature:
+      variable_types:
+      - binary_station_opening
+      - binary_demand_assignment
+      - nonnegative_integer_new_scooter_count
+      objective_sense: minimize
+      objective_terms:
+      - demand_weighted_walking_distance
+      - station_opening_cost
+      - new_scooter_deployment_cost
+      core_constraints:
+      - each_demand_point_assigned_exactly_once
+      - assign_only_to_selected_location
+      - selected_location_capacity_with_existing_and_new_scooters
+      - maximum_selected_locations
+      - total_new_scooter_budget
+      - new_scooters_only_at_selected_locations
+      required_tables:
+      - compact_scooter_location_tables
+      - demand_vector
+      - candidate_location_existing_scooters_opening_and_new_scooter_costs
+      - demand_point_candidate_location_distance_matrix
+      - station_and_new_scooter_limits
+      forbidden_changes:
+      - do not remove fixed opening costs
+      - do not turn site opening into pure transportation
+      - do not reinterpret as vehicle routing, TSP, shortest path, or station visit sequencing
+      - do not allow new scooters at unselected stations
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      facility_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      facility_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    - LLM may omit fixed opening costs
+    - LLM may miss open-before-serve linking constraints
+    rationale_requirements:
+    - explain binary opening variables
+    - explain assignment or shipment variables
+    - explain capacity and linking constraints
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_fixed_costs
+      - preserve_capacity_constraints
+      - preserve_open_before_serve_linking
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: scooter_location
+    source: optmath_internal
+  optmath_setcover:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: covering
+    sub_family: set_covering
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_selection
+    - coverage_matrix
+    - set_covering_requirement
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: SetCover
+    source: optmath_internal
+  optmath_singlelevelsmallbucket:
+    enabled: true
+    priority: medium
+    recommended_weight: 0.8
+    sampling_weight:
+      cpt_weight: 0.8
+      max_daily_samples: 1500
+      min_quality_score: 0.72
+      solver_timeout_seconds: 60
+    task_family: lot_sizing
+    sub_family: single_level_small_bucket_lot_sizing_with_backlog
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - dynamic_lot_sizing
+    - machine_period_assignment
+    - binary_production_state
+    - startup_transition_logic
+    - inventory_backlog_balance
+    - small_bucket_capacity
+    canonical_math_signature:
+      variable_types:
+      - continuous_production_amount
+      - binary_item_machine_period_production_state
+      - binary_startup_event
+      - continuous_inventory
+      - continuous_backlog
+      objective_sense: minimize
+      objective_terms:
+      - setup_cost_times_binary_production_state
+      - startup_cost_times_binary_startup_event
+      - holding_cost_times_inventory
+      - backlog_cost_times_backlog
+      core_constraints:
+      - net_inventory_balance_with_backlog_carryover
+      - production_capacity_with_startup_time
+      - one_item_per_machine_period
+      - startup_initial_equals_production_initial
+      - startup_transition_from_previous_period
+      - no_startup_if_machine_already_running_same_item
+      required_tables:
+      - compact_lotsizing_tables
+      - item_period_demand_matrix
+      - item_holding_and_backlog_cost_table
+      - machine_capacity_and_startup_time_table
+      - global_setup_and_startup_costs
+      forbidden_changes:
+      - do not add a per-unit production cost term
+      - do not collapse item-machine-period decisions into a single order quantity variable
+      - do not replace backlog and inventory carryover with independent period slack
+      - do not omit startup transition logic
+      - do not use placeholder demand, capacity, startup time, or cost values
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Internalized OptMATH DLSP small-bucket formulation with explicit source fact tables.
+    quality_risks:
+    - LLM may invent per-unit production costs that are not in the source objective
+    - LLM may replace startup transition constraints with a generic setup variable
+    - Natural-language statement may omit machine capacity or startup-time tables
+    - Forward model may collapse inventory and backlog carryover across periods
+    rationale_requirements:
+    - explain item-machine-period production and startup binaries
+    - explain inventory/backlog flow balance from one period to the next
+    - explain why setup and startup costs are fixed/binary terms, not per-unit production costs
+    - explain the one-item-per-machine-per-period small-bucket restriction
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_no_unit_production_cost
+      - preserve_startup_transition_logic
+      - preserve_inventory_backlog_balance
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 8
+    expected_acceptance_rate: 0.3
+    source_generator_name: SingleLevelSmallBucket
+    source: optmath_internal
+  optmath_staticlineplanning:
+    enabled: true
+    priority: medium
+    recommended_weight: 0.9
+    sampling_weight:
+      cpt_weight: 0.9
+      max_daily_samples: 1800
+      min_quality_score: 0.7
+      solver_timeout_seconds: 45
+    task_family: network_design
+    sub_family: static_line_frequency_planning
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_line_activation
+    - continuous_line_frequency
+    - unmet_od_demand_shortage
+    - od_service_coverage_matrix
+    - frequency_activation_linking
+    - fleet_vehicle_hour_budget
+    - fixed_transfer_node_coverage_requirement
+    canonical_math_signature:
+      variable_types:
+      - binary_line_activation_x[l]
+      - continuous_frequency_f[l]
+      - continuous_unmet_demand_s[c]
+      objective_sense: minimize
+      objective_terms:
+      - fixed_line_activation_cost
+      - line_operating_frequency_cost
+      - unmet_demand_penalty
+      core_constraints:
+      - od_demand_coverage_with_shortage
+      - max_frequency_activation_linking
+      - min_frequency_if_selected
+      - fleet_vehicle_hours_budget
+      - transfer_required_node_min_two_selected_lines
+      required_tables:
+      - candidate_line_cost_capacity_frequency_table
+      - od_demand_penalty_table
+      - od_to_candidate_line_service_table
+      - line_to_node_pass_through_table
+      - transfer_required_node_table
+      - total_vehicle_hours_budget
+      forbidden_changes:
+      - do not invent passenger-flow, commodity-flow, route-sequencing, subtour, time-window, or arc-use variables
+      - do not introduce z[i,j,l] line-continuity variables
+      - do not convert continuous frequency into binary line choice only
+      - do not make frequency integer unless explicitly stated
+      - do not omit unmet-demand variables or their penalty
+      - do not replace fixed transfer requirements with optional transfer-station decisions
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Compact static line frequency planning with binary line activation, continuous frequency, OD coverage, fleet vehicle-hours, and fixed transfer-node coverage.
+    quality_risks:
+    - LLM may reinterpret candidate lines as vehicle routes with subtour or time-window constraints
+    - LLM may invent passenger-flow or arc-use variables not present in the source model
+    - LLM may omit the OD-to-line service eligibility table
+    - LLM may incorrectly make the fixed transfer requirement an optional decision variable
+    - Long candidate-line or OD tables can cause overly verbose backtranslation if scale is not controlled
+    rationale_requirements:
+    - explain binary line activation variables
+    - explain continuous frequency variables and min/max activation linking
+    - explain continuous unmet-demand variables and penalty term
+    - explain OD demand coverage using the service eligibility table
+    - explain the fleet vehicle-hours budget
+    - explain fixed transfer-node coverage requirements
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - preserve_service_coverage_matrix
+      - preserve_frequency_activation_linking
+      - preserve_fixed_transfer_requirements
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - invented_route_or_arc_use_variables
+      - missing_service_coverage_matrix
+      - omitted_frequency_linking
+      - optionalized_transfer_requirements
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: StaticLinePlanning
+    source: optmath_internal
+  optmath_steel3:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: production_planning
+    sub_family: production_planning
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - product_mix
+    - resource_capacity
+    - profit_or_cost_objective
+    - demand_bound
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: steel3
+    source: optmath_internal
+  optmath_steel4:
+    enabled: true
+    priority: high
+    recommended_weight: 2.0
+    sampling_weight:
+      cpt_weight: 2.0
+      max_daily_samples: 4000
+      min_quality_score: 0.72
+      solver_timeout_seconds: 45
+    task_family: production_planning
+    sub_family: continuous_stage_capacity_product_mix
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - continuous_product_mix
+    - stage_capacity_constraint
+    - processing_hours_per_ton
+    - profit_maximization
+    - minimum_commitment_lower_bound
+    - market_upper_bound
+    canonical_math_signature:
+      variable_types:
+      - continuous_nonnegative_production_tons
+      objective_sense: maximize
+      objective_terms:
+      - profit_per_ton_times_production_tons
+      core_constraints:
+      - stage_time_capacity_by_processing_hours_per_ton
+      - minimum_product_commitment
+      - maximum_product_market_bound
+      required_tables:
+      - product_profit_commit_market_table
+      - product_stage_rate_or_processing_hours_table
+      - stage_available_hours_table
+      - capacity_envelope_by_stage
+      forbidden_changes:
+      - do not reinterpret production stages as time periods
+      - do not add inventory carryover or backlog variables
+      - do not add binary product selection or setup variables
+      - do not add sequencing, job-shop, or machine-ordering constraints
+      - do not omit minimum commitment or market upper bounds
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Locally refined continuous product-mix LP with production-stage capacity envelope metadata.
+    quality_risks:
+    - LLM may describe stages as time periods and invent inventory carryover
+    - LLM may omit commit lower bounds or market upper bounds
+    - LLM may use production rates directly instead of processing hours per ton in capacity constraints
+    - LLM may add binary setup or product-selection variables
+    rationale_requirements:
+    - explain continuous production quantity variables
+    - explain profit maximization objective
+    - explain stage capacity constraints using processing hours per ton
+    - explain minimum commitment and maximum market bounds separately
+    - explain that stages are production resources, not time periods
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_stage_capacity_constraints
+      - preserve_commit_and_market_bounds
+      - preserve_continuous_product_mix_variables
+      - preserve_profit_maximization
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: steel4
+    source: optmath_internal
+  optmath_structure_based_assignment:
+    enabled: true
+    priority: medium
+    recommended_weight: 0.8
+    sampling_weight:
+      cpt_weight: 0.8
+      max_daily_samples: 1500
+      min_quality_score: 0.72
+      solver_timeout_seconds: 45
+    task_family: assignment
+    sub_family: nmr_peak_amino_acid_structure_assignment
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_peak_acid_assignment
+    - exact_assignment_count
+    - assignment_cost_minimization
+    - noe_peak_pair_compatibility
+    - amino_acid_at_most_one
+    - peak_at_most_one
+    canonical_math_signature:
+      variable_types:
+      - binary_peak_acid_assignment
+      objective_sense: minimize
+      objective_terms:
+      - assignment_cost_times_binary_assignment
+      core_constraints:
+      - each_amino_acid_at_most_one_peak
+      - each_peak_at_most_one_amino_acid
+      - exact_total_assignment_count
+      - noe_compatibility_pair_constraints
+      required_tables:
+      - compact_structure_assignment_tables
+      - peak_set
+      - amino_acid_set
+      - complete_assignment_cost_matrix
+      - noe_relation_pairs
+      - amino_acid_distance_or_compatibility_matrix
+      - required_assignment_count
+      forbidden_changes:
+      - do not reinterpret peaks and amino acids as workers, jobs, equipment, gates, or routes
+      - do not invent missing compatibility or distance values
+      - do not use placeholders such as perm? or replace_with
+      - do not replace the exact assignment count with optional assignment
+      - do not reinterpret NOE constraints as capacity, routing, flow, staffing, or workload rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: NMR peak-to-amino-acid assignment with NOE compatibility constraints.
+    quality_risks:
+    - LLM may misframe the scientific assignment as staffing or equipment allocation
+    - LLM may omit the exact total assignment count
+    - Forward model may invent compatibility values instead of using the source matrix
+    - Forward model may reverse objective sense or weaken NOE compatibility constraints
+    rationale_requirements:
+    - explain x[peak, acid] as a binary NMR assignment variable
+    - explain the complete assignment cost matrix
+    - explain exact total assignment count
+    - explain peak and amino-acid one-to-one restrictions
+    - explain how NOE-related peak pairs use the amino-acid compatibility matrix
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_exact_assignment_count
+      - preserve_noe_compatibility_constraints
+      - preserve_complete_cost_and_compatibility_matrices
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: Structure_based_assignment
+    source: optmath_internal
+  optmath_supplychain:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: supply_chain
+    sub_family: fixed_charge_capacitated_network_flow
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - directed_arc_flow
+    - binary_arc_activation
+    - fixed_charge
+    - arc_capacity_linking
+    - node_flow_balance
+    - sparse_declared_arc_set
+    - node_role_balance_table
+    canonical_math_signature:
+      variable_types:
+      - binary_arc_activation
+      - continuous_nonnegative_arc_flow
+      objective_sense: minimize
+      objective_terms:
+      - fixed_arc_activation_cost
+      - unit_arc_flow_cost
+      core_constraints:
+      - arc_capacity_activation_linking
+      - node_flow_balance
+      required_tables:
+      - compact_supplychain_tables
+      - directed_arc_list
+      - arc_table_with_capacity_fixed_cost_and_unit_cost
+      - arc_capacity
+      - fixed_arc_activation_cost
+      - unit_arc_flow_cost
+      - node_supply
+      - node_demand
+      - node_balance_rhs_demand_minus_supply
+      forbidden_changes:
+      - do not replace arc activation with node facility opening
+      - do not add inventory, storage, or time-period carryover
+      - do not create arcs outside the listed directed arc set
+      - do not imply the directed network is a complete graph
+      - do not reverse the node flow-balance sign convention
+      - do not reveal or force internally generated feasible flow certificates
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit fixed arc activation costs
+    - LLM may use node opening variables instead of arc activation variables
+    - LLM may reverse flow-balance signs
+    - LLM may create arcs that are not in the source table
+    - LLM may treat sparse declared arcs as a complete graph
+    rationale_requirements:
+    - explain binary arc activation variables
+    - explain continuous arc flow variables
+    - explain fixed and unit arc cost terms
+    - explain arc capacity activation linking
+    - explain node flow balance sign convention
+    - explain that variables exist only for declared directed arcs
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_declared_sparse_arc_set
+      - preserve_fixed_arc_activation_costs
+      - preserve_arc_capacity_activation_linking
+      - preserve_node_balance_sign_convention
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: SupplyChain
+    source: optmath_internal
+  optmath_team_formulation:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: workforce_planning
+    sub_family: team_skill_shortage_assignment
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_person_project_assignment
+    - attained_skill_balance
+    - skill_shortage_variable
+    - max_skill_shortage_minimization
+    - project_staffing_requirement
+    canonical_math_signature:
+      variable_types:
+      - binary_person_project_assignment
+      - continuous_attained_skill
+      - continuous_skill_shortage
+      - continuous_max_skill_shortage
+      objective_sense: minimize
+      objective_terms:
+      - maximum_skill_shortage_priority
+      - total_skill_shortage_secondary
+      core_constraints:
+      - each_person_assigned_to_exactly_one_project
+      - each_project_receives_at_least_one_person
+      - attained_skill_equals_sum_of_assigned_individual_skills
+      - skill_shortage_covers_requirement_gap
+      - max_skill_shortage_bounds_every_project_skill_shortage
+      required_tables:
+      - compact_team_formulation_tables
+      - individual_skill_matrix
+      - project_skill_requirement_matrix
+      forbidden_changes:
+      - do not replace shortage minimization with compatibility-score maximization
+      - do not omit AttainedSkill, SkillShortage, or MaxSkillShortage variables
+      - do not omit the at-least-one-person-per-project staffing constraint
+      - do not add route continuity, travel, or sequencing structure
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may collapse the model into generic assignment or compatibility-score maximization
+    - LLM may omit attained-skill balance or explicit shortage variables
+    - LLM may omit the project staffing lower bound
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain binary person-project assignment variables
+    - explain attained skill as the sum of assigned individual skills
+    - explain skill shortage and maximum shortage variables
+    - explain the lexicographic-style shortage objective
+    - explain exactly-one-person assignment and at-least-one-person project staffing
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_attained_skill_balance
+      - preserve_skill_shortage_variables
+      - preserve_project_staffing_lower_bound
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - missing_shortage_variable
+      - changed_to_score_maximization
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: team_formulation
+    source: optmath_internal
+  optmath_the_maxisum_model:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: dispersion
+    sub_family: dispersion
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - pairwise_distance
+    - site_selection
+    - diversity_objective
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: The_maxisum_model
+    source: optmath_internal
+  optmath_the_military_personnel_deployment_problem:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: workforce_deployment
+    sub_family: workforce_deployment
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - deployment_assignment
+    - staffing_requirement
+    - readiness_or_skill_constraint
+    canonical_math_signature:
+      variable_types:
+      - continuous_or_integer_as_source
+      core_constraints:
+      - linear_capacity_or_requirement
+      required_tables:
+      - objective_coefficients
+      - constraint_coefficients
+      - bounds
+      forbidden_changes:
+      - do not introduce nonlinear or unstated business rules
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    rationale_requirements:
+    - explain decision variables
+    - explain objective coefficients
+    - explain each major constraint family
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: The_military_personnel_deployment_problem
+    source: optmath_internal
+  optmath_the_multi_factory_schedule_problem:
+    enabled: true
+    priority: medium
+    recommended_weight: 0.75
+    sampling_weight:
+      cpt_weight: 0.75
+      max_daily_samples: 1600
+      min_quality_score: 0.68
+      solver_timeout_seconds: 30
+    task_family: production_planning
+    sub_family: fixed_charge_multi_factory_production
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_factory_run_decision
+    - continuous_monthly_production
+    - fixed_run_cost
+    - unit_production_cost
+    - min_max_production_linking
+    - monthly_demand_satisfaction
+    canonical_math_signature:
+      variable_types:
+      - binary_factory_run_decision_z[m,f]
+      - continuous_production_quantity_x[m,f]
+      objective_sense: minimize
+      objective_terms:
+      - fixed_factory_month_run_cost
+      - variable_unit_production_cost
+      core_constraints:
+      - minimum_production_if_running
+      - maximum_production_if_running
+      - monthly_demand_satisfaction
+      required_tables:
+      - compact_multi_factory_schedule_tables
+      - factory_fixed_run_costs
+      - factory_unit_production_costs
+      - factory_minimum_output_if_running
+      - factory_maximum_output_if_running
+      - monthly_demand
+      forbidden_changes:
+      - do not rewrite as job-shop, flow-shop, aircraft landing, or sequencing
+      - do not introduce inventory carryover, backlog, products, or due-date penalties
+      - do not replace RunDecision[m,f] binary variables with continuous utilization variables
+      - do not omit fixed run costs
+      - do not change monthly demand satisfaction from >= demand to unrelated capacity allocation
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios:
+    - fixed_charge_plant_month_plan
+    - regional_factory_activation_plan
+    - monthly_capacity_commitment
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Fixed-charge monthly factory run and production quantity formulation.
+    quality_risks:
+    - LLM may misread schedule as job sequencing
+    - LLM may omit fixed run costs or min-output linking
+    - Natural-language statement may invent inventory or product-level demand
+    rationale_requirements:
+    - explain binary factory run decisions by month
+    - explain continuous production quantities by month and factory
+    - decompose fixed run costs and variable production costs
+    - explain min and max production linking constraints
+    - explain monthly demand satisfaction constraints
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - preserve_fixed_charge_run_costs
+      - preserve_min_max_production_linking
+      - preserve_monthly_demand_satisfaction
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - missing_fixed_run_cost
+      - invented_inventory_or_sequence_constraints
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: The_multi-factory_schedule_problem
+    source: optmath_internal
+  optmath_the_p_dispersion_model:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: dispersion
+    sub_family: p_dispersion_min_distance
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_node_selection
+    - exact_cardinality_selection
+    - pairwise_distance_matrix
+    - pair_selection_linking
+    - max_min_dispersion
+    - big_m_min_distance_definition
+    canonical_math_signature:
+      variable_types:
+      - binary_node_selection
+      - binary_pair_selection
+      - continuous_minimum_distance
+      objective_sense: maximize
+      objective_terms:
+      - minimum_selected_pairwise_distance
+      core_constraints:
+      - select_exactly_p_nodes
+      - pair_selection_upper_bound_left_node
+      - pair_selection_upper_bound_right_node
+      - pair_selection_lower_bound_both_nodes
+      - min_distance_upper_bound_for_selected_pairs
+      required_tables:
+      - compact_p_dispersion_tables
+      - candidate_nodes
+      - selected_count_p
+      - pairwise_distance_matrix
+      forbidden_changes:
+      - do not add fixed opening costs
+      - do not add demand satisfaction, assignment, capacity, or shipping-flow constraints
+      - do not change max-min dispersion into maxisum dispersion
+      - do not select more or fewer than exactly p nodes
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: moderate
+        level_2: tight
+        level_3: tight
+        level_4: very_tight
+      node_count:
+        level_1:
+        - 8
+        - 10
+        level_2:
+        - 10
+        - 14
+        level_3:
+        - 14
+        - 22
+        level_4:
+        - 22
+        - 40
+      selected_count_p:
+        level_1:
+        - 3
+        - 4
+        level_2:
+        - 4
+        - 5
+        level_3:
+        - 5
+        - 8
+        level_4:
+        - 8
+        - 12
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: moderate
+        level_2: tight
+        level_3: tight
+        level_4: very_tight
+      node_count:
+        level_1:
+        - 8
+        - 10
+        level_2:
+        - 10
+        - 14
+        level_3:
+        - 14
+        - 22
+        level_4:
+        - 22
+        - 40
+      selected_count_p:
+        level_1:
+        - 3
+        - 4
+        level_2:
+        - 4
+        - 5
+        level_3:
+        - 5
+        - 8
+        level_4:
+        - 8
+        - 12
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Max-min p-dispersion with exact p node selection and pair-selection linking.
+    quality_risks:
+    - LLM may confuse p-dispersion with capacitated facility location
+    - LLM may add fixed opening costs or customer assignments that are not present
+    - LLM may replace max-min dispersion with maxisum total-distance dispersion
+    - LLM may forget to select exactly p nodes
+    - LLM may omit pair-selection linking variables
+    rationale_requirements:
+    - explain binary node selection variables
+    - explain pair-selection linking variables
+    - explain why MinDistance is bounded by every selected pair distance
+    - explain exact p-cardinality selection
+    - explicitly state that there are no demand, capacity, assignment, shipping, or fixed-cost terms
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_exact_p_selection
+      - preserve_pair_selection_linking
+      - preserve_max_min_distance_objective
+      - forbid_facility_location_terms
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.5
+    source_generator_name: The_p_dispersion_model
+    source: optmath_internal
+  optmath_the_shortest_path_problem:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: network_flow
+    sub_family: shortest_path
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - binary_directed_arc_selection
+    - flow_conservation
+    - arc_cost
+    - source_sink_flow_balance
+    - declared_directed_arc_set
+    canonical_math_signature:
+      variable_types:
+      - binary_path_arc_selection
+      objective_sense: minimize
+      objective_terms:
+      - arc_cost_times_binary_path_arc
+      core_constraints:
+      - source_sink_flow_balance
+      - intermediate_node_flow_conservation
+      required_tables:
+      - compact_shortest_path_tables
+      - node_set
+      - declared_directed_arc_set
+      - arc_cost_table
+      - node_balance_rhs
+      forbidden_changes:
+      - do not add arc capacity limits, fixed charges, vehicle routes, subtours, time windows, or facility-opening decisions
+      - do not expand the declared graph to a complete directed network
+      - do not turn the source-sink path into a TSP tour
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    - LLM may invent arc capacity constraints or vehicle-routing structure
+    rationale_requirements:
+    - explain binary directed-arc path variables
+    - explain source, sink, and intermediate node flow balance
+    - explain declared arc-cost objective
+    - explicitly state there are no capacities or fixed charges
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: The_shortest_path_problem
+    source: optmath_internal
+  optmath_transp:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: transportation
+    sub_family: balanced_transportation_lp
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - nonnegative_shipment
+    - supply_constraint
+    - demand_constraint
+    - cost_matrix
+    canonical_math_signature:
+      variable_types:
+      - continuous_nonnegative
+      objective_sense: minimize
+      objective_terms:
+      - lane_unit_cost_times_transport_quantity
+      core_constraints:
+      - origin_supply_exactly_shipped
+      - destination_demand_exactly_received
+      - nonnegative_continuous_shipments
+      required_tables:
+      - supply_vector
+      - demand_vector
+      - lane_cost_matrix
+      - compact_transportation_tables
+      forbidden_changes:
+      - do not add vehicles
+      - do not add time windows
+      - do not add subtour constraints
+      - do not add lane capacities, fixed charges, or binary lane activation
+      - do not relax exact supply and demand equalities into optional unused supply or unmet demand
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      node_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      node_count:
+        level_1:
+        - 3
+        - 5
+        level_2:
+        - 6
+        - 12
+        level_3:
+        - 13
+        - 30
+        level_4:
+        - 31
+        - 80
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Balanced transportation LP with continuous nonnegative shipments, exact origin supply equalities, exact destination demand equalities, and lane-cost minimization.
+    quality_risks:
+    - LLM may omit a lane cost coefficient
+    - LLM may confuse transportation flow with vehicle routing
+    - LLM may add lane capacities or fixed-charge activation not present in the source
+    - LLM may relax exact supply/demand balance into optional unmet demand
+    rationale_requirements:
+    - explain source supply constraints
+    - explain destination demand constraints
+    - explain nonnegative lane shipment variables
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_supply_vector
+      - preserve_demand_vector
+      - preserve_lane_cost_matrix
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: transp
+    source: optmath_internal
+  optmath_tsp:
+    enabled: true
+    priority: medium
+    recommended_weight: 1.0
+    sampling_weight:
+      cpt_weight: 1.0
+      max_daily_samples: 2500
+      min_quality_score: 0.65
+      solver_timeout_seconds: 45
+    task_family: routing
+    sub_family: traveling_salesperson
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - routing_binary_variable
+    - directed_tour_arc_selection
+    - exactly_one_inbound_outbound_per_city
+    - mtz_subtour_elimination
+    - complete_directed_distance_table
+    canonical_math_signature:
+      variable_types:
+      - binary_directed_route_arc
+      - integer_mtz_order_variable
+      objective_sense: minimize
+      objective_terms:
+      - directed_arc_distance_times_route_binary
+      core_constraints:
+      - exactly_one_inbound_arc_per_city
+      - exactly_one_outbound_arc_per_city
+      - single_tour_mtz_subtour_elimination
+      required_tables:
+      - compact_tsp_tables
+      - city_set
+      - depot_city
+      - complete_directed_distance_table
+      forbidden_changes:
+      - do not add vehicle capacity, time windows, service times, delivery quantities, or multiple vehicles
+      - do not simplify to shortest path or pure transportation flow
+      - do not omit subtour-elimination logic
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      customer_count:
+        level_1:
+        - 5
+        - 12
+        level_2:
+        - 13
+        - 30
+        level_3:
+        - 31
+        - 80
+        level_4:
+        - 81
+        - 200
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      customer_count:
+        level_1:
+        - 5
+        - 12
+        level_2:
+        - 13
+        - 30
+        level_3:
+        - 31
+        - 80
+        level_4:
+        - 81
+        - 200
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Original OptMATH formulation imported into this project.
+    quality_risks:
+    - LLM may omit a numeric coefficient
+    - Natural-language statement may become too generic
+    - LLM may add vehicle-capacity or time-window constraints that are not present
+    - LLM may omit subtour-elimination logic
+    rationale_requirements:
+    - explain binary directed route-arc variables
+    - explain exactly-one inbound and exactly-one outbound arc constraints
+    - explain MTZ subtour-elimination order variables
+    - explain total directed travel-distance objective
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_exactly_one_inbound_outbound
+      - preserve_single_tour_subtour_elimination
+      - preserve_complete_directed_distance_table
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.35
+    source_generator_name: TSP
+    source: optmath_internal
+  optmath_uncapacitatedlotsizing:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: lot_sizing
+    sub_family: uncapacitated_lot_sizing
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - inventory_balance
+    - setup_decision
+    - holding_cost
+    - time_indexed_decision
+    canonical_math_signature:
+      variable_types:
+      - continuous_order_quantity
+      - continuous_ending_inventory
+      - binary_order_setup
+      objective_sense: minimize
+      objective_terms:
+      - fixed_ordering_setup_cost
+      - unit_order_cost
+      - inventory_holding_cost
+      core_constraints:
+      - inventory_balance_without_backlog
+      - order_quantity_linked_to_binary_setup
+      - zero_final_inventory
+      required_tables:
+      - period_demand
+      - fixed_ordering_cost
+      - unit_order_cost
+      - holding_cost
+      - total_demand_big_m
+      forbidden_changes:
+      - do not remove time periods or inventory carryover
+      - do not add production capacity constraints
+      - do not introduce backlog, backlog penalty, lost sales, or unmet-demand slack
+      - do not add a zero final backlog constraint
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      period_count:
+        level_1:
+        - 4
+        - 8
+        level_2:
+        - 9
+        - 20
+        level_3:
+        - 21
+        - 52
+        level_4:
+        - 53
+        - 120
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      period_count:
+        level_1:
+        - 4
+        - 8
+        level_2:
+        - 9
+        - 20
+        level_3:
+        - 21
+        - 52
+        level_4:
+        - 53
+        - 120
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Uncapacitated lot sizing without backlog, with inventory carryover, zero final inventory, and total-demand setup linking.
+    quality_risks:
+    - LLM may add an unstated production capacity constraint
+    - LLM may incorrectly add backlog variables, backlog penalties, lost sales, or unmet-demand slack
+    - LLM may reverse the inventory balance signs
+    - LLM may add a zero final backlog constraint even though no backlog state exists
+    - LLM may omit fixed ordering setup costs
+    rationale_requirements:
+    - explain OrderedAmount, EndingInventory, and OrderIsPlaced variables
+    - explain inventory balance without backlog carryover
+    - explain initial zero inventory and required final zero inventory
+    - explain total-demand big-M setup linking
+    - explain fixed setup, unit order, and holding costs
+    - explicitly state there are no BackloggedAmount variables, backlog penalties, lost-sales variables, unmet-demand slack, production capacity, or zero-final-backlog constraints
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_inventory_balance
+      - preserve_period_demand
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: UncapacitatedLotSizing
+    source: optmath_internal
+  optmath_uncapacitatedlotsizingbacklogging:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: lot_sizing
+    sub_family: uncapacitated_lot_sizing_with_backlogging
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - inventory_balance
+    - setup_decision
+    - holding_cost
+    - backlog_state
+    - backlog_penalty
+    - time_indexed_decision
+    canonical_math_signature:
+      variable_types:
+      - continuous_order_quantity
+      - continuous_ending_inventory
+      - continuous_backlog_state
+      - binary_order_setup
+      objective_sense: minimize
+      objective_terms:
+      - fixed_ordering_setup_cost
+      - unit_order_cost
+      - inventory_holding_cost
+      - backlog_penalty_cost
+      core_constraints:
+      - net_inventory_balance_with_backlog_carryover
+      - order_quantity_linked_to_binary_setup
+      - zero_final_inventory
+      - zero_final_backlog
+      required_tables:
+      - period_demand
+      - fixed_ordering_cost
+      - unit_order_cost
+      - holding_cost
+      - backlog_penalty
+      - total_demand_big_m
+      forbidden_changes:
+      - do not remove time periods or inventory carryover
+      - do not add production capacity constraints
+      - do not drop backlog variables or backlog penalty
+      - do not model backlog as lost sales
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      period_count:
+        level_1:
+        - 4
+        - 8
+        level_2:
+        - 9
+        - 20
+        level_3:
+        - 21
+        - 52
+        level_4:
+        - 53
+        - 120
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      period_count:
+        level_1:
+        - 4
+        - 8
+        level_2:
+        - 9
+        - 20
+        level_3:
+        - 21
+        - 52
+        level_4:
+        - 53
+        - 120
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Compact ULSB formulation with explicit net-inventory transition, zero final inventory/backlog, and total-demand setup linking.
+    quality_risks:
+    - LLM may add an unstated production capacity constraint
+    - LLM may omit backlog variables or backlog penalty
+    - LLM may reverse the net-inventory balance signs
+    - LLM may model backlog as lost sales instead of a carried state
+    - LLM may omit fixed ordering setup costs
+    rationale_requirements:
+    - explain OrderedAmount, EndingInventory, BackloggedAmount, and OrderIsPlaced variables
+    - explain net inventory as EndingInventory minus BackloggedAmount
+    - explain initial zero inventory/backlog constants and final zero inventory/backlog constraints
+    - explain total-demand big-M setup linking
+    - explain fixed setup, unit order, holding, and backlog penalty costs
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_inventory_balance
+      - preserve_period_demand
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.45
+    source_generator_name: UncapacitatedLotSizingBacklogging
+    source: optmath_internal
+  optmath_vrptw:
+    enabled: true
+    priority: high
+    recommended_weight: 3.0
+    sampling_weight:
+      cpt_weight: 3.0
+      max_daily_samples: 5000
+      min_quality_score: 0.75
+      solver_timeout_seconds: 60
+    task_family: routing
+    sub_family: single_vehicle_cvrptw
+    difficulty_support: basic
+    default_variant_id: base
+    modeling_concepts:
+    - single_vehicle_route
+    - binary_directed_arc_visit
+    - visit_once
+    - depot_start_and_return
+    - time_window
+    - service_time
+    - cumulative_load_capacity
+    canonical_math_signature:
+      variable_types:
+      - binary_directed_arc_visit
+      - continuous_service_start_time
+      - continuous_cumulative_load
+      objective_sense: minimize
+      objective_terms:
+      - travel_distance_times_arc_visit
+      core_constraints:
+      - each_customer_has_one_incoming_arc
+      - each_customer_has_one_outgoing_arc
+      - single_route_leaves_and_returns_to_depot
+      - time_propagation_on_used_arcs
+      - customer_time_windows
+      - load_propagation_on_used_arcs
+      - vehicle_capacity
+      required_tables:
+      - depot_and_customer_nodes
+      - directed_distance_matrix
+      - customer_demands
+      - customer_service_times
+      - customer_time_windows
+      - single_vehicle_capacity
+      forbidden_changes:
+      - do not introduce multiple vehicles or vehicle-indexed variables
+      - do not describe the problem as a fleet with multiple routes
+      - do not split customers across multiple routes
+      - do not simplify to pure transportation flow
+      - do not omit customer time windows
+      - do not omit cumulative load and vehicle capacity logic
+      - do not change the depot or customer set
+      - do not reveal or force the internally generated feasible route
+    difficulty_config:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      customer_count:
+        level_1:
+        - 5
+        - 8
+        level_2:
+        - 6
+        - 8
+        level_3:
+        - 7
+        - 8
+        level_4:
+        - 8
+        - 8
+    difficulty_axes:
+      size_scale:
+        level_1: small
+        level_2: medium
+        level_3: large
+        level_4: stress
+      constraint_tightness:
+        level_1: loose
+        level_2: moderate
+        level_3: tight
+        level_4: very_tight
+      customer_count:
+        level_1:
+        - 5
+        - 8
+        level_2:
+        - 6
+        - 8
+        level_3:
+        - 7
+        - 8
+        level_4:
+        - 8
+        - 8
+    semantic_scenarios: []
+    formulation_variants:
+    - variant_id: base
+      enabled: true
+      notes: Single-vehicle CVRPTW generated from a latent feasible route.
+    quality_risks:
+    - LLM may incorrectly introduce multiple vehicles
+    - LLM may use fleet/all-routes wording even though the source has one vehicle
+    - LLM may omit service times in time propagation
+    - LLM may omit customer time windows
+    - LLM may omit cumulative load and capacity propagation
+    - LLM may simplify routing to transportation flow
+    rationale_requirements:
+    - explain that there is exactly one vehicle and one route
+    - explain binary directed arc variables
+    - explain customer visit-once logic
+    - explain depot departure and return
+    - explain service-time and travel-time propagation
+    - explain customer time windows
+    - explain cumulative load and vehicle capacity
+    quality_controls:
+      validation_required:
+      - source_instance_parse_ok
+      - gurobi_code_or_lp_executes
+      - solver_status_recorded
+      - objective_recomputed
+      - constraint_residual_checked
+      - no_forbidden_misframing
+      - no_duplicate_exact_text
+      - preserve_visit_once_logic
+      - preserve_route_continuity
+      - preserve_time_window_or_capacity_if_present
+      rejection_reasons:
+      - changed_objective_sense
+      - missing_core_constraint
+      - added_unstated_constraint
+      - wrong_variable_type
+      - objective_mismatch
+      - code_not_executable
+      - scenario_math_mismatch
+      - high_text_similarity
+    max_views_per_seed_instance: 12
+    expected_acceptance_rate: 0.4
+    source_generator_name: VRPTW
+    source: optmath_internal

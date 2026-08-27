@@ -1,0 +1,25 @@
+instance_generation:
+  min_solver_validated_rate: 0.50
+backtranslation:
+  min_chars: 160
+  max_chars: 4000
+  min_number_coverage: 0.40
+forward_modeling_eval:
+  allowed_execution_status:
+    - SUCCESS
+  objective_abs_tolerance: 0.0001
+  objective_rel_tolerance: 0.0001
+forward_repair:
+  enabled: true
+  max_attempts: 1
+  repairable_failure_families:
+    - objective_mismatch
+    - solver_status_failure
+    - execution_failure
+cpt_rendering:
+  min_chars: 400
+  forbidden_phrases:
+    - "User:"
+    - "Assistant:"
+    - "ChatML"
+    - "let me think"

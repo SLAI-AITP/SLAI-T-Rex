@@ -1,0 +1,12 @@
+external_optmath_root: external/OptMATH
+optmath_generators_dir: or_cpt_engine/generators/optmath_seed
+internal_optmath_generators_dir: or_cpt_engine/generators/optmath_seed
+scenario_catalog_path: engine_configs/scenario_catalog.yaml
+family_contracts_path: engine_configs/family_contracts.yaml
+generator_profiles_path: engine_configs/generator_profiles.yaml
+data_root: data
+runs_root: engine_runs
+registry_root: data/registry
+final_root: data/final
+logs_root: logs
+reports_root: reports

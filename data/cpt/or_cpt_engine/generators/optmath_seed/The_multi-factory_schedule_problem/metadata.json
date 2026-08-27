@@ -1,0 +1,8 @@
+{
+  "subclass": "Fixed-Charge Multi-Factory Monthly Production Planning",
+  "reference": "Optimizing the Supply Chain Configuration for New Products",
+  "reference_url": "https://doi.org/10.1287/mnsc.1050.0367",
+  "math_formula": "Let M be months and F be factories. Binary RunDecision[m,f] indicates whether factory f is operated in month m, and continuous Production[m,f] is the amount produced. Minimize sum_{m,f} fixed_cost[f] RunDecision[m,f] + unit_cost[f] Production[m,f]. For every month and factory, Production[m,f] >= min_production[f] RunDecision[m,f] and Production[m,f] <= max_production[f] RunDecision[m,f]. For every month, sum_f Production[m,f] >= demand[m]. RunDecision is binary and Production is nonnegative continuous.",
+  "natural_language_example": "A manufacturer plans monthly aggregate production across several factories. Each factory has a fixed monthly run cost, a unit production cost, and minimum and maximum output levels that apply only if the factory is operated. For each month, total production across operated factories must meet or exceed that month's demand. The planner chooses which factories to run in each month and how much each one produces, minimizing fixed run costs plus variable production costs.",
+  "local_modification_notes": "Internal OR-CPT version exposes complete factory/month cost, min-output, max-output, and demand tables; reframes the source as fixed-charge production planning rather than sequencing; and forbids invented inventory, backlog, product-mix, due-date, or job-shop constraints."
+}

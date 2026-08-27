@@ -1,0 +1,29 @@
+providers:
+  default:
+    type: openai_compatible
+    endpoint_pool_path: configs/model_api_pool2.yaml
+    base_url_env: OR_LLM_BASE_URL
+    api_key_env: OR_LLM_API_KEY
+    model: dsv4
+    timeout_sec: 300
+    max_retries: 3
+    trust_env: false
+    # 每个 API endpoint 的并发槽位数。若池里有 2 个 endpoint，这里设为 64，则 LLM 总并发约为 128。
+    concurrency_per_endpoint: 32
+    endpoint_failure_threshold: 2
+    endpoint_cooldown_seconds: 45
+backtranslation:
+  provider: default
+  temperature: 0.7
+  max_tokens: 4096
+  num_candidates: 2
+forward_modeling:
+  provider: default
+  temperature: 0.1
+  max_tokens: 8192
+  num_candidates: 1
+rendering:
+  provider: default
+  temperature: 0.3
+  max_tokens: 8192
+  num_candidates: 1

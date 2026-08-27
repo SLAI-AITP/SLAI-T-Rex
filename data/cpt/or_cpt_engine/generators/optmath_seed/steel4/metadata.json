@@ -1,0 +1,8 @@
+{
+    "subclass": "Production Planning Problem",
+    "reference": "Operations Research in Production Planning, Scheduling and Inventory Control",
+    "reference_url": "https://doi.org/10.1057/jors.1975.120",
+    "math_formula": "Maximize \n$$\n\\sum_{p \\in \\text{Products}} \\text{Profit}_{p} \\cdot \\text{Production}_{p}\n$$\nSubject to:\n$$\n\\sum_{p \\in \\text{Products}} \\text{ProcessingHoursPerTon}_{p,s} \\cdot \\text{Production}_{p} \\leq \\text{AvailableHours}_{s} \\quad \\forall s \\in \\text{ProductionStages}\n$$\nwhere \\(\\text{ProcessingHoursPerTon}_{p,s}=1/\\text{Rate}_{p,s}\\), and:\n$$\n\\text{Commit}_{p} \\leq \\text{Production}_{p} \\leq \\text{Market}_{p} \\quad \\forall p \\in \\text{Products}\n$$\nProduction variables are continuous tons.",
+    "natural_language_example": "A steel mill chooses how many tons of each grade to produce through several production stages such as melting, casting, rolling, and finishing. Each grade earns a profit per ton, has a minimum commitment and a maximum market limit, and consumes stage hours according to its processing rate in each stage. The goal is to maximize total contribution while respecting every stage's available hours and keeping each grade between its commitment and market bounds.",
+    "local_modification_notes": "Internal OR-CPT version records product tables, stage capacity tables, processing-hour coefficients, commit/market envelopes, and bottleneck-stage guardrails. Stages are production resources, not time periods."
+}

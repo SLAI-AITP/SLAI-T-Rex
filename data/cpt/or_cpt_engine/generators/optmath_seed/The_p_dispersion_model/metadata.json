@@ -1,0 +1,7 @@
+{
+    "subclass": "P-Dispersion Facility Spacing Problem",
+    "reference": "Programming models for facility dispersion: the p-dispersion and maxisum dispersion problems",
+    "reference_url": "https://doi.org/10.1016/0895-7177(88)90094-5",
+    "math_formula": "$$\n\\begin{aligned}\n&\\text{Maximize} && D \\\\\n&\\text{Subject to} && \\sum_{i \\in N} x_i = p \\\\\n& && D \\leq d_{i,j} + M \\cdot (1 - z_{i,j}) \\quad \\forall i < j \\\\\n& && z_{i,j} \\leq x_i \\quad \\forall i < j \\\\\n& && z_{i,j} \\leq x_j \\quad \\forall i < j \\\\\n& && z_{i,j} \\geq x_i + x_j - 1 \\quad \\forall i < j \\\\\n& && x_i \\in \\{0, 1\\} \\quad \\forall i \\in N \\\\\n& && z_{i,j} \\in \\{0, 1\\} \\quad \\forall i < j \\\\\n& && D \\geq 0\n\\end{aligned}\n$$\nHere x_i selects candidate node i, z_{i,j} indicates that both endpoints of pair (i,j) are selected, and D is the minimum pairwise distance among selected nodes. There are no demand, assignment, capacity, shipping-flow, or fixed-cost terms in this formulation.",
+    "natural_language_example": "A resilience planner must choose exactly 3 cache sites from 10 candidates. The pairwise distances between all candidate sites are known. The goal is to maximize the smallest distance between any two selected sites, so the chosen sites are well separated. This is a pure p-dispersion model: there are no customer assignments, capacities, shipping flows, or fixed opening costs."
+}

@@ -1,0 +1,8 @@
+{
+  "subclass": "Continuous Mean-Variance Portfolio Optimization",
+  "reference": "Markowitz, H. \"Portfolio Selection.\" Journal of Finance, 7(1), 77-91 (1952).",
+  "reference_url": "https://www.jstor.org/stable/2975974",
+  "math_formula": "### Mathematical Model\nLet A be a set of assets. Parameter r_i is expected return, Sigma_{i,j} is the positive-semidefinite covariance matrix, R is the target minimum expected return, and l_i,u_i are weight bounds. Continuous variable w_i is the fraction of capital allocated to asset i. Minimize portfolio variance sum_i sum_j Sigma_{i,j} w_i w_j subject to full investment sum_i w_i = 1, minimum return sum_i r_i w_i >= R, and bounds l_i <= w_i <= u_i. There are no binary asset-selection or cardinality variables in this generator.",
+  "natural_language_example": "An investment manager allocates capital continuously among candidate assets. Each asset has an expected return, and portfolio risk is measured by a covariance matrix across all asset pairs. The manager must invest 100% of the capital, achieve at least a target expected return, and keep every asset weight within allowed bounds. The goal is to minimize portfolio variance. The decision is the continuous weight of each asset, not a yes/no choice of whether to include the asset.",
+  "local_modification_notes": "Internal OR-CPT version exposes the full covariance matrix, constructs a rounded strictly diagonally dominant PSD covariance matrix for stable convex-QP solves, and explicitly forbids binary-cardinality reinterpretations. The 2026-06-08 CPT-stage tuning reduces the default asset count to 6-10 and adds compact_portfolio_tables so complete covariance data reaches backtranslation and forward modeling prompts."
+}

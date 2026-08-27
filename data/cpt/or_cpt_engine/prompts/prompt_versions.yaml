@@ -1,0 +1,55 @@
+backtranslation_prompt:
+  version: v1.0.8
+  path: backtranslation_prompt.md
+  updated_at: '2026-06-07 11:34:48'
+  notes: Require problem_statement itself to carry organization, business trigger, decision owner, and operating context because downstream stages consume problem_statement directly.
+backtranslation_compact_prompt:
+  version: v1.0.2
+  path: backtranslation_compact_prompt.md
+  updated_at: '2026-06-08 16:30:00'
+  notes: Adds exact compact-table rules for CLSP without backlog, uncapacitated lot sizing with backlogging, and net1 min-cost flow to reduce numeric drift and wrong-family reinterpretation.
+backtranslation_aircraft_prompt:
+  version: v1.0.1
+  path: backtranslation_aircraft_prompt.md
+  updated_at: '2026-06-08 18:00:00'
+  notes: Requires aircraft landing time/penalty tables and ordered-pair separation matrix to appear directly in problem_statement, not only structured_problem_data.
+backtranslation_transportation_prompt:
+  version: v1.0.0
+  path: backtranslation_transportation_prompt.md
+  updated_at: '2026-06-08 00:00:00'
+  notes: Generator-specific balanced transportation LP backtranslation prompt for optmath_transp with exact supply/demand and lane-cost preservation.
+backtranslation_cflp_prompt:
+  version: v1.0.0
+  path: backtranslation_cflp_prompt.md
+  updated_at: '2026-06-08 00:00:00'
+  notes: Generator-specific capacitated facility-location prompt for optmath_cflp with binary opening, capacity linking, and fixed-cost preservation.
+backtranslation_revenue_management_prompt:
+  version: v1.0.0
+  path: backtranslation_revenue_management_prompt.md
+  updated_at: '2026-06-08 00:00:00'
+  notes: Generator-specific static revenue-management prompt for optmath_revenue_management and optmath_revenue with package sales, demand bounds, resource usage, and revenue maximization.
+backtranslation_car_selection_prompt:
+  version: v1.0.1
+  path: backtranslation_car_selection_prompt.md
+  updated_at: '2026-06-08 20:20:00'
+  notes: Strengthens semantic framing so optmath_carselection stays participant/requester-to-vehicle matching and avoids technician/job/staffing drift.
+backtranslation_cell_tower_prompt:
+  version: v1.0.0
+  path: backtranslation_cell_tower_prompt.md
+  updated_at: '2026-06-08 00:00:00'
+  notes: Generator-specific budgeted maximum-coverage prompt for cell-tower site selection with tower costs, region populations, coverage matrix, and budget preservation.
+backtranslation_source_fact_prompt:
+  version: v1.0.5
+  path: backtranslation_source_fact_prompt.md
+  updated_at: '2026-06-08 20:20:00'
+  notes: Strengthens structure-based assignment as NMR peak-to-residue matching and forbids staffing/technician/routing reframing while preserving prior source-fact rules.
+forward_modeling_prompt:
+  version: v1.0.7
+  path: forward_modeling_prompt.md
+  updated_at: '2026-06-08 16:30:00'
+  notes: Treats source_compact_data as the authoritative source-fact table when available to prevent numeric drift from backtranslation.
+forward_model_repair_prompt:
+  version: v1.0.1
+  path: forward_model_repair_prompt.md
+  updated_at: '2026-06-08 16:30:00'
+  notes: Uses source_compact_data as authoritative source facts during repair while still forbidding target-objective hard-coding.

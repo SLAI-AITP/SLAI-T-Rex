@@ -1,0 +1,8 @@
+{
+  "subclass": "Contract Quantity Allocation",
+  "reference": "Supply contract allocation and split-award procurement models.",
+  "reference_url": "https://en.wikipedia.org/wiki/Supply_chain_management",
+  "math_formula": "### Mathematical Model\nLet P be producers and C be contracts. Parameter cap_p is producer capacity, d_c is contract size, m_p is producer-specific minimum delivery if that producer participates in a contract, n_c is the minimum number of contributors required for contract c, and cost_{p,c} is unit production cost. Continuous variable x_{p,c} is the delivered quantity from producer p to contract c. Binary variable y_{p,c} indicates whether producer p contributes to contract c. Minimize sum_{p,c} cost_{p,c} x_{p,c}. Capacity constraints require sum_c x_{p,c} <= cap_p. Exact contract fulfillment requires sum_p x_{p,c} = d_c. Minimum contributors require sum_p y_{p,c} >= n_c. Activation bounds require x_{p,c} >= m_p y_{p,c} and x_{p,c} <= d_c y_{p,c}.",
+  "natural_language_example": "A procurement team must split contract quantities among qualified producers. Each producer has a total capacity and a minimum delivery size if it participates in a contract. Each contract has a required quantity and a minimum number of contributing producers. The planner chooses delivered quantities and producer-contract participation indicators to minimize total production cost while fulfilling each contract exactly, respecting producer capacities, and enforcing minimum contributor and delivery-size rules.",
+  "local_modification_notes": "Internal OR-CPT version uses exact contract fulfillment and exposes all capacity, contract, incidence, and cost tables."
+}

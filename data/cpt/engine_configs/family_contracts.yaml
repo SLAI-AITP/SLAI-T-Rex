@@ -1,0 +1,1800 @@
+version: v1.0.0
+
+generator_aliases:
+  facility_location:
+    - facility
+    - cflp
+    - location
+    - scooter_location
+  lot_sizing:
+    - lotsizing
+    - bucket
+    - clsp
+  covering:
+    - setcover
+    - multisetcover
+    - cover
+  revenue_management:
+    - revenue
+    - marketshare
+    - contractallocation
+  transportation:
+    - transp
+    - transportation
+  packing:
+    - knapsack
+    - binpacking
+    - packing
+  scheduling:
+    - scheduling
+    - flowshop
+    - jopshop
+    - jobshop
+  routing:
+    - routing
+    - vrp
+    - aircraftlanding
+    - fleet
+  network_flow:
+    - network
+    - shortest_path
+    - mcnd
+  supply_chain:
+    - supplychain
+    - supply_chain
+  diet:
+    - diet
+  blending:
+    - blending
+  portfolio:
+    - portfolio
+  contract_allocation:
+    - contractallocation
+    - contract_allocation
+    - split_award
+
+generator_overrides:
+  optmath_carselection:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - binary_participant_car_assignment
+      common_variable_domains:
+        assignment: binary
+      valid_index_policy:
+        use_only_declared_participants_cars_and_eligibility_matrix: true
+        do_not_create_route_time_vehicle_capacity_or_score_indices: true
+      required_constraints:
+        - assignment_only_if_eligible
+        - participant_at_most_one_car
+        - car_at_most_one_participant
+      required_objective_terms:
+        - one_unit_value_per_selected_assignment
+      forbidden_changes:
+        - do not introduce assignment costs, scores, distances, or revenues absent from the source
+        - do not require every participant or every car to be assigned
+        - do not replace at-most-one constraints with exact assignment constraints
+        - do not reinterpret as transportation, routing, scheduling, or fleet allocation
+      high_risk_failures:
+        - eligibility_matrix_missing
+        - objective_changed_to_cost_minimization
+        - full_assignment_required_without_source_support
+        - routing_or_transportation_reinterpretation
+
+  optmath_cell_tower:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - binary_tower_build
+        - binary_region_covered
+      common_variable_domains:
+        build: binary
+        covered: binary
+      valid_index_policy:
+        use_only_declared_towers_regions_and_coverage_matrix: true
+        do_not_create_customer_assignment_shipment_capacity_route_or_time_indices: true
+      required_constraints:
+        - region_coverage_linking
+        - tower_budget_limit
+      required_objective_terms:
+        - region_population_times_covered_binary
+      forbidden_changes:
+        - do not require every region to be covered
+        - do not change covered-population maximization into setup-cost minimization
+        - do not introduce shipment quantities, customer assignments, capacities, vehicles, routes, or time windows
+        - do not reinterpret as capacitated facility location or transportation
+      high_risk_failures:
+        - coverage_matrix_missing
+        - budget_constraint_missing
+        - all_regions_forced_covered
+        - cflp_or_transportation_reinterpretation
+
+  optmath_revenue:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - nonnegative_integer_package_sales
+      common_variable_domains:
+        package_sales: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_packages_resources_and_usage_matrix: true
+        do_not_create_time_period_dynamic_pricing_or_stochastic_arrival_indices: true
+      required_constraints:
+        - package_demand_upper_bound
+        - resource_capacity_consumption_limit
+        - nonnegative_integer_package_sales
+      required_objective_terms:
+        - package_revenue_times_package_sales
+      forbidden_changes:
+        - do not change revenue maximization into cost minimization
+        - do not introduce dynamic pricing, booking periods, stochastic arrivals, or bid-price controls
+        - do not omit package demand upper bounds
+        - do not omit the package-resource usage matrix
+        - do not omit resource capacity constraints
+      high_risk_failures:
+        - objective_sense_mismatch
+        - package_demand_limit_missing
+        - resource_usage_matrix_missing
+        - capacity_constraint_missing
+
+  optmath_cflp:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_facility_opening
+        - continuous_customer_facility_shipment
+      common_variable_domains:
+        facility_open: binary
+        shipped_amount: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_customers_and_facilities: true
+        do_not_create_vehicle_route_time_or_inventory_indices: true
+      required_constraints:
+        - customer_demand_exactly_satisfied
+        - ship_only_from_open_facility
+        - open_facility_capacity_limit
+      required_objective_terms:
+        - facility_fixed_opening_cost
+        - customer_facility_transport_cost_times_shipped_amount
+      forbidden_changes:
+        - do not remove binary FacilityOpen[j] decisions
+        - do not remove fixed facility opening costs
+        - do not relax exact customer demand satisfaction into optional service
+        - do not omit ShippedAmount[i,j] <= demand[i] * FacilityOpen[j] linking
+        - do not omit capacity[j] * FacilityOpen[j] capacity linking
+        - do not add vehicles, tours, time windows, subtour constraints, or route sequencing
+      high_risk_failures:
+        - pure_transportation_reinterpretation
+        - fixed_opening_cost_missing
+        - open_before_ship_linking_missing
+        - capacity_linking_missing
+
+  optmath_revenue_management:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - nonnegative_integer_package_sales
+      common_variable_domains:
+        package_sales: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_packages_resources_and_usage_matrix: true
+        do_not_create_time_period_dynamic_pricing_or_stochastic_arrival_indices: true
+      required_constraints:
+        - package_demand_upper_bound
+        - resource_capacity_consumption_limit
+        - nonnegative_integer_package_sales
+      required_objective_terms:
+        - package_revenue_times_package_sales
+      forbidden_changes:
+        - do not change revenue maximization into cost minimization
+        - do not introduce dynamic pricing, booking periods, stochastic arrivals, or bid-price controls
+        - do not omit package demand upper bounds
+        - do not omit the package-resource usage matrix
+        - do not omit resource capacity constraints
+      high_risk_failures:
+        - objective_sense_mismatch
+        - package_demand_limit_missing
+        - resource_usage_matrix_missing
+        - capacity_constraint_missing
+
+  optmath_marketshare:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - nonnegative_integer_company_market_product_supply
+      common_variable_domains:
+        supply: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_companies_markets_products: true
+        do_not_create_resource_capacity_budget_channel_or_price_indices: true
+      required_constraints:
+        - market_product_demand_exactly_satisfied
+        - nonnegative_integer_supply
+      required_objective_terms:
+        - net_profit_times_integer_supply
+      forbidden_changes:
+        - do not change profit maximization into cost minimization
+        - do not introduce resource capacity, budget, channel capacity, eligibility, or nonlinear market-response constraints absent from the source
+        - do not relax exact market-product demand fulfillment into optional market coverage
+        - do not convert integer supply quantities into binary campaign-selection variables
+      high_risk_failures:
+        - objective_sense_mismatch
+        - demand_fulfillment_missing
+        - resource_capacity_invented
+        - integer_supply_domain_lost
+
+  optmath_transp:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_nonnegative_shipment
+      common_variable_domains:
+        shipment: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_origins_destinations_and_complete_lane_table: true
+        do_not_create_vehicle_route_time_capacity_activation_or_facility_indices: true
+      required_constraints:
+        - origin_supply_exactly_shipped
+        - destination_demand_exactly_received
+        - nonnegative_continuous_shipments
+      required_objective_terms:
+        - lane_unit_cost_times_transport_quantity
+      forbidden_changes:
+        - do not add vehicles, tours, time windows, subtour constraints, or route sequencing
+        - do not add lane capacity, fixed-charge activation, facility opening, or binary lane decisions
+        - do not add unmet-demand slack or optional unused supply
+        - do not reveal or force internally generated feasible shipment certificates
+      high_risk_failures:
+        - supply_or_demand_balance_missing
+        - lane_cost_matrix_missing
+        - vehicle_routing_reinterpretation
+        - capacity_or_fixed_charge_added
+
+  optmath_tsp:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_directed_route_arc
+        - integer_mtz_order_variable
+      common_variable_domains:
+        route_arc: binary
+        mtz_order: integer
+      valid_index_policy:
+        use_complete_declared_directed_city_arc_set_without_self_loops: true
+        do_not_create_vehicle_capacity_time_window_service_or_delivery_indices: true
+      required_constraints:
+        - exactly_one_inbound_arc_per_city
+        - exactly_one_outbound_arc_per_city
+        - single_tour_mtz_subtour_elimination
+      required_objective_terms:
+        - directed_arc_distance_times_route_binary
+      forbidden_changes:
+        - do not add vehicle capacity, time windows, service times, delivery quantities, or multiple vehicles
+        - do not simplify to shortest path, transportation, assignment-only matching, or path flow
+        - do not omit subtour-elimination logic
+        - do not add arcs outside the complete directed city-pair table
+      high_risk_failures:
+        - capacity_or_time_window_added
+        - subtour_elimination_missing
+        - shortest_path_reinterpretation
+        - objective_distance_terms_missing
+
+  optmath_the_shortest_path_problem:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_path_arc_selection
+      common_variable_domains:
+        path_arc: binary
+      valid_index_policy:
+        use_only_declared_nodes_and_directed_arcs: true
+        do_not_expand_sparse_dag_to_complete_graph: true
+        do_not_create_vehicle_route_time_capacity_or_facility_indices: true
+      required_constraints:
+        - source_sink_flow_balance
+        - intermediate_node_flow_conservation
+      required_objective_terms:
+        - arc_cost_times_binary_path_arc
+      forbidden_changes:
+        - do not add arc capacity limits, fixed charges, vehicle routes, subtours, time windows, or facility-opening decisions
+        - do not turn the source-sink path into a traveling-salesperson tour
+        - do not add unmet-demand slack or optional path completion
+        - do not create arcs outside the declared directed arc set
+      high_risk_failures:
+        - arc_capacity_added
+        - complete_graph_reinterpretation
+        - tsp_tour_reinterpretation
+        - source_sink_balance_missing
+
+  optmath_scooter_location:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_station_opening
+        - binary_demand_assignment
+        - nonnegative_integer_new_scooter_count
+      common_variable_domains:
+        station_open: binary
+        demand_assignment: binary
+        new_scooters: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_demand_points_and_candidate_locations: true
+        do_not_create_route_sequence_vehicle_or_time_indices: true
+      required_constraints:
+        - each_demand_point_assigned_exactly_once
+        - assign_only_to_selected_location
+        - selected_location_capacity_with_existing_and_new_scooters
+        - maximum_selected_locations
+        - total_new_scooter_budget
+        - new_scooters_only_at_selected_locations
+      required_objective_terms:
+        - demand_weighted_walking_distance
+        - station_opening_cost
+        - new_scooter_deployment_cost
+      forbidden_changes:
+        - do not drop station opening costs or new scooter deployment costs
+        - do not relax exact demand assignment into optional service
+        - do not allow new scooters at unselected stations
+        - do not reinterpret as vehicle routing, TSP, shortest path, or station visit sequencing
+      high_risk_failures:
+        - new_scooter_variable_missing
+        - station_capacity_missing
+        - opening_or_deployment_cost_missing
+        - routing_reinterpretation
+
+  optmath_aircraftassignment:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - integer_fleet_allocation_count
+      common_variable_domains:
+        allocation: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_aircraft_types_and_routes: true
+        do_not_create_aircraft_tail_route_sequence_or_time_indices: true
+      required_constraints:
+        - aircraft_type_availability_capacity
+        - route_demand_requirement
+      required_objective_terms:
+        - aircraft_route_operating_cost
+      forbidden_changes:
+        - do not convert integer fleet counts into binary one-aircraft-to-one-route matching
+        - do not add aircraft routing, sequencing, or time-expanded balance constraints
+        - do not add passenger spill, recapture, or revenue-management variables
+        - do not omit aircraft-route capacity contribution coefficients
+        - do not expose or use an internal feasible allocation certificate as problem data
+      high_risk_failures:
+        - binary_assignment_reinterpretation
+        - route_demand_missing
+        - aircraft_availability_missing
+        - time_expanded_routing_added
+
+  optmath_aircraftlanding:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_pairwise_order
+        - continuous_landing_time
+        - continuous_early_deviation
+        - continuous_late_deviation
+      common_variable_domains:
+        aircraft_order: binary
+        landing_time: continuous_nonnegative
+        early_deviation: continuous_nonnegative
+        late_deviation: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_aircraft_and_ordered_aircraft_pairs: true
+        do_not_create_aircraft_types_routes_or_fleet_assignment_indices: true
+      required_constraints:
+        - one_precedence_order_for_each_aircraft_pair
+        - minimum_separation_time_between_ordered_landings
+        - aircraft_landing_time_window
+        - early_deviation_lower_bound
+        - late_deviation_lower_bound
+      required_objective_terms:
+        - early_landing_penalty
+        - late_landing_penalty
+      forbidden_changes:
+        - do not convert landing sequencing into aircraft fleet assignment
+        - do not add route demand, capacity contribution, or operating cost matrices
+        - do not omit pairwise separation times
+        - do not omit earliest, target, and latest landing times
+        - do not replace early/late penalty minimization with makespan minimization
+        - do not present big-M as an operational business input
+      high_risk_failures:
+        - fleet_assignment_reinterpretation
+        - separation_constraints_missing
+        - time_windows_missing
+        - early_late_penalty_missing
+
+  optmath_schedulingproblem:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_site_employee_shift_skill_assignment
+        - integer_unfilled_position_slack
+      common_variable_domains:
+        assignment: binary
+        unfilled_positions: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_sites_employees_shifts_skills: true
+        do_not_invent_processing_times_or_machine_sets: true
+        positive_demand_table_may_omit_zero_demand_roles: true
+      required_constraints:
+        - coverage_equal_demand_with_shortage
+        - employee_shift_availability
+        - employee_skill_eligibility
+        - at_most_one_total_assignment_per_employee
+      required_objective_terms:
+        - employee_skill_preference_assignment_cost
+        - unfilled_position_penalty
+      forbidden_changes:
+        - do not add sequencing, non-overlap, due-date, routing, or machine-capacity constraints
+        - do not drop shortage slack variables or shortage penalty
+        - do not change minimize into maximize
+        - do not require all demand to be filled without unfilled-position slack
+        - do not allow one employee to take multiple total assignments
+        - do not reveal or force any internal demand-generation staff sample
+      high_risk_failures:
+        - shortage_slack_missing
+        - skill_or_availability_constraint_missing
+        - objective_penalty_term_missing
+        - positive_demand_zeros_misread
+        - internal_staff_sample_leaked
+
+  optmath_flowshop_2:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_job_sequence_position_assignment
+        - nonnegative_start_time_by_position_and_machine
+        - explicit_makespan_variable
+      common_variable_domains:
+        job_position_assignment: binary
+        start_time: continuous_nonnegative
+        makespan: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_jobs_sequence_positions_and_machines: true
+        use_one_common_sequence_for_all_machines: true
+        job_sequence_assignment_is_not_machine_specific: true
+      required_constraints:
+        - one_job_per_sequence_position
+        - one_sequence_position_per_job
+        - stage_precedence_for_each_position
+        - adjacent_position_ordering_on_each_machine
+        - makespan_completion_bound
+      required_objective_terms:
+        - explicit_makespan_variable
+        - final_position_completion_bound_on_last_machine
+      forbidden_changes:
+        - do not add due dates, release dates, or tardiness variables
+        - do not replace the common permutation sequence with machine-specific sequences
+        - do not convert into job shop with job-specific machine routes
+        - do not create assignment variables indexed by machine
+        - do not reinterpret final-machine processing-time coefficients as assignment costs, delay weights, or weighted completion costs
+        - do not put final-machine processing-time coefficients directly into an assignment-cost objective
+        - do not minimize total processing time, total completion time, or weighted completion time
+      high_risk_failures:
+        - makespan_objective_replaced
+        - explicit_makespan_variable_missing
+        - makespan_completion_bound_missing
+        - common_sequence_constraint_missing
+        - processing_time_table_omitted
+        - independent_machine_sequences_added
+        - objective_coefficients_misread_as_costs
+
+  optmath_fleet_routing:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - integer_flight_leg_count
+        - idle_fleet_count
+        - initial_fleet_placement
+      common_variable_domains:
+        flight_leg_count: nonnegative_integer
+        idle_fleet_count: nonnegative_integer
+        initial_fleet_placement: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_fleet_types_locations_periods_and_feasible_legs: true
+        demand_exists_only_on_active_legs: true
+      required_constraints:
+        - initial_fleet_balance_by_location
+        - time_expanded_fleet_flow_conservation
+        - fleet_availability_by_type
+        - active_leg_passenger_demand_satisfaction
+        - inactive_leg_route_restriction
+      required_objective_terms:
+        - fleet_type_operating_cost_per_assigned_leg
+      forbidden_changes:
+        - do not add visit-once or subtour-elimination constraints
+        - do not require binary route-arc variables
+        - do not create passenger demand on inactive legs
+        - do not convert to a customer-stop VRP
+        - do not omit idle fleet variables or initial fleet placement variables
+        - do not add service-time, load-propagation, or customer time-window constraints
+      high_risk_failures:
+        - aircraft_flow_balance_missing
+        - fleet_availability_missing
+        - active_leg_demand_missing
+        - binary_vrp_reinterpretation
+        - idle_state_variables_missing
+        - inactive_leg_restriction_missing
+
+  optmath_vrptw:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_directed_arc_visit
+        - continuous_service_start_time
+        - continuous_cumulative_load
+      common_variable_domains:
+        arc_visit: binary
+        service_start_time: continuous_nonnegative
+        cumulative_load: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_depot_customer_nodes_and_directed_arcs: true
+        exactly_one_vehicle_available: true
+        do_not_create_vehicle_indices_or_multiple_route_sets: true
+      required_constraints:
+        - no_self_arcs
+        - each_customer_has_one_incoming_arc
+        - each_customer_has_one_outgoing_arc
+        - single_route_leaves_the_depot_once
+        - single_route_returns_to_the_depot_once
+        - time_propagation_with_service_times_on_used_arcs
+        - customer_service_start_time_windows
+        - cumulative_load_propagation_on_used_arcs
+        - single_vehicle_capacity
+      required_objective_terms:
+        - directed_travel_distance_times_arc_visit
+      forbidden_changes:
+        - do not introduce multiple vehicles, vehicle indices, fleet-sizing decisions, or customer-to-vehicle assignment variables
+        - do not describe the source problem as a fleet with multiple independent routes
+        - do not split customers across separate routes
+        - do not convert the problem into transportation flow without visit sequencing
+        - do not omit service times from time propagation
+        - do not omit customer time windows
+        - do not omit cumulative load and single-vehicle capacity constraints
+        - do not change the depot or customer set
+        - do not reveal or force the internally generated feasible route
+      high_risk_failures:
+        - multi_vehicle_reinterpretation
+        - fleet_or_multiple_routes_wording
+        - route_continuity_missing
+        - time_window_or_service_time_missing
+        - capacity_or_load_propagation_missing
+        - transportation_flow_reinterpretation
+
+  optmath_facility_location:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - selected_distribution_center_binary
+        - served_zone_assignment_binary
+        - multi_commodity_shipment_flow
+      common_variable_domains:
+        selected_distribution_center: binary
+        served_zone_assignment: binary
+        shipment: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_commodities_plants_distribution_centers_and_zones: true
+        do_not_create_vehicle_routes_or_customer_sequences: true
+      required_constraints:
+        - plant_commodity_supply_capacity
+        - served_zone_commodity_demand_exactly_shipped
+        - each_zone_assigned_to_exactly_one_distribution_center
+        - explicit_distribution_center_open_before_zone_assignment
+        - distribution_center_minimum_throughput_if_selected
+        - distribution_center_maximum_throughput_if_selected
+      required_objective_terms:
+        - plant_to_distribution_center_to_zone_variable_shipping_cost
+        - fixed_distribution_center_selection_cost
+        - unit_distribution_center_throughput_cost
+      forbidden_changes:
+        - do not omit fixed distribution-center selection costs
+        - do not omit unit throughput costs
+        - do not omit explicit Served[d,z] <= Selected[d] linking
+        - do not collapse multi-commodity shipments into a simple zone assignment
+        - do not add vehicle-routing, subtour, or visit-order constraints
+      high_risk_failures:
+        - fixed_cost_missing
+        - throughput_cost_missing
+        - open_before_assignment_link_missing
+        - demand_equality_weakened
+        - shipment_index_collapsed
+
+  optmath_multisetcover:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_set_selection
+      common_variable_domains:
+        set_selection: binary
+      valid_index_policy:
+        use_only_declared_candidate_sets_and_elements: true
+        coverage_membership_is_declared_set_to_element_matrix: true
+        coverage_requirements_are_lower_bounds: true
+        do_not_create_flow_route_assignment_or_capacity_indices: true
+      required_constraints:
+        - element_multicover_requirement_lower_bound
+      required_objective_terms:
+        - selected_set_cost
+      forbidden_changes:
+        - do not convert binary set selection into continuous coverage quantities
+        - do not replace multicover requirements with ordinary single-cover requirements
+        - do not replace >= required coverage lower bounds with exact equality
+        - do not omit candidate sets, elements, costs, coverage requirements, or coverage memberships
+        - do not invent coverage memberships not listed in the set table
+        - do not add routing, flow, assignment, scheduling, budget, or capacity constraints
+      high_risk_failures:
+        - coverage_matrix_incomplete
+        - multicover_requirement_downgraded_to_single_cover
+        - coverage_lower_bound_changed_to_equality
+        - selected_set_cost_missing
+        - binary_selection_relaxed
+
+  optmath_cut_edited:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - nonnegative_integer_pattern_count
+      common_variable_domains:
+        pattern_count: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_order_widths_and_cutting_patterns: true
+        pattern_piece_counts_are_declared_width_pattern_matrix: true
+        stock_roll_width_is_fixed_for_all_patterns: true
+        do_not_create_set_cover_elements_bins_routes_or_jobs: true
+      required_constraints:
+        - exact_order_width_fulfillment
+        - pattern_width_feasibility
+      required_objective_terms:
+        - total_raw_roll_count
+      forbidden_changes:
+        - do not make Cut[j] binary; it is a nonnegative integer pattern-count variable
+        - do not replace exact order-width fulfillment with optional or at-least fulfillment
+        - do not invent cutting patterns or piece counts not listed in the pattern table
+        - do not reinterpret this as set cover, bin packing, vehicle routing, or job scheduling
+        - do not add assignment, facility-location, route, sequencing, or capacity-allocation variables
+      high_risk_failures:
+        - binary_pattern_selection_reinterpretation
+        - pattern_matrix_incomplete
+        - exact_fulfillment_weakened
+        - raw_roll_objective_missing
+        - set_cover_or_bin_packing_reinterpretation
+
+  optmath_singlelevelsmallbucket:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_production_amount
+        - binary_item_machine_period_production_state
+        - binary_startup_event
+        - continuous_inventory
+        - continuous_backlog
+      common_variable_domains:
+        production_amount: continuous_nonnegative
+        production_state: binary
+        startup_event: binary
+        inventory: continuous_nonnegative
+        backlog: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_items_machines_and_periods: true
+        demand_is_item_period_matrix: true
+        capacity_and_startup_time_are_machine_specific: true
+        do_not_create_unit_production_cost_or_routing_indices: true
+      required_constraints:
+        - net_inventory_balance_with_backlog_carryover
+        - production_capacity_with_startup_time
+        - one_item_per_machine_period
+        - startup_initial_equals_production_initial
+        - startup_transition_from_previous_period
+        - no_startup_if_machine_already_running_same_item
+      required_objective_terms:
+        - setup_cost_times_binary_production_state
+        - startup_cost_times_binary_startup_event
+        - holding_cost_times_inventory
+        - backlog_cost_times_backlog
+      forbidden_changes:
+        - do not add a per-unit production cost, material cost, or revenue term
+        - do not collapse item-machine-period production states into a single production quantity
+        - do not omit backlog or inventory carryover variables
+        - do not omit startup transition logic
+        - do not replace machine-specific startup time and capacity with aggregate capacity
+        - do not use placeholder demand, capacity, startup time, or cost values
+      high_risk_failures:
+        - unit_production_cost_invented
+        - startup_transition_missing
+        - inventory_backlog_balance_changed
+        - machine_period_dimension_collapsed
+        - placeholder_numeric_table_used
+
+  optmath_staticlineplanning:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_line_activation
+        - continuous_line_frequency
+        - continuous_unmet_od_demand
+      common_variable_domains:
+        line_activation: binary
+        line_frequency: continuous_nonnegative
+        unmet_demand: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_candidate_lines_nodes_and_od_pairs: true
+        line_service_eligibility_is_declared_binary_table: true
+        transfer_requirements_are_fixed_parameters: true
+        do_not_create_route_sequence_arc_use_or_passenger_flow_indices: true
+      required_constraints:
+        - od_demand_coverage_with_shortage
+        - max_frequency_activation_linking
+        - min_frequency_if_selected
+        - fleet_vehicle_hours_budget
+        - transfer_required_node_min_two_selected_lines
+      required_objective_terms:
+        - fixed_line_activation_cost
+        - line_operating_frequency_cost
+        - unmet_demand_penalty
+      forbidden_changes:
+        - do not introduce passenger-flow, commodity-flow, route-sequencing, subtour, time-window, or arc-use variables
+        - do not invent z[i,j,l] line-continuity variables
+        - do not convert continuous line frequency into binary line choice only
+        - do not make f[l] integer unless explicitly stated
+        - do not omit unmet-demand variables or penalty terms
+        - do not omit the OD-to-line service eligibility table
+        - do not replace fixed transfer requirements with optional transfer-station decision variables
+      high_risk_failures:
+        - route_or_arc_use_reinterpretation
+        - service_eligibility_matrix_missing
+        - frequency_activation_linking_missing
+        - unmet_demand_penalty_missing
+        - transfer_requirement_optionalized
+
+  optmath_the_p_dispersion_model:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - binary_node_selection
+        - binary_pair_selection
+        - continuous_minimum_distance
+      common_variable_domains:
+        node_selection: binary
+        pair_selection: binary
+        minimum_distance: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_candidate_nodes_and_node_pairs: true
+        selected_count_is_exactly_p: true
+        do_not_create_customer_demand_assignment_or_capacity_indices: true
+      required_constraints:
+        - select_exactly_p_nodes
+        - pair_selection_upper_bound_left_node
+        - pair_selection_upper_bound_right_node
+        - pair_selection_lower_bound_both_nodes
+        - min_distance_upper_bound_for_every_selected_pair
+      required_objective_terms:
+        - continuous_minimum_selected_pair_distance
+      forbidden_changes:
+        - do not add fixed opening costs
+        - do not add customer assignment variables
+        - do not add demand satisfaction, capacity, shipping, or transportation-flow constraints
+        - do not change max-min dispersion into maxisum total-distance dispersion
+        - do not select more or fewer than exactly p nodes
+      high_risk_failures:
+        - facility_location_reinterpretation
+        - fixed_cost_or_capacity_added
+        - exact_p_selection_missing
+        - pair_selection_linking_missing
+        - maxisum_objective_substitution
+
+  optmath_factory_planning_problem:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - continuous_production_quantity
+        - continuous_sales_quantity
+        - continuous_ending_inventory
+      common_variable_domains:
+        production: continuous_nonnegative
+        sales: continuous_nonnegative
+        ending_inventory: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_periods_products_and_machines: true
+        sales_limits_are_product_period_specific: true
+        machine_capacity_is_period_machine_specific_after_maintenance: true
+      required_constraints:
+        - initial_inventory_balance
+        - period_to_period_inventory_balance
+        - machine_hour_capacity_after_maintenance
+        - sales_upper_bound_by_period_product
+        - inventory_upper_bound_by_period_product
+        - required_final_inventory_target
+      required_objective_terms:
+        - product_sales_revenue
+        - inventory_holding_cost_penalty
+      forbidden_changes:
+        - do not omit machine-hour capacity constraints
+        - do not say sales are unbounded
+        - do not aggregate product-period sales limits into one demand number per product
+        - do not infer demand totals from the reference answer
+        - do not omit final inventory target constraints
+        - do not replace inventory balance with independent one-period product-mix constraints
+        - do not introduce binary setup variables or fixed setup costs
+      high_risk_failures:
+        - machine_capacity_missing
+        - sales_upper_bound_missing
+        - final_inventory_target_missing
+        - inferred_total_demand_added
+        - generic_product_mix_reinterpretation
+        - sales_upper_bounds_missing
+        - inventory_balance_missing
+        - final_inventory_target_missing
+        - product_period_indices_collapsed
+
+  optmath_the_multi_factory_schedule_problem:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_factory_run_decision
+        - continuous_monthly_production_quantity
+      common_variable_domains:
+        run_decision: binary
+        production: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_months_and_factories: true
+        factory_costs_are_factory_specific: true
+        demand_is_month_specific: true
+        no_product_inventory_or_job_indices: true
+      required_constraints:
+        - minimum_production_if_running
+        - maximum_production_if_running
+        - monthly_demand_satisfaction
+      required_objective_terms:
+        - fixed_factory_month_run_cost
+        - variable_unit_production_cost
+      forbidden_changes:
+        - do not rewrite as job-shop, flow-shop, aircraft landing, or machine sequencing
+        - do not introduce inventory carryover, backlog, final stock, products, or due-date penalties
+        - do not omit fixed factory run costs
+        - do not relax RunDecision[m,f] to a continuous utilization variable
+        - do not allow positive production when RunDecision[m,f] is zero
+        - do not omit either minimum or maximum production linking constraints
+        - do not replace monthly demand lower bounds with unrelated capacity allocation constraints
+        - do not introduce transportation arcs, flow conservation, routes, or customer assignments
+      high_risk_failures:
+        - sequencing_reinterpretation
+        - fixed_run_cost_missing
+        - min_or_max_linking_missing
+        - demand_constraint_missing_or_wrong_sense
+        - inventory_or_backlog_invented
+        - production_allowed_without_run_decision
+
+  optmath_team_formulation:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_person_project_assignment
+        - continuous_attained_skill
+        - continuous_skill_shortage
+        - continuous_max_skill_shortage
+      common_variable_domains:
+        assign: binary
+        attained_skill: continuous_nonnegative
+        skill_shortage: continuous_nonnegative
+        max_skill_shortage: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_people_projects_and_skills: true
+        skill_coefficients_are_person_skill_specific: true
+        requirements_are_project_skill_specific: true
+        do_not_create_routes_jobs_time_periods_or_compatibility_scores: true
+      required_constraints:
+        - each_person_assigned_to_exactly_one_project
+        - each_project_receives_at_least_one_person
+        - attained_skill_equals_sum_of_assigned_individual_skills
+        - skill_shortage_covers_requirement_gap
+        - max_skill_shortage_bounds_every_project_skill_shortage
+      required_objective_terms:
+        - maximum_skill_shortage_priority
+        - total_skill_shortage_secondary
+      forbidden_changes:
+        - do not replace shortage minimization with compatibility-score maximization
+        - do not omit AttainedSkill, SkillShortage, or MaxSkillShortage variables
+        - do not treat project skill requirements as optional preferences
+        - do not omit the at-least-one-person-per-project staffing constraint
+        - do not add route continuity, travel, sequencing, project durations, or time windows
+      high_risk_failures:
+        - compatibility_score_reinterpretation
+        - shortage_variables_missing
+        - attained_skill_balance_missing
+        - project_staffing_constraint_missing
+        - objective_changed_to_maximize_score
+
+  optmath_farmplanning:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - continuous_crop_area
+        - continuous_crop_sales
+        - continuous_consumption_bundle_fraction
+        - continuous_labor_level
+      common_variable_domains:
+        planted_area: continuous_nonnegative
+        crop_sales: continuous_nonnegative
+        consumption_bundle_fraction: continuous_nonnegative
+        labor_level: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_crops_months_and_consumption_bundles: true
+        do_not_create_binary_crop_selection_or_inventory_indices: true
+      required_constraints:
+        - monthly_land_occupation_capacity
+        - monthly_labor_requirement_coverage
+        - monthly_water_capacity
+        - annual_water_availability
+        - crop_yield_balance
+        - family_consumption_bundle_balance
+      required_objective_terms:
+        - crop_sales_revenue
+        - labor_cost
+        - water_cost
+      forbidden_changes:
+        - do not introduce binary crop-selection variables or fixed planting setup costs
+        - do not add crop rotation, inventory carryover, minimum planting, or nonlinear agronomic rules
+        - do not omit crop yield split between family consumption and sales
+        - do not omit consumption bundle fraction normalization
+        - do not change net-earnings maximization into cost or water-use minimization
+      high_risk_failures:
+        - yield_split_missing
+        - consumption_bundle_balance_missing
+        - monthly_resource_constraints_missing
+        - binary_crop_selection_added
+        - objective_terms_missing
+
+  optmath_mcnd:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_commodity_flow_fraction
+        - nonnegative_integer_arc_facility_count
+      common_variable_domains:
+        commodity_flow_fraction: continuous_between_zero_and_one
+        arc_facility_count: nonnegative_integer
+      valid_index_policy:
+        use_only_declared_nodes_commodities_and_directed_arcs: true
+        commodity_costs_are_declared_by_commodity_and_arc: true
+        do_not_create_vehicle_route_time_inventory_node_opening_or_customer_assignment_indices: true
+      required_constraints:
+        - commodity_flow_conservation
+        - arc_capacity_linked_to_integer_facility_count
+        - flow_fraction_bounds_zero_to_one
+      required_objective_terms:
+        - demand_weighted_commodity_arc_routing_cost
+        - fixed_facility_installation_cost
+      forbidden_changes:
+        - do not make y[i,j] binary; it is a nonnegative integer arc facility count
+        - do not collapse commodities into one aggregate commodity
+        - do not omit commodity origin, destination, demand, or commodity-arc routing costs
+        - do not omit fixed facility installation costs
+        - do not add vehicle routing, time windows, inventory, node opening, customer assignment, or path-ordering variables
+      high_risk_failures:
+        - binary_activation_reinterpretation
+        - commodity_dimension_collapsed
+        - demand_weighted_capacity_missing
+        - fixed_facility_cost_missing
+        - routing_or_inventory_reinterpretation
+
+  optmath_nltrans:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_nonnegative_shipment
+      common_variable_domains:
+        shipment: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_origins_destinations_and_lanes: true
+        do_not_create_vehicle_route_or_time_indices: true
+      required_constraints:
+        - origin_supply_balance
+        - destination_demand_balance
+        - lane_capacity_limit
+      required_objective_terms:
+        - lane_shipping_cost
+      forbidden_changes:
+        - do not add vehicles, tours, time windows, subtour constraints, or route sequencing
+        - do not omit lane capacity limits
+        - do not add unmet-demand slack or optional demand satisfaction
+        - do not reveal or force internally generated feasible shipment certificates
+      high_risk_failures:
+        - supply_or_demand_balance_missing
+        - lane_capacity_missing
+        - vehicle_routing_reinterpretation
+
+  optmath_netasgn:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_assignment_hours
+      common_variable_domains:
+        assigned_hours: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_people_and_projects: true
+        every_person_project_pair_has_cost_and_upper_bound: true
+        total_supply_equals_total_demand: true
+        do_not_create_binary_matching_route_or_time_indices: true
+      required_constraints:
+        - person_supply_hours_equality
+        - project_demand_hours_equality
+        - person_project_contribution_upper_bound
+      required_objective_terms:
+        - cost_per_hour_times_assigned_hours
+      forbidden_changes:
+        - do not convert continuous assigned hours into binary one-to-one matching
+        - do not relax person supply equality into a less-than-or-equal capacity constraint
+        - do not relax project demand equality into greater-than-or-equal or optional coverage
+        - do not omit person-project contribution upper bounds
+        - do not invent missing eligibility, route continuity, sequencing, time windows, or vehicle paths
+        - do not aggregate project demand or person supply into a single total-only constraint
+        - do not reveal or force internally generated feasible allocation certificates
+      high_risk_failures:
+        - binary_assignment_reinterpretation
+        - supply_or_demand_equality_relaxed
+        - contribution_upper_bounds_missing
+        - cost_matrix_missing
+        - infeasible_due_to_misread_totals
+        - feasible_allocation_certificate_leaked
+
+  optmath_netmcol:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_product_flow
+      common_variable_domains:
+        product_flow: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_cities_products_and_directed_links: true
+        do_not_create_binary_activation_or_vehicle_route_indices: true
+      required_constraints:
+        - city_product_flow_balance
+        - directed_link_joint_capacity
+        - directed_link_product_capacity
+      required_objective_terms:
+        - product_link_shipping_cost
+      forbidden_changes:
+        - do not add binary arc activation variables or fixed activation costs
+        - do not collapse multi-commodity flow into single-commodity flow
+        - do not omit joint link capacity constraints
+        - do not omit product-specific link capacity constraints
+        - do not convert to vehicle routing, route sequencing, or path selection
+        - do not reveal or force internally generated feasible flow certificates
+      high_risk_failures:
+        - binary_activation_added
+        - product_flow_balance_missing
+        - joint_or_product_capacity_missing
+        - single_commodity_reinterpretation
+
+  optmath_multi:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_origin_destination_product_shipment
+      common_variable_domains:
+        shipment: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_origins_destinations_and_products: true
+        lane_capacity_is_shared_across_products: true
+        do_not_create_binary_activation_vehicle_or_time_indices: true
+      required_constraints:
+        - origin_product_supply_equality
+        - destination_product_demand_equality
+        - origin_destination_joint_capacity_across_products
+      required_objective_terms:
+        - origin_destination_product_unit_shipping_cost
+      forbidden_changes:
+        - do not add binary lane activation variables or fixed lane opening costs
+        - do not collapse products into a single aggregate commodity
+        - do not relax exact supply or demand equalities into inequalities
+        - do not omit the shared lane capacity across products
+        - do not add service frequencies, reserve penalties, fleet capacity, vehicle routes, subtours, or time windows
+        - do not add inventory carryover, backlog, facility opening, or customer assignment variables
+        - do not reveal or force internally generated feasible flow certificates
+      high_risk_failures:
+        - product_dimension_collapsed
+        - supply_or_demand_equality_relaxed
+        - shared_lane_capacity_missing
+        - fixed_charge_or_binary_activation_added
+        - line_planning_or_vehicle_routing_reinterpretation
+
+  optmath_net1:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_arc_flow
+      common_variable_domains:
+        arc_flow: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_nodes_and_directed_arcs: true
+        do_not_create_vehicle_route_time_or_activation_indices: true
+      required_constraints:
+        - node_flow_balance
+        - arc_capacity_limit
+      required_objective_terms:
+        - unit_arc_flow_cost
+      forbidden_changes:
+        - do not add binary arc activation variables or fixed activation costs
+        - do not add vehicles, routes, time windows, subtour constraints, or path-ordering variables
+        - do not add unmet-demand slack or optional demand satisfaction
+        - do not omit arc capacity limits
+      high_risk_failures:
+        - node_balance_missing_or_sign_error
+        - arc_capacity_missing
+        - vehicle_routing_reinterpretation
+        - fixed_charge_activation_added
+
+  optmath_netthru:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_arc_flow
+      common_variable_domains:
+        arc_flow: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_nodes_and_directed_links: true
+        do_not_expand_sparse_network_to_complete_graph: true
+        do_not_create_vehicle_route_time_path_or_activation_indices: true
+      required_constraints:
+        - node_flow_balance
+        - directed_link_capacity
+        - node_throughput_capacity
+      required_objective_terms:
+        - directed_link_unit_cost
+      forbidden_changes:
+        - do not add binary link activation variables or fixed-charge opening costs
+        - do not change the objective to maximum throughput
+        - do not reinterpret this as vehicle routing, route sequencing, or path selection
+        - do not add unmet-demand slack or optional demand satisfaction
+        - do not omit node throughput capacity constraints
+        - do not reveal or force internally generated feasible flow certificates
+      high_risk_failures:
+        - node_balance_missing_or_sign_error
+        - directed_link_capacity_missing
+        - node_throughput_capacity_missing
+        - maximum_throughput_reinterpretation
+        - sparse_network_expanded_to_complete_graph
+        - feasible_flow_certificate_leaked
+
+  optmath_supplychain:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_arc_activation
+        - continuous_arc_flow
+      common_variable_domains:
+        arc_activation: binary
+        arc_flow: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_directed_arcs: true
+        do_not_invent_node_opening_or_inventory_indices: true
+      required_constraints:
+        - arc_capacity_activation_linking
+        - node_flow_balance
+      required_objective_terms:
+        - fixed_arc_activation_cost
+        - unit_arc_flow_cost
+      forbidden_changes:
+        - do not replace arc activation with node facility opening
+        - do not add inventory, storage, or time-period carryover constraints
+        - do not create arcs outside the listed directed arc set
+        - do not omit fixed arc activation costs
+        - do not imply a complete directed graph when the source gives a sparse arc set
+        - do not reverse node flow balance; use inflow minus outflow equals demand minus supply
+        - do not reveal or force internally generated feasible flow certificates
+      high_risk_failures:
+        - fixed_arc_cost_missing
+        - flow_balance_sign_error
+        - activation_linking_missing
+        - invalid_arc_index
+        - complete_graph_reinterpretation
+
+  optmath_steel4:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - continuous_production_quantity
+      common_variable_domains:
+        production_quantity: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_products_and_production_stages: true
+        production_stages_are_resources_not_time_periods: true
+        do_not_create_inventory_setup_or_sequence_indices: true
+      required_constraints:
+        - stage_time_capacity_by_processing_hours_per_ton
+        - minimum_product_commitment
+        - maximum_product_market_bound
+      required_objective_terms:
+        - profit_per_ton_times_production_tons
+      forbidden_changes:
+        - do not reinterpret production stages as time periods
+        - do not add inventory carryover, backlog, or storage variables
+        - do not add binary product-selection, setup, or fixed-charge variables
+        - do not add sequencing, job-shop, or machine-ordering constraints
+        - do not omit minimum commitment or market upper bounds
+        - do not use production rates directly as time consumption; use processing hours per ton or equivalent reciprocal rates
+      high_risk_failures:
+        - stage_capacity_missing
+        - processing_rate_reciprocal_error
+        - commit_or_market_bound_missing
+        - inventory_period_reinterpretation
+        - binary_setup_reinterpretation
+
+  optmath_structure_based_assignment:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - binary_peak_acid_assignment
+      common_variable_domains:
+        peak_acid_assignment: binary
+      valid_index_policy:
+        use_only_declared_peaks_and_amino_acids: true
+        compatibility_values_are_declared_source_parameters: true
+        do_not_create_workers_jobs_equipment_routes_or_capacity_indices: true
+      required_constraints:
+        - each_amino_acid_at_most_one_peak
+        - each_peak_at_most_one_amino_acid
+        - exact_total_assignment_count
+        - noe_compatibility_pair_constraints
+      required_objective_terms:
+        - assignment_cost_times_binary_assignment
+      forbidden_changes:
+        - do not reinterpret peaks and amino acids as staff, jobs, equipment, gates, vehicles, or routes
+        - do not invent missing compatibility or distance values
+        - do not use placeholders such as perm? or replace_with
+        - do not replace exact total assignment count with optional assignment
+        - do not convert NOE compatibility into capacity, workload, flow, or routing constraints
+        - do not change the objective from cost minimization to score or profit maximization
+      high_risk_failures:
+        - nmr_domain_misframed_as_staffing
+        - exact_assignment_count_missing
+        - compatibility_matrix_invented_or_omitted
+        - noe_constraints_missing_or_weakened
+        - objective_sense_reversed
+
+  optmath_jopshop:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - operation_start_time
+        - same_machine_ordering_binary
+        - makespan
+      common_variable_domains:
+        start_time: continuous_or_integer_nonnegative
+        same_machine_order: binary
+        makespan: continuous_or_integer_nonnegative
+      valid_index_policy:
+        use_only_declared_job_operations_and_machine_routes: true
+        do_not_create_a_global_flowshop_sequence: true
+      required_constraints:
+        - within_job_operation_precedence
+        - same_machine_pairwise_nonoverlap
+        - makespan_completion_bounds
+      forbidden_changes:
+        - do not convert into a permutation flow shop
+        - do not add due dates, release dates, or tardiness terms
+        - do not optimize total processing time or assignment cost instead of makespan
+      high_risk_failures:
+        - machine_nonoverlap_missing
+        - job_route_changed
+        - makespan_objective_replaced
+
+  optmath_clsp_expand_capacity:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_production_quantity
+        - continuous_ending_inventory
+        - binary_setup_indicator
+      common_variable_domains:
+        production_quantity: continuous_nonnegative
+        ending_inventory: continuous_nonnegative
+        setup_indicator: binary
+      valid_index_policy:
+        use_only_declared_products_and_periods: true
+        do_not_invent_backlog_lost_sales_or_capacity_expansion_indices: true
+      required_constraints:
+        - cumulative_inventory_balance_without_backlog
+        - production_quantity_linked_to_binary_setup_by_remaining_demand_big_m
+        - period_capacity_limit
+        - nonnegative_inventory
+      required_objective_terms:
+        - fixed_setup_cost
+        - unit_production_cost
+        - inventory_holding_cost
+      forbidden_changes:
+        - do not introduce backlog variables, backlog penalties, lost sales, or unmet-demand slack
+        - do not introduce capacity-expansion variables or expansion costs
+        - do not omit fixed period capacity constraints
+        - do not omit fixed setup costs
+        - do not treat cumulative demand values as independent period demands
+        - do not add zero final inventory as a separate hard constraint
+      high_risk_failures:
+        - cumulative_demand_interpreted_as_period_demand
+        - backlog_variable_invented
+        - capacity_expansion_variable_invented
+        - period_capacity_missing
+        - fixed_setup_cost_missing
+
+  optmath_uncapacitatedlotsizing:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_order_quantity
+        - continuous_ending_inventory
+        - binary_order_setup
+      common_variable_domains:
+        order_quantity: continuous_nonnegative
+        ending_inventory: continuous_nonnegative
+        order_setup: binary
+      valid_index_policy:
+        use_only_declared_periods: true
+        do_not_invent_capacity_resource_or_backlog_tables: true
+      required_constraints:
+        - inventory_balance
+        - order_quantity_linked_to_binary_setup
+        - zero_final_inventory
+      required_objective_terms:
+        - fixed_ordering_setup_cost
+        - unit_order_cost
+        - inventory_holding_cost
+      forbidden_changes:
+        - do not add production capacity constraints
+        - do not introduce backlog or lost-sales variables
+        - do not omit fixed ordering setup costs
+        - do not reverse the inventory balance sign
+      high_risk_failures:
+        - capacity_constraint_invented
+        - backlog_variable_invented
+        - inventory_balance_sign_error
+        - fixed_setup_cost_missing
+
+  optmath_uncapacitatedlotsizingbacklogging:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - order_quantity
+        - ending_inventory
+        - backlog
+        - binary_order_setup
+      common_variable_domains:
+        order_quantity: continuous_nonnegative
+        ending_inventory: continuous_nonnegative
+        backlog: continuous_nonnegative
+        order_setup: binary
+      valid_index_policy:
+        use_only_declared_periods: true
+        do_not_invent_capacity_or_resource_tables: true
+      required_constraints:
+        - net_inventory_balance_with_backlog_carryover
+        - order_quantity_linked_to_binary_setup
+        - zero_final_inventory
+        - zero_final_backlog
+      required_objective_terms:
+        - fixed_ordering_setup_cost
+        - unit_order_cost
+        - inventory_holding_cost
+        - backlog_penalty_cost
+      forbidden_changes:
+        - do not add production capacity constraints
+        - do not drop backlog variables or backlog penalties
+        - do not model backlog as lost sales
+        - do not omit fixed ordering setup costs
+        - do not replace carried backlog with independent per-period shortage slack
+        - do not omit zero final inventory or zero final backlog constraints
+      high_risk_failures:
+        - balance_equation_sign_error
+        - backlog_penalty_missing
+        - setup_linking_missing
+        - invented_capacity_constraint
+
+  optmath_portfolio:
+    answer_contract:
+      model_type: convex_QP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_asset_weight
+      common_variable_domains:
+        asset_weight: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_assets: true
+        covariance_terms_use_declared_asset_pairs: true
+      required_constraints:
+        - full_investment_budget_weights_sum_to_one
+        - minimum_expected_return_requirement
+        - continuous_asset_weight_bounds
+      required_objective_terms:
+        - covariance_weight_quadratic_terms
+      forbidden_changes:
+        - do not introduce binary asset selection or cardinality variables
+        - do not maximize expected return instead of minimizing variance
+        - do not omit the covariance matrix
+        - do not replace covariance risk with independent linear risk scores
+        - do not add transaction costs or minimum-lot constraints
+      high_risk_failures:
+        - binary_asset_selection_invented
+        - objective_sense_changed_to_maximize_return
+        - covariance_terms_omitted
+        - target_return_constraint_missing
+
+  optmath_contractallocation:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - continuous_delivery_quantity
+        - binary_producer_contract_incidence
+      common_variable_domains:
+        delivery_quantity: continuous_nonnegative
+        producer_contract_incidence: binary
+      valid_index_policy:
+        use_only_declared_producers_and_contracts: true
+        do_not_create_facilities_routes_regions_or_time_periods: true
+      required_constraints:
+        - producer_capacity
+        - exact_contract_fulfillment
+        - minimum_contributors_per_contract
+        - delivery_activation_lower_bound_minimum_delivery
+        - delivery_activation_upper_bound_contract_size
+      forbidden_changes:
+        - do not omit binary producer-contract incidence variables
+        - do not weaken exact fulfillment into at-least or optional fulfillment
+        - do not change delivered quantities into binary award-only decisions
+        - do not convert the problem into facility location, transportation routing, or assignment-only matching
+      high_risk_failures:
+        - exact_fulfillment_weakened
+        - incidence_variable_missing
+        - minimum_delivery_linking_missing
+        - placeholder_or_nonexecutable_code
+
+defaults:
+  default_linear_or_contract:
+    model_type: LP_or_MILP
+    objective_sense_options: [minimize, maximize]
+    required_variable_families:
+      - variables implied by the natural-language problem and source seed
+    common_variable_domains:
+      binary: use only for selection, assignment, activation, and yes/no decisions
+      continuous_nonnegative: use for divisible flows, quantities, production, inventory, and blends
+    valid_index_policy:
+      use_only_declared_sets_and_indices: true
+      do_not_invent_missing_tables_or_nested_fields: true
+    required_constraints:
+      - all capacity, demand, assignment, balance, and bound constraints stated in the problem
+    forbidden_changes:
+      - do not change objective sense
+      - do not invent data fields, arcs, resources, costs, capacities, or eligibility matrices
+      - do not replace a structured model family with a simpler unrelated model
+    high_risk_failures:
+      - objective_term_missing
+      - invalid_index_set
+      - missing_core_constraint
+
+families:
+  facility_location:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - open_facility_binary
+        - assignment_or_flow
+      common_variable_domains:
+        facility_open: binary
+        assignment: binary_or_continuous_as_source
+        flow: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_facilities_and_customers: true
+        do_not_create_complete_graph_unless_source_has_complete_graph: true
+      required_constraints:
+        - demand_assignment_or_satisfaction
+        - facility_capacity_if_present
+        - open_to_assignment_linking
+      forbidden_changes:
+        - do not invent hub_capacity
+        - do not change minimize to maximize
+        - do not add routing subtour constraints
+      high_risk_failures:
+        - invalid_index_set
+        - missing_linking_constraint
+        - objective_fixed_cost_missing
+
+  lot_sizing:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - production_quantity
+        - inventory
+        - setup_indicator_if_setup_cost_present
+      common_variable_domains:
+        production_quantity: continuous_or_integer_as_source
+        setup_indicator: binary
+        inventory: continuous_nonnegative
+      required_constraints:
+        - inventory_balance
+        - demand_satisfaction
+        - setup_linking_if_setup_cost_present
+        - capacity_if_present
+      forbidden_changes:
+        - do not drop backlog variables if source includes backlog
+        - do not reverse inventory balance
+      high_risk_failures:
+        - objective_term_missing
+        - balance_equation_sign_error
+
+  covering:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - selected_set_binary
+      common_variable_domains:
+        selected_set: binary
+      required_constraints:
+        - every_element_covered
+        - coverage_multiplicity_if_required
+      forbidden_changes:
+        - do not turn set cover into assignment
+        - do not use continuous selected-set variables
+      high_risk_failures:
+        - missing_coverage_constraint
+        - invalid_element_set
+
+  revenue_management:
+    answer_contract:
+      model_type: LP_or_MILP
+      objective_sense_options: [maximize]
+      required_variable_families:
+        - offer_or_allocation_decisions
+      common_variable_domains:
+        allocation: continuous_or_integer_as_source
+        selected_offer: binary_if_source_has_selection
+      required_constraints:
+        - resource_capacity
+        - demand_or_market_limit
+        - eligibility_if_present
+      forbidden_changes:
+        - do not change profit maximization into cost minimization
+        - do not invent demand classes
+      high_risk_failures:
+        - objective_sense_mismatch
+        - capacity_constraint_missing
+
+  transportation:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - shipment_flow
+      common_variable_domains:
+        shipment: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_origin_destination_pairs: true
+      required_constraints:
+        - supply_capacity
+        - demand_satisfaction
+      forbidden_changes:
+        - do not introduce vehicle routes
+        - do not introduce binary assignment unless source explicitly requires it
+      high_risk_failures:
+        - invalid_lane_index
+        - missing_supply_or_demand_balance
+
+  packing:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [maximize, minimize]
+      required_variable_families:
+        - select_item_binary
+        - bin_assignment_binary_if_bin_packing
+      common_variable_domains:
+        item_selection: binary
+        bin_assignment: binary
+      required_constraints:
+        - capacity_limit
+        - item_assignment_or_selection_logic
+      forbidden_changes:
+        - do not use fractional item selection for take-or-leave items
+        - do not drop capacity constraints
+      high_risk_failures:
+        - variable_domain_wrong
+        - capacity_constraint_missing
+
+  scheduling:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize, maximize]
+      required_variable_families:
+        - assignment_or_start_time
+        - sequencing_binary_if_required
+      common_variable_domains:
+        assignment: binary
+        start_time: continuous_nonnegative
+        sequence: binary
+      required_constraints:
+        - processing_or_assignment_requirement
+        - machine_or_resource_capacity
+        - precedence_or_nonoverlap_if_present
+      forbidden_changes:
+        - do not ignore precedence constraints
+        - do not convert sequencing to independent selection
+      high_risk_failures:
+        - missing_nonoverlap_constraint
+        - invalid_time_index
+
+  routing:
+    answer_contract:
+      model_type: MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - route_arc_binary
+        - arrival_time_if_time_windows_present
+      common_variable_domains:
+        route_arc: binary
+        arrival_time: continuous_nonnegative
+      valid_index_policy:
+        use_only_declared_arcs: true
+      required_constraints:
+        - visit_or_service_constraints
+        - flow_conservation
+        - capacity_if_present
+        - time_window_if_present
+      forbidden_changes:
+        - do not omit time windows when source includes them
+        - do not create arcs not present in source arc set
+      high_risk_failures:
+        - infeasible_generated_code
+        - invalid_arc_index
+        - subtour_constraint_missing
+
+  network_flow:
+    answer_contract:
+      model_type: LP_or_MILP
+      objective_sense_options: [minimize, maximize]
+      required_variable_families:
+        - arc_flow
+        - arc_activation_if_fixed_charge
+      common_variable_domains:
+        flow: continuous_nonnegative
+        activation: binary_if_source_has_fixed_charge
+      valid_index_policy:
+        use_only_declared_nodes_and_arcs: true
+      required_constraints:
+        - flow_balance_or_conservation
+        - arc_capacity_if_present
+        - activation_linking_if_present
+      forbidden_changes:
+        - do not build a complete graph unless the source gives complete arcs
+        - do not drop commodity or period indices
+      high_risk_failures:
+        - invalid_arc_index
+        - missing_flow_balance
+
+  supply_chain:
+    answer_contract:
+      model_type: LP_or_MILP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - production
+        - shipment
+        - inventory
+        - activation_if_present
+      common_variable_domains:
+        production: continuous_or_integer_as_source
+        shipment: continuous_nonnegative
+        inventory: continuous_nonnegative
+        activation: binary_if_source_has_setup_or_opening
+      required_constraints:
+        - material_balance
+        - demand_satisfaction
+        - capacity
+        - inventory_carryover_if_multiperiod
+      forbidden_changes:
+        - do not collapse multi-echelon or multi-period structure
+        - do not drop inventory balance
+      high_risk_failures:
+        - balance_equation_sign_error
+        - objective_term_missing
+
+  diet:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize]
+      required_variable_families:
+        - food_or_ingredient_quantity
+      common_variable_domains:
+        quantity: continuous_nonnegative
+      required_constraints:
+        - nutrient_minimum_or_range
+        - availability_or_quantity_bounds_if_present
+      forbidden_changes:
+        - do not use binary food choices unless explicitly stated
+        - do not reverse nutrient lower and upper bounds
+      high_risk_failures:
+        - nutrient_bound_direction_error
+        - objective_cost_missing
+
+  blending:
+    answer_contract:
+      model_type: LP
+      objective_sense_options: [minimize, maximize]
+      required_variable_families:
+        - ingredient_quantity
+        - blend_output_quantity_if_present
+      common_variable_domains:
+        ingredient_quantity: continuous_nonnegative
+      required_constraints:
+        - material_balance
+        - quality_ratio_or_specification
+      forbidden_changes:
+        - do not linearize ratios incorrectly when source has weighted averages
+        - do not invent unavailable ingredients
+      high_risk_failures:
+        - quality_constraint_missing
+        - ratio_constraint_error
+
+  portfolio:
+    answer_contract:
+      model_type: LP_or_MILP
+      objective_sense_options: [maximize, minimize]
+      required_variable_families:
+        - allocation_weight
+        - selected_asset_binary_if_cardinality_present
+      common_variable_domains:
+        allocation: continuous_nonnegative
+        selected_asset: binary_if_source_has_cardinality_or_selection
+      required_constraints:
+        - budget_or_total_weight
+        - return_requirement_if_present
+        - risk_bound_if_present
+        - allocation_bounds
+      forbidden_changes:
+        - do not drop risk or return requirements
+        - do not force equal allocation unless source requires it
+      high_risk_failures:
+        - missing_risk_constraint
+        - budget_constraint_missing

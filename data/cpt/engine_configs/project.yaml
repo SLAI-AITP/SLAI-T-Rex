@@ -1,0 +1,15 @@
+project_name: or_cpt_data_engine
+version: 0.1.0
+mode: cold_start_optmath
+random_seed: 42
+default_language: en
+target:
+  accepted_samples_mvp: 10000
+  solver_validated_smoke: 100
+  nl_validated_smoke: 20
+  forward_accepted_smoke: 5
+data_mix:
+  final_model_report_ratio: 0.70
+  modeling_rationale_ratio: 0.30
+run:
+  description: "OptMATH instance generation -> LLM backtranslation -> forward modeling -> CPT rendering."

@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="SLAI%20T-Rex.pdf"><img alt="Paper" src="https://img.shields.io/badge/Paper-SLAI%20T--Rex-B34A78?logo=readthedocs&logoColor=white"></a>
+  <a href="docs/SLAI-T-Rex.pdf"><img alt="Paper" src="https://img.shields.io/badge/Paper-SLAI%20T--Rex-B34A78?logo=readthedocs&logoColor=white"></a>
   <a href="https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR"><img alt="ModelScope checkpoint" src="https://img.shields.io/badge/ModelScope-Checkpoint-624AFF?logo=modelscope&logoColor=white"></a>
   <a href="https://github.com/SLAI-AITP/SLAI-T-Rex"><img alt="GitHub repository" src="https://img.shields.io/badge/GitHub-SLAI--T--Rex-181717?logo=github&logoColor=white"></a>
   <br>
@@ -21,7 +21,7 @@
 
 **SLAI T-Rex** 是技术报告配套的开源仓库：
 
-**论文：** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](SLAI%20T-Rex.pdf)  
+**论文：** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](docs/SLAI-T-Rex.pdf)  
 **模型：** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)  
 **代码：** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
 
@@ -49,13 +49,13 @@ SLAI T-Rex 有两条主线：
 
 | 模块 | 状态 | 作用 |
 | --- | --- | --- |
-| [cpt_data_construction](cpt_data_construction/) | 设计说明 | OR-CPT engine 的范围：solver-verified document synthesis 与 provenance 要求 |
-| [cpt_training](cpt_training/) | 已提供脚本 | MindSpeed-LLM CPT 数据转换、checkpoint 转换、4K 训练启动模板 |
-| [sft_data_construction](sft_data_construction/) | 可运行 | OR SFT 自蒸馏工具链：seed IR、synthetic IR、渲染、质量门、断点续跑、缓存、多 endpoint 生成 |
-| [sft_training](sft_training/) | 已提供脚本 | MindSpeed-LLM SFT 数据转换与 8K 多机训练启动模板 |
-| [model_download_deployment](model_download_deployment/) | 已提供脚本 | DeepSeek-V4 FP8 HuggingFace checkpoint 转 BF16 HuggingFace checkpoint |
-| [docs](docs/) | 索引 | 扩展文档与后续 dataset/model card |
-| [examples](examples/) | 索引 | 端到端流程示例入口 |
+| [data/cpt](data/cpt/) | 可运行 | OR-CPT engine：solver-verified 实例合成、Gurobi 校验、NL 反写与 CPT 文档导出 |
+| [data/sft](data/sft/) | 可运行 | OR SFT 自蒸馏工具链：seed IR、synthetic IR、渲染、质量门、断点续跑、缓存、多 endpoint 生成 |
+| [training/convert](training/convert/) | 已提供脚本 | 共享的数据转换与 HF/MCore/FP8 checkpoint 转换 |
+| [training/cpt](training/cpt/) | 已提供脚本 | MindSpeed-LLM 4K CPT 启动模板 |
+| [training/sft](training/sft/) | 已提供脚本 | MindSpeed-LLM 8K SFT 启动模板与多机封装 |
+| [eval](eval/) | 可运行 | OR benchmark 评测：NL4OPT、OptiBench、B4O-Feasible、B4O-ORGEval |
+| [docs](docs/) | 说明 | 技术报告 PDF 与文档索引 |
 
 ## 端到端流程
 
@@ -85,7 +85,7 @@ cd SLAI-T-Rex
 安装 SFT 数据构建工具：
 
 ```bash
-cd sft_data_construction
+cd data/sft
 python3 -m pip install -e .
 ```
 
@@ -114,7 +114,7 @@ python3 -m or_data_distill run --config configs/run.local.yaml
 转换生成的 SFT JSONL，并启动 MindSpeed-LLM SFT 模板：
 
 ```bash
-cd ../sft_training
+cd ../../training/sft
 
 export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
 export MINDSPEED_DIR=/path/to/MindSpeed
@@ -122,9 +122,9 @@ export TOKENIZER_PATH=/path/to/DeepSeek-V4-Flash
 export CKPT_LOAD_DIR=/path/to/source_mcore_checkpoint
 export OUTPUT_ROOT=/path/to/training_outputs/sft
 
-bash scripts/convert_data.sh \
+bash ../convert/convert_data.sh \
   --mindspeed-llm-dir "$MINDSPEED_LLM_DIR" \
-  --input ../sft_data_construction/runs/sft_data_demo/sft.jsonl \
+  --input ../../data/sft/runs/sft_data_demo/sft.jsonl \
   --output-prefix /path/to/processed/or_sft/openai \
   --tokenizer "$TOKENIZER_PATH" \
   --handler-name SharegptStyleInstructionHandler \
@@ -136,10 +136,10 @@ bash scripts/convert_data.sh \
   --no-append-eod
 
 export DATA_PATH=/path/to/processed/or_sft/openai
-bash scripts/launch_sft_deepseek4_flash_8n16_910c.sh
+bash launch_sft_deepseek4_flash_8n16_910c.sh
 ```
 
-CPT 训练脚本见 [cpt_training/README.md](cpt_training/README.md)，checkpoint 准备见 [model_download_deployment/README.md](model_download_deployment/README.md)。
+CPT 训练脚本见 [training/cpt/README.md](training/cpt/README.md)，checkpoint 转换见 [training/convert](training/convert/)。
 
 ## SFT 数据构建
 
@@ -157,7 +157,7 @@ problem-answer seeds
 
 当前支持：
 
-- `sft_data_construction/seeds/` 下的公开 seed pool；
+- `data/sft/seeds/` 下的公开 seed pool；
 - DP、DT、DPS 三种问题表示；
 - domain、structure、difficulty、data interface、answer style 等 OR bucket 控制；
 - `target_count`、`generation_oversample`、`max_rounds` 组成的 accepted-target top-up；
@@ -171,7 +171,7 @@ problem-answer seeds
 
 训练脚本面向已经准备好的 Ascend/MindSpeed 环境。本仓库不内置 MindSpeed-LLM、MindSpeed、CANN、自定义算子、集群启动器或私有 checkpoint。
 
-`cpt_training/scripts/train_cpt_deepseek4_flash_4k.sh` 默认值：
+`training/cpt/train_cpt_deepseek4_flash_4k.sh` 默认值：
 
 ```text
 SEQ_LEN=4096
@@ -183,7 +183,7 @@ MIN_LR=3.0e-7
 TP=1, PP=4, EP=32, CP=1
 ```
 
-`sft_training/scripts/train_sft_deepseek4_flash_8k.sh` 默认值：
+`training/sft/train_sft_deepseek4_flash_8k.sh` 默认值：
 
 ```text
 SEQ_LEN=8192
@@ -202,17 +202,15 @@ PROMPT_TYPE=deepseek4
 
 ```text
 SLAI-T-Rex/
-├── cpt_data_construction/       # OR-CPT engine 设计范围与发布说明
-├── cpt_training/                # MindSpeed-LLM CPT 转换与启动模板
-├── sft_data_construction/       # 可运行的 OR SFT 数据蒸馏工具链
-├── sft_training/                # MindSpeed-LLM SFT 转换与启动模板
-├── model_download_deployment/   # checkpoint 准备与部署说明
-├── docs/                        # 扩展文档索引
-├── examples/                    # 端到端流程索引
-├── assets/                      # 兼容保留的 README 图标
-├── SLAI T-Rex.pdf               # 技术报告 PDF
+├── data/cpt/                    # 可运行的 OR-CPT engine（solver-verified 合成）
+├── data/sft/                    # 可运行的 OR SFT 数据蒸馏工具链
+├── training/convert/            # 共享的数据与 checkpoint 转换脚本
+├── training/cpt/                # MindSpeed-LLM CPT 启动模板
+├── training/sft/                # MindSpeed-LLM SFT 启动模板
+├── eval/                        # OR benchmark 评测
+├── docs/                        # 技术报告 PDF 与文档索引
+├── assets/                      # README 图片
 ├── README.md                    # 英文入口
-├── README_en.md                 # 英文兼容入口
 └── README_zh.md                 # 中文入口
 ```
 

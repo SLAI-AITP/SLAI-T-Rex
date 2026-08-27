@@ -1,0 +1,8 @@
+{
+  "subclass": "Job Shop Scheduling",
+  "reference": "Pinedo, Michael. \"Scheduling: Theory, Algorithms, and Systems.\" Springer, 5th edition (2016).",
+  "reference_url": "https://doi.org/10.1007/978-3-319-26580-3",
+  "math_formula": "### Mathematical Model\nA job shop has jobs J, ordered operations O_j for each job j, and machines M. Each operation (j,i) has processing time p[j,i] and requires a specified machine machine[j,i]. Start-time variable S[j,i] gives the operation start time. C_max is the makespan. For each pair of operations requiring the same machine, binary variable X[a,b] chooses which one runs first. Minimize C_max. Within each job, S[j,i+1] >= S[j,i] + p[j,i]. For each same-machine pair a,b, non-overlap constraints enforce S[a] + p[a] <= S[b] + H(1-X[a,b]) and S[b] + p[b] <= S[a] + H X[a,b]. Makespan constraints require C_max >= S[j,i] + p[j,i] for every operation. Starts are nonnegative and X variables are binary.",
+  "natural_language_example": "A make-to-order workshop has several jobs, and each job consists of a fixed sequence of operations. Each operation requires one specific machine for a known processing time. Operations within the same job must follow their listed order, and a machine can process at most one operation at a time. The planner must choose the relative order of operations competing for the same machines and their start times so that all jobs complete as early as possible. The objective is to minimize the makespan.",
+  "local_modification_notes": "Internal OR-CPT version corrects the reference and records operation routes, same-machine non-overlap, and makespan guardrails."
+}
