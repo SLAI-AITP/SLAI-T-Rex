@@ -19,223 +19,104 @@
 
 # SLAI T-Rex
 
-**SLAI T-Rex** 是技术报告配套的开源仓库：
+技术报告配套开源仓库：[SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](docs/SLAI-T-Rex.pdf)。
 
-**论文：** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](docs/SLAI-T-Rex.pdf)  
-**模型：** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)  
-**代码：** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
+- **模型：** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)
+- **代码：** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
 
-技术报告研究的是在 Ascend CloudMatrix384 SuperPOD 与 Ascend 910C NPU 上，对 DeepSeek-V4 系列模型进行全参数后训练的系统工程实践。本仓库开放其中可复现、可迁移的部分：OR 方向数据构建、MindSpeed-LLM CPT/SFT 启动模板、checkpoint 准备脚本，以及端到端后训练流程文档。
+报告研究在 Ascend CloudMatrix384 SuperPOD（910C）上对 DeepSeek-V4 做全参数后训练。本仓库提供可复现部分：OR CPT/SFT 数据构建、MindSpeed-LLM 启动模板、checkpoint 转换、OR benchmark 评测。
 
-SLAI T-Rex 有两条主线：
+两条主线：
 
-- **系统扩展：** 围绕 Ascend SuperPOD 上的万亿参数级 MoE 训练，优化并行策略、通信编排、CPU-NPU 协同和 AscendC 算子执行。
-- **领域专精：** 面向 Operations Research (OR) 任务，对 DeepSeek-V4-Flash 进行 solver-grounded CPT、self-distilled SFT、合约式清洗和 benchmark 验证。
-
-## 报告要点
+- **系统扩展：** 万亿参数级 MoE 在 Ascend SuperPOD 上的训练（并行、通信、CPU–NPU 协同、AscendC 算子）。
+- **领域专精：** 面向 Operations Research，对 DeepSeek-V4-Flash 做 solver-grounded CPT、自蒸馏 SFT 与 benchmark 验证。
 
 <p align="center">
   <img src="assets/overview_infra_and_acc.png" width="960" alt="SLAI T-Rex 系统与评测概览">
 </p>
 
-- 在 DeepSeek-V4-Pro 训练中达到 **34.22% MFU**，相对开源 baseline recipe 提升 **2.93x**。
-- 提出 **AuraKernel**，面向 AscendC 的瓶颈算子优化流程，覆盖 sparse attention、RMS normalization、lightning indexer gradient、RoPE、limited SwiGLU、mHC 相关算子链等。
-- 构建 DeepSeek-V4-Flash 的 **OR CPT-SFT 专精流程**，结合 OR 资源收集、solver-verified synthetic documents、自蒸馏 SFT 样本和 Clean-CoT 质量门。
-- 形成 **10K 高质量 SFT 样本**，覆盖 4 类 OR 任务与 3 种问题表示形式。
-- 在 NL4OPT、OptiBench、B4O-Feasible、B4O-ORGEval 的平均 zero-shot Pass@1 上达到 **71.81%**，在报告对比中超过 GPT-5.4-Mini 3.98 个百分点、超过 DeepSeek-V4-Flash base 11.27 个百分点。
-- CPT-to-SFT 迁移实验显示：在相同 SFT 条件下，CPT 初始化后 B4O-Feasible 提升至 71.22%，B4O-ORGEval 提升至 59.39%。
+## 报告要点
 
-## 仓库状态
+- DeepSeek-V4-Pro 训练 **34.22% MFU**，相对开源 baseline **2.93x**。
+- **AuraKernel：** 面向 AscendC 的瓶颈算子优化（sparse attention、RMSNorm、lightning indexer gradient、RoPE、limited SwiGLU、mHC 相关算子链）。
+- DeepSeek-V4-Flash 的 **OR CPT–SFT**：OR 资源收集、solver-verified 合成文档、自蒸馏 SFT、Clean-CoT 质量门。
+- **10K** 高质量 SFT 样本（4 类 OR 任务、3 种问题表示）。
+- NL4OPT / OptiBench / B4O-Feasible / B4O-ORGEval 平均 zero-shot Pass@1 **71.81%**（报告对比中高于 GPT-5.4-Mini 3.98 点、高于 base DeepSeek-V4-Flash 11.27 点）。
+- CPT→SFT 迁移（相同 SFT）：B4O-Feasible **71.22%**，B4O-ORGEval **59.39%**。
 
-| 模块 | 状态 | 作用 |
-| --- | --- | --- |
-| [data/cpt](data/cpt/) | 可运行 | OR-CPT engine：solver-verified 实例合成、Gurobi 校验、NL 反写与 CPT 文档导出 |
-| [data/sft](data/sft/) | 可运行 | OR SFT 自蒸馏工具链：seed IR、synthetic IR、渲染、质量门、断点续跑、缓存、多 endpoint 生成 |
-| [training/convert](training/convert/) | 已提供脚本 | 共享的数据转换与 HF/MCore/FP8 checkpoint 转换 |
-| [training/cpt](training/cpt/) | 已提供脚本 | MindSpeed-LLM 4K CPT 启动模板 |
-| [training/sft](training/sft/) | 已提供脚本 | MindSpeed-LLM 8K SFT 启动模板与多机封装 |
-| [eval](eval/) | 可运行 | OR benchmark 评测：NL4OPT、OptiBench、B4O-Feasible、B4O-ORGEval |
-| [docs](docs/) | 说明 | 技术报告 PDF 与文档索引 |
-
-## 端到端流程
-
-```text
-DeepSeek-V4 checkpoint
-  -> FP8/BF16 checkpoint 准备
-  -> HF <-> MindSpeed/Megatron-Core 转换
-  -> OR-CPT 数据构建
-  -> Ascend 910C CPT
-  -> 自蒸馏 OR SFT 数据
-  -> Clean-CoT / 合约式过滤
-  -> Ascend 910C SFT
-  -> HF 导出、服务部署、OR benchmark 评测
-```
-
-当前仓库聚焦公开数据与训练脚手架。大规模生产数据、私有集群配置、内部评测产物不会随仓库发布。
-
-## 快速开始
-
-拉取更名后的仓库：
-
-```bash
-git clone https://github.com/SLAI-AITP/SLAI-T-Rex.git
-cd SLAI-T-Rex
-```
-
-安装 SFT 数据构建工具：
-
-```bash
-cd data/sft
-python3 -m pip install -e .
-```
-
-校验公开 seed pool：
-
-```bash
-python3 -m or_data_distill validate-sft --input seeds/public_seed.jsonl
-```
-
-不调用 LLM 的 dry-run：
-
-```bash
-python3 -m or_data_distill run \
-  --config examples/configs/demo.yaml \
-  --dry-run
-```
-
-使用 OpenAI-compatible backend 生成 SFT 数据：
-
-```bash
-cp configs/run.example.yaml configs/run.local.yaml
-export LLM_API_KEY=YOUR_KEY_IF_NEEDED
-python3 -m or_data_distill run --config configs/run.local.yaml
-```
-
-转换生成的 SFT JSONL，并启动 MindSpeed-LLM SFT 模板：
-
-```bash
-cd ../../training/sft
-
-export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
-export MINDSPEED_DIR=/path/to/MindSpeed
-export TOKENIZER_PATH=/path/to/DeepSeek-V4-Flash
-export CKPT_LOAD_DIR=/path/to/source_mcore_checkpoint
-export OUTPUT_ROOT=/path/to/training_outputs/sft
-
-bash ../convert/convert_data.sh \
-  --mindspeed-llm-dir "$MINDSPEED_LLM_DIR" \
-  --input ../../data/sft/runs/sft_data_demo/sft.jsonl \
-  --output-prefix /path/to/processed/or_sft/openai \
-  --tokenizer "$TOKENIZER_PATH" \
-  --handler-name SharegptStyleInstructionHandler \
-  --prompt-type deepseek4 \
-  --map-keys '{"messages":"messages","tags":{"role_tag":"role","content_tag":"content","user_tag":"user","assistant_tag":"assistant","system_tag":"system"}}' \
-  --seq-length 8192 \
-  --workers 8 \
-  --n-subs 16 \
-  --no-append-eod
-
-export DATA_PATH=/path/to/processed/or_sft/openai
-bash launch_sft_deepseek4_flash_8n16_910c.sh
-```
-
-CPT 训练脚本见 [training/cpt/README.md](training/cpt/README.md)，checkpoint 转换见 [training/convert](training/convert/)。
-
-## SFT 数据构建
-
-公开 SFT 工具链实现了报告中的数据飞轮：
-
-```text
-problem-answer seeds
-  -> generic modeling IR
-  -> synthetic modeling IR
-  -> rendered problem
-  -> rendered answer
-  -> quality gate
-  -> OpenAI-style SFT JSONL
-```
-
-当前支持：
-
-- `data/sft/seeds/` 下的公开 seed pool；
-- DP、DT、DPS 三种问题表示；
-- domain、structure、difficulty、data interface、answer style 等 OR bucket 控制；
-- `target_count`、`generation_oversample`、`max_rounds` 组成的 accepted-target top-up；
-- request cache 与断点续跑；
-- `llm.base_urls` 与 `workers_per_api` 组成的多 endpoint OpenAI-compatible 生成；
-- 对 seed 与本轮输出的相似度过滤；
-- accepted synthetic pool，可用于后续飞轮轮次；
-- surplus pool，用于保存 quota 满后仍合格的样本。
-
-## 训练模板
-
-训练脚本面向已经准备好的 Ascend/MindSpeed 环境。本仓库不内置 MindSpeed-LLM、MindSpeed、CANN、自定义算子、集群启动器或私有 checkpoint。
-
-`training/cpt/train_cpt_deepseek4_flash_4k.sh` 默认值：
-
-```text
-SEQ_LEN=4096
-GBS=128
-MBS=1
-TRAIN_ITERS=280
-LR=3.0e-6
-MIN_LR=3.0e-7
-TP=1, PP=4, EP=32, CP=1
-```
-
-`training/sft/train_sft_deepseek4_flash_8k.sh` 默认值：
-
-```text
-SEQ_LEN=8192
-GBS=128
-MBS=1
-TRAIN_ITERS=250
-LR=5.0e-6
-MIN_LR=5.0e-8
-TP=1, PP=4, EP=32, CP=1
-PROMPT_TYPE=deepseek4
-```
-
-修改这些值前，应先确认硬件拓扑、checkpoint 格式、并行策略和数据 packing 方式。
-
-## 仓库结构
+## 结构
 
 ```text
 SLAI-T-Rex/
-├── data/cpt/                    # 可运行的 OR-CPT engine（solver-verified 合成）
-├── data/sft/                    # 可运行的 OR SFT 数据蒸馏工具链
-├── training/convert/            # 共享的数据与 checkpoint 转换脚本
-├── training/cpt/                # MindSpeed-LLM CPT 启动模板
-├── training/sft/                # MindSpeed-LLM SFT 启动模板
-├── eval/                        # OR benchmark 评测
-├── docs/                        # 技术报告 PDF 与文档索引
-├── assets/                      # README 图片
-├── README.md                    # 英文入口
-└── README_zh.md                 # 中文入口
+├── data/cpt/            OR-CPT engine（solver-verified 合成）
+├── data/sft/            OR SFT 蒸馏工具
+├── training/convert/    数据与 checkpoint 转换
+├── training/cpt/        4K CPT 启动
+├── training/sft/        8K SFT 启动
+├── eval/                OR benchmark
+├── docs/                技术报告 PDF
+└── assets/
 ```
+
+| 模块 | 状态 | 作用 |
+| --- | --- | --- |
+| [data/cpt](data/cpt/) | 可运行 | OptMATH 生成器 → Gurobi → NL 反写 → CPT JSONL |
+| [data/sft](data/sft/) | 可运行 | seed / synthetic IR → 渲染 → 质量门 → OpenAI-style SFT JSONL |
+| [training/convert](training/convert/) | 脚本 | MindSpeed 数据转换；HF / MCore / FP8 checkpoint |
+| [training/cpt](training/cpt/) | 脚本 | MindSpeed-LLM 4K CPT |
+| [training/sft](training/sft/) | 脚本 | MindSpeed-LLM 8K SFT |
+| [eval](eval/) | 可运行 | NL4OPT、OptiBench、B4O-Feasible、B4O-ORGEval |
+
+```text
+checkpoint 准备 -> CPT 数据 -> CPT 训练 -> SFT 数据 -> SFT 训练 -> 评测
+```
+
+大规模生产数据、私有集群配置和内部评测产物不随仓库发布。训练脚本面向已准备好的 Ascend / MindSpeed 环境，不内置 MindSpeed-LLM、CANN 或集群启动器。
+
+## 快速开始
+
+SFT 数据 dry-run（不调用 LLM）：
+
+```bash
+git clone https://github.com/SLAI-AITP/SLAI-T-Rex.git
+cd SLAI-T-Rex/data/sft
+python3 -m pip install -e .
+python3 -m or_data_distill validate-sft --input seeds/public_seed.jsonl
+python3 -m or_data_distill run --config examples/configs/demo.yaml --dry-run
+```
+
+真实生成：复制 `configs/run.example.yaml`，填写 `llm.base_url` / `model`，再执行 `python3 -m or_data_distill run --config configs/run.local.yaml`。
+
+CPT engine 冒烟（seed factory 需要 `gurobipy`；LLM 阶段需要 OpenAI-compatible 接口）：
+
+```bash
+cd SLAI-T-Rex/data/cpt
+python3 -m pip install -e .
+python3 -m or_cpt_engine.cli.main --help
+```
+
+训练、转换与评测命令见上表各模块 README。
+
+## 训练默认值
+
+| | CPT (`training/cpt`) | SFT (`training/sft`) |
+| --- | --- | --- |
+| Seq / GBS | 4096 / 128 | 8192 / 128 |
+| Iters / LR | 280 / 3e-6 | 250 / 5e-6 |
+| 并行 | TP=1, PP=4, EP=32 | TP=1, PP=4, EP=32 |
+| 数据 | `{"text": "..."}` JSONL | OpenAI `messages` JSONL |
+
+改这些值前先对齐硬件拓扑、checkpoint 格式和 packing。
 
 ## 引用
 
 ```bibtex
-@techreport{slai2026trex,
-  title  = {SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD},
-  author = {Dongfang Li and Xiaodong Luo and Ruoyu Sun and Xuhui Chen and
-            Linyuan Qiu and Jian Meng and Zhengxuan Lu and Yiting Wang and
-            Yucheng Xie and Tao Guo and Tianxiang Fang and Jing Li and
-            Sihang Chen and Shihao Hong and Chang Liu and Weihua Dai and
-            Zirong Zeng and Ziwei Zhu and Zhuohan Wang and Zhengjun Yue and
-            Igor Vasilyev and Min Liu and Weijian Sun and Xin Chen and
-            Yingmeng Gao and Jinhua Zhou and Taolue Chen and Chenwei Wu and
-            Dong Zhang and Wenlong Jin and Jinmin Xiang and Barkova Maria and
-            Ushakov Anton and Xianfei Jin and Tian Ding and Zhihang Lin and
-            Qian Chen and Linxin Yang and Mingzhe Yang and Bingwei Zhang and
-            Hongzhang Yang and Fangxue Zhang and Shijun Qin and Jie Yu and
-            Cuihua Hu and Tolstykh Vasiliy and Nosov Ivan and Abdullin Amir and
-            Zhichen Zhou and Xin Zhang and Zhixiong Ning and Xutong Zhao and
-            Junjie Huang and Jiajun Liu and Weiyan Kong and Zheng Zhang and
-            Wenhan Luo and Lin Hu and Yangbo Guo and Li Zeng and Shihao Zeng and
-            Baotian Hu and Min Zhang and Haizhou Li and Zhiquan Luo},
-  year   = {2026},
-  url    = {https://github.com/SLAI-AITP/SLAI-T-Rex}
+@misc{li2026slaitrexfullparameterposttraining,
+      title={SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD}, 
+      author={Dongfang Li and Xiaodong Luo and Ruoyu Sun and Xuhui Chen and Linyuan Qiu and Jian Meng and Zhengxuan Lu and Yiting Wang and Yucheng Xie and Tao Guo and Tianxiang Fang and Jing Li and Sihang Chen and Shihao Hong and Chang Liu and Weihua Dai and Zirong Zeng and Ziwei Zhu and Zhuohan Wang and Zhengjun Yue and Igor Vasilyev and Min Liu and Weijian Sun and Xin Chen and Yingmeng Gao and Jinhua Zhou and Taolue Chen and Chenwei Wu and Dong Zhang and Wenlong Jin and Jinmin Xiang and Barkova Maria and Ushakov Anton and Xianfei Jin and Tian Ding and Zhihang Lin and Qian Chen and Linxin Yang and Mingzhe Yang and Bingwei Zhang and Hongzhang Yang and Fangxue Zhang and Shijun Qin and Jie Yu and Cuihua Hu and Tolstykh Vasiliy and Nosov Ivan and Abdullin Amir and Zhicheng Zhou and Xin Zhang and Zhixiong Ning and Xutong Zhao and Junjie Huang and Jiajun Liu and Weiyan Kong and Zheng Zhang and Wenhan Luo and Lin Hu and Yangbo Guo and Li Zeng and Shihao Zhang and Baotian Hu and Min Zhang and Haizhou Li and Zhiquan Luo},
+      year={2026},
+      eprint={2607.20145},
+      archivePrefix={arXiv},
+      url={https://arxiv.org/abs/2607.20145}, 
 }
 ```

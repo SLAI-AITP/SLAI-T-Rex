@@ -19,200 +19,94 @@
 
 # SLAI T-Rex
 
-**SLAI T-Rex** is the open-source companion repository for the technical report:
+Open-source companion to [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](docs/SLAI-T-Rex.pdf).
 
-**Paper:** [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](docs/SLAI-T-Rex.pdf)  
-**Model:** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)  
-**Code:** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
+- **Model:** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)
+- **Code:** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
 
-The report studies full-parameter post-training for the DeepSeek-V4 family on Ascend CloudMatrix384 SuperPOD with Ascend 910C NPUs. The repository exposes the reproducible parts of that work: OR-oriented data construction, MindSpeed-LLM CPT/SFT launch templates, checkpoint preparation, and documentation for the end-to-end post-training workflow.
+The report studies full-parameter post-training of DeepSeek-V4 on Ascend CloudMatrix384 SuperPOD (910C). This repository ships the reproducible pieces: OR CPT/SFT data construction, MindSpeed-LLM launch templates, checkpoint conversion, and OR benchmark evaluation.
 
-SLAI T-Rex has two connected goals:
+Two connected goals:
 
-- **System scaling:** optimize trillion-parameter-class MoE training on Ascend SuperPOD through parallelism, communication orchestration, CPU-NPU coordination, and AscendC kernel optimization.
-- **Domain specialization:** adapt DeepSeek-V4-Flash to Operations Research (OR) with solver-grounded CPT data, self-distilled SFT data, contract-aware cleaning, and benchmark evaluation.
-
-## Report Highlights
+- **System scaling:** trillion-parameter-class MoE training on Ascend SuperPOD (parallelism, communication, CPU–NPU coordination, AscendC kernels).
+- **Domain specialization:** adapt DeepSeek-V4-Flash to Operations Research with solver-grounded CPT, self-distilled SFT, and benchmark evaluation.
 
 <p align="center">
   <img src="assets/overview_infra_and_acc.png" width="960" alt="SLAI T-Rex system and benchmark overview">
 </p>
 
-- **34.22% MFU on DeepSeek-V4-Pro training**, a **2.93x** improvement over the open-source baseline recipe on Ascend SuperPOD.
-- **AuraKernel**, an AscendC kernel optimization workflow for bottleneck operators in sparse attention, RMS normalization, lightning indexer gradients, RoPE, limited SwiGLU, and mHC-related chains.
-- **OR CPT-SFT specialization** for DeepSeek-V4-Flash, combining collected OR resources, solver-verified synthetic documents, self-distilled SFT samples, and Clean-CoT quality gates.
-- **10K high-quality SFT samples** across four OR task categories and three problem representations.
-- **71.81% average zero-shot Pass@1** across NL4OPT, OptiBench, B4O-Feasible, and B4O-ORGEval, outperforming GPT-5.4-Mini by 3.98 points and the base DeepSeek-V4-Flash by 11.27 points in the reported comparison.
-- **CPT-to-SFT transfer gain:** under identical SFT conditions, CPT-initialized SFT improves B4O-Feasible to 71.22% and B4O-ORGEval to 59.39%.
+## Highlights
 
-## Repository Status
+- **34.22% MFU** on DeepSeek-V4-Pro, **2.93x** vs the open baseline recipe on Ascend SuperPOD.
+- **AuraKernel:** AscendC optimizations for sparse attention, RMSNorm, lightning indexer gradients, RoPE, limited SwiGLU, and mHC-related chains.
+- **OR CPT–SFT** for DeepSeek-V4-Flash: collected OR resources, solver-verified synthetic documents, self-distilled SFT, Clean-CoT gates.
+- **10K** high-quality SFT samples (four OR task categories, three problem representations).
+- **71.81%** average zero-shot Pass@1 on NL4OPT / OptiBench / B4O-Feasible / B4O-ORGEval (+3.98 vs GPT-5.4-Mini, +11.27 vs base DeepSeek-V4-Flash in the report).
+- CPT→SFT transfer (same SFT): B4O-Feasible **71.22%**, B4O-ORGEval **59.39%**.
 
-| Module | Status | Purpose |
-| --- | --- | --- |
-| [data/cpt](data/cpt/) | runnable | OR-CPT engine: solver-verified instance synthesis, Gurobi checks, NL backtranslation, and CPT document export |
-| [data/sft](data/sft/) | runnable | OR SFT self-distillation toolkit with seed IR, synthetic IR, rendering, quality gate, resume, cache, and multi-endpoint generation |
-| [training/convert](training/convert/) | scripts included | Shared MindSpeed data conversion and HF/MCore/FP8 checkpoint conversion |
-| [training/cpt](training/cpt/) | scripts included | MindSpeed-LLM 4K CPT launcher |
-| [training/sft](training/sft/) | scripts included | MindSpeed-LLM 8K SFT launcher and multi-node wrapper |
-| [eval](eval/) | runnable | OR benchmark evaluation for NL4OPT, OptiBench, B4O-Feasible, and B4O-ORGEval |
-| [docs](docs/) | notes | technical report PDF and documentation index |
-
-## Workflow
-
-```text
-DeepSeek-V4 checkpoint
-  -> FP8/BF16 checkpoint preparation
-  -> HF <-> MindSpeed/Megatron-Core conversion
-  -> OR-CPT data construction
-  -> CPT on Ascend 910C
-  -> self-distilled OR SFT data
-  -> Clean-CoT / contract-aware filtering
-  -> SFT on Ascend 910C
-  -> HF export, serving, and OR benchmark evaluation
-```
-
-The runnable repository focuses on the public data and training scaffolding. Large-scale production inputs, private cluster configuration, and proprietary evaluation artifacts are intentionally excluded.
-
-## Quick Start
-
-Clone the renamed repository:
-
-```bash
-git clone https://github.com/SLAI-AITP/SLAI-T-Rex.git
-cd SLAI-T-Rex
-```
-
-Install the SFT data construction toolkit:
-
-```bash
-cd data/sft
-python3 -m pip install -e .
-```
-
-Validate the public seed pool:
-
-```bash
-python3 -m or_data_distill validate-sft --input seeds/public_seed.jsonl
-```
-
-Run a dry-run without calling an LLM:
-
-```bash
-python3 -m or_data_distill run \
-  --config examples/configs/demo.yaml \
-  --dry-run
-```
-
-Generate SFT data with an OpenAI-compatible backend:
-
-```bash
-cp configs/run.example.yaml configs/run.local.yaml
-export LLM_API_KEY=YOUR_KEY_IF_NEEDED
-python3 -m or_data_distill run --config configs/run.local.yaml
-```
-
-Convert the generated SFT JSONL and launch the MindSpeed-LLM SFT template:
-
-```bash
-cd ../../training/sft
-
-export MINDSPEED_LLM_DIR=/path/to/MindSpeed-LLM
-export MINDSPEED_DIR=/path/to/MindSpeed
-export TOKENIZER_PATH=/path/to/DeepSeek-V4-Flash
-export CKPT_LOAD_DIR=/path/to/source_mcore_checkpoint
-export OUTPUT_ROOT=/path/to/training_outputs/sft
-
-bash ../convert/convert_data.sh \
-  --mindspeed-llm-dir "$MINDSPEED_LLM_DIR" \
-  --input ../../data/sft/runs/sft_data_demo/sft.jsonl \
-  --output-prefix /path/to/processed/or_sft/openai \
-  --tokenizer "$TOKENIZER_PATH" \
-  --handler-name SharegptStyleInstructionHandler \
-  --prompt-type deepseek4 \
-  --map-keys '{"messages":"messages","tags":{"role_tag":"role","content_tag":"content","user_tag":"user","assistant_tag":"assistant","system_tag":"system"}}' \
-  --seq-length 8192 \
-  --workers 8 \
-  --n-subs 16 \
-  --no-append-eod
-
-export DATA_PATH=/path/to/processed/or_sft/openai
-bash launch_sft_deepseek4_flash_8n16_910c.sh
-```
-
-For CPT scripts, see [training/cpt/README.md](training/cpt/README.md). For checkpoint conversion, see [training/convert](training/convert/).
-
-## SFT Data Construction
-
-The public SFT toolkit implements the data flywheel described in the report:
-
-```text
-problem-answer seeds
-  -> generic modeling IR
-  -> synthetic modeling IR
-  -> rendered problem
-  -> rendered answer
-  -> quality gate
-  -> OpenAI-style SFT JSONL
-```
-
-Key capabilities:
-
-- public seed pool under `data/sft/seeds/`;
-- DP, DT, and DPS problem representations;
-- controllable OR buckets for domain, structure, difficulty, data interface, and answer style;
-- accepted-target top-up with `target_count`, `generation_oversample`, and `max_rounds`;
-- request cache and resumable generation;
-- multi-endpoint OpenAI-compatible generation with `llm.base_urls` and `workers_per_api`;
-- similarity filtering against seeds and current run outputs;
-- accepted synthetic pools for later flywheel rounds;
-- surplus pools for valid samples generated after the quota is full.
-
-## Training Templates
-
-The training scripts are templates for an already prepared Ascend/MindSpeed environment. They do not vendor MindSpeed-LLM, MindSpeed, CANN, custom operators, cluster launchers, or private checkpoints.
-
-CPT defaults in `training/cpt/train_cpt_deepseek4_flash_4k.sh`:
-
-```text
-SEQ_LEN=4096
-GBS=128
-MBS=1
-TRAIN_ITERS=280
-LR=3.0e-6
-MIN_LR=3.0e-7
-TP=1, PP=4, EP=32, CP=1
-```
-
-SFT defaults in `training/sft/train_sft_deepseek4_flash_8k.sh`:
-
-```text
-SEQ_LEN=8192
-GBS=128
-MBS=1
-TRAIN_ITERS=250
-LR=5.0e-6
-MIN_LR=5.0e-8
-TP=1, PP=4, EP=32, CP=1
-PROMPT_TYPE=deepseek4
-```
-
-Adjust these values only after matching the hardware layout, checkpoint format, parallelism strategy, and data packing configuration.
-
-## Repository Layout
+## Layout
 
 ```text
 SLAI-T-Rex/
-├── data/cpt/                    # Runnable OR-CPT engine (solver-verified synthesis)
-├── data/sft/                    # Runnable OR SFT data distillation toolkit
-├── training/convert/            # Shared data and checkpoint conversion scripts
-├── training/cpt/                # MindSpeed-LLM CPT launch template
-├── training/sft/                # MindSpeed-LLM SFT launch templates
-├── eval/                        # OR benchmark evaluation
-├── docs/                        # Technical report PDF and documentation index
-├── assets/                      # README images
-├── README.md                    # English entry
-└── README_zh.md                 # Chinese entry
+├── data/cpt/            OR-CPT engine (solver-verified synthesis)
+├── data/sft/            OR SFT distillation toolkit
+├── training/convert/    data and checkpoint conversion
+├── training/cpt/        4K CPT launcher
+├── training/sft/        8K SFT launcher
+├── eval/                OR benchmarks
+├── docs/                technical report PDF
+└── assets/
 ```
+
+| Module | Status | Role |
+| --- | --- | --- |
+| [data/cpt](data/cpt/) | runnable | OptMATH generators → Gurobi → NL backtranslation → CPT JSONL |
+| [data/sft](data/sft/) | runnable | seed / synthetic IR → render → quality gate → OpenAI-style SFT JSONL |
+| [training/convert](training/convert/) | scripts | MindSpeed data conversion; HF / MCore / FP8 checkpoints |
+| [training/cpt](training/cpt/) | scripts | MindSpeed-LLM 4K CPT |
+| [training/sft](training/sft/) | scripts | MindSpeed-LLM 8K SFT |
+| [eval](eval/) | runnable | NL4OPT, OptiBench, B4O-Feasible, B4O-ORGEval |
+
+```text
+checkpoint prep -> CPT data -> CPT train -> SFT data -> SFT train -> eval
+```
+
+Large-scale production inputs, private cluster configs, and proprietary eval artifacts are not included. Training scripts assume an existing Ascend / MindSpeed environment (MindSpeed-LLM, CANN, and cluster launchers are not vendored).
+
+## Quick start
+
+SFT data dry-run (no LLM):
+
+```bash
+git clone https://github.com/SLAI-AITP/SLAI-T-Rex.git
+cd SLAI-T-Rex/data/sft
+python3 -m pip install -e .
+python3 -m or_data_distill validate-sft --input seeds/public_seed.jsonl
+python3 -m or_data_distill run --config examples/configs/demo.yaml --dry-run
+```
+
+Real SFT generation: copy `configs/run.example.yaml`, set `llm.base_url` / `model`, then `python3 -m or_data_distill run --config configs/run.local.yaml`.
+
+CPT engine smoke (needs `gurobipy` + an OpenAI-compatible endpoint for LLM stages):
+
+```bash
+cd SLAI-T-Rex/data/cpt
+python3 -m pip install -e .
+python3 -m or_cpt_engine.cli.main --help
+```
+
+Training, conversion, and eval commands live in the module READMEs above.
+
+## Training defaults
+
+| | CPT (`training/cpt`) | SFT (`training/sft`) |
+| --- | --- | --- |
+| Seq / GBS | 4096 / 128 | 8192 / 128 |
+| Iters / LR | 280 / 3e-6 | 250 / 5e-6 |
+| Parallelism | TP=1, PP=4, EP=32 | TP=1, PP=4, EP=32 |
+| Data | `{"text": "..."}` JSONL | OpenAI `messages` JSONL |
+
+Match hardware layout, checkpoint format, and packing before changing these.
 
 ## Citation
 
