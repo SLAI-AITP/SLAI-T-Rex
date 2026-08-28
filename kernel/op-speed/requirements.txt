@@ -1,0 +1,13 @@
+pybind11==3.0.1
+pybind11[global]==3.0.1
+six==1.17.0
+numpy==1.26.4
+sympy==1.14.0
+decorator==5.2.1
+scipy==1.15.3
+attrs==25.3.0
+pyyaml
+protobuf==5.29.5
+psutil==7.0.0
+expecttest
+pandarallel

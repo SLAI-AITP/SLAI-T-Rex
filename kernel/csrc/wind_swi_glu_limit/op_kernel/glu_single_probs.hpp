@@ -1,0 +1,137 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#ifndef CANN_XX_GLU_LIMIT_SINGLE_PROBS_HPP
+#define CANN_XX_GLU_LIMIT_SINGLE_PROBS_HPP
+#include "xxglu_limit_tiling_kernel_single.h"
+
+template<typename ParentClass, typename inType, typename outType>
+class GluSingleProbs : public ParentClass {
+public:
+    __aicore__ inline GluSingleProbs() = default;
+    __aicore__ inline ~GluSingleProbs() = default;
+
+    __aicore__ inline void Init(GM_ADDR input_gm, GM_ADDR probs_gm, GM_ADDR output_gm, GM_ADDR output_probs_gm, const XxGluLimitSingleTilingData* tiling, TPipe& pipe)
+    {
+        singleTiling.GetTilingAndOffset(tiling, sizeof(inType));
+        InitGmBuffer(input_gm, probs_gm,  output_gm, output_probs_gm);
+        this->InitUbBuffer(pipe, singleTiling.tileLength);
+    }
+
+    __aicore__ inline void Process()
+    {
+        if (singleTiling.is32BAligned == 1) {
+            XXGLU_SINGLE_PROBS_PROCESS(singleTiling);
+        } else {
+#if defined(__CCE_AICORE__) && __CCE_AICORE__ == 220
+            XXGLU_SINGLE_PROBS_PROCESS_NON32BALIGNED(singleTiling);
+#endif
+        }
+    }
+
+protected:
+    __aicore__ inline void InitGmBuffer(GM_ADDR input_gm, GM_ADDR probs_gm, GM_ADDR output_gm, GM_ADDR output_probs_gm)
+    {
+        this->limit = singleTiling.limit; // [Add by GTS-AILab] [feature GTSOps] 透传 clamp 阈值给 Compute 类
+        // get start index for current core, core parallel
+        this->aGm.SetGlobalBuffer((__gm__ inType*)input_gm, singleTiling.totalBlockLen);
+        this->cGm.SetGlobalBuffer((__gm__ outType*)output_gm, singleTiling.totalBlockLen / 2);
+        this->probsGm.SetGlobalBuffer((__gm__ DTYPE_PROBS*)probs_gm, singleTiling.rowLen);
+        this->outprobsGm.SetGlobalBuffer((__gm__ outType*)output_probs_gm, singleTiling.totalBlockLen / 2);
+    }
+
+    __aicore__ inline void CopyIn(XxGluSingleTileOffsetParam &offsetParam, XxGluSinlgeTileCopyParam &copyParam)
+    {
+        DataCopyParams splitCopyinParams = {copyParam.splitVecCopyParam.blockCount,
+                                            copyParam.splitVecCopyParam.blockLen,
+                                            copyParam.splitVecCopyParam.stride,
+                                            0};
+        // Copy A
+        LocalTensor<inType> aLocal = this->inQueueA.template AllocTensor<inType>();
+        ::DataCopy(aLocal, this->aGm[offsetParam.splitVecGmOffset1], splitCopyinParams);
+        this->inQueueA.EnQue(aLocal);
+        // Copy B
+        LocalTensor<inType> bLocal = this->inQueueB.template AllocTensor<inType>();
+        ::DataCopy(bLocal, this->aGm[offsetParam.splitVecGmOffset2], splitCopyinParams);
+        this->inQueueB.EnQue(bLocal);
+        // Copy C
+        LocalTensor<float> cLocal = this->inQueueC.template AllocTensor<float>();
+        ::DataCopy(cLocal, this->probsGm[offsetParam.probsGmOffset], (copyParam.splitVecCopyParam.blockCount + 7U) / 8U * 8U);
+        this->inQueueC.EnQue(cLocal);
+    }
+
+    __aicore__ inline void CopyOut(XxGluSingleTileOffsetParam &offsetParam, XxGluSinlgeTileCopyParam &copyParam)
+    {
+        DataCopyParams indepCopyinParams = {copyParam.indepVecCopyParam.blockCount,
+                                            copyParam.indepVecCopyParam.blockLen,
+                                            0,
+                                            copyParam.indepVecCopyParam.stride};
+        // deque output tensor from VECOUT queue
+        LocalTensor<outType> cLocal = this->outQueueC.template DeQue<outType>();
+        // copy progress_th tile from local tensor to global tensor
+        ::DataCopy(this->cGm[offsetParam.indepVecGmoffset], cLocal, indepCopyinParams);
+        // free output tensor for reuse
+        this->outQueueC.FreeTensor(cLocal);
+
+        // deque output tensor from VECOUT queue
+        LocalTensor<outType> cLocal1 = this->outQueueProbs.template DeQue<outType>();
+        // copy progress_th tile from local tensor to global tensor
+        ::DataCopy(this->outprobsGm[offsetParam.indepVecGmoffset], cLocal1, indepCopyinParams);
+        // free output tensor for reuse
+        this->outQueueProbs.FreeTensor(cLocal1);
+    }
+
+    __aicore__ inline void CopyIn_Non32BAligned(XxGluSingleTileOffsetParam &offsetParam,
+                                                XxGluSinlgeTileCopyParam &copyParam)
+    {
+        DataCopyParams splitCopyinParams = {copyParam.splitVecCopyParam.blockCount,
+                                            copyParam.splitVecCopyParam.blockLen,
+                                            copyParam.splitVecCopyParam.stride,
+                                            0};
+        DataCopyPadParams copyPadParams = {false, 0, 0, 0};
+        // Copy A
+        LocalTensor<inType> aLocal = this->inQueueA.template AllocTensor<inType>();
+        ::DataCopyPad(aLocal, this->aGm[offsetParam.splitVecGmOffset1], splitCopyinParams, copyPadParams);
+        this->inQueueA.EnQue(aLocal);
+        // Copy B
+        LocalTensor<inType> bLocal = this->inQueueB.template AllocTensor<inType>();
+        ::DataCopyPad(bLocal, this->aGm[offsetParam.splitVecGmOffset2], splitCopyinParams, copyPadParams);
+        this->inQueueB.EnQue(bLocal);
+        // Copy C
+        LocalTensor<float> cLocal = this->inQueueC.template AllocTensor<float>();
+        ::DataCopy(cLocal, this->probsGm[offsetParam.probsGmOffset], (copyParam.splitVecCopyParam.blockCount + 7U) / 8U * 8U);
+        this->inQueueC.EnQue(cLocal);
+    }
+
+    __aicore__ inline void CopyOut_Non32BAligned(XxGluSingleTileOffsetParam &offsetParam,
+                                                 XxGluSinlgeTileCopyParam &copyParam)
+    {
+        DataCopyParams indepCopyinParams = {copyParam.indepVecCopyParam.blockCount,
+                                            copyParam.indepVecCopyParam.blockLen,
+                                            0,
+                                            copyParam.indepVecCopyParam.stride};
+        // deque output tensor from VECOUT queue
+        LocalTensor<outType> cLocal = this->outQueueC.template DeQue<outType>();
+        // copy progress_th tile from local tensor to global tensor
+        ::DataCopyPad(this->cGm[offsetParam.indepVecGmoffset], cLocal, indepCopyinParams);
+        // free output tensor for reuse
+        this->outQueueC.FreeTensor(cLocal);
+
+        // deque output tensor from VECOUT queue
+        LocalTensor<outType> cLocal1 = this->outQueueProbs.template DeQue<outType>();
+        // copy progress_th tile from local tensor to global tensor
+        ::DataCopyPad(this->outprobsGm[offsetParam.indepVecGmoffset], cLocal1, indepCopyinParams);
+        // free output tensor for reuse
+        this->outQueueProbs.FreeTensor(cLocal1);
+    }
+
+private:
+    XxgluSingleTilingKernel singleTiling;
+};
+#endif // CANN_XX_GLU_LIMIT_SINGLE_PROBS_HPP   // [Add by GTS-AILab] [feature GTSOps]

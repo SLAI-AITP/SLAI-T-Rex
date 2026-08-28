@@ -1,0 +1,21 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#include "glu_single_probs.hpp"
+
+#define INVOKE_SWI_GLU_SINGLE_PROBS_IMPL(bufferNum, highPrecision, hasProbs)                                                          \
+if constexpr (std::is_same_v<float, DTYPE_SELF>) {                                                                    \
+    GluSingleProbs<SwigluVector<float, float, bufferNum>, float, float> op;                                                \
+    op.Init(self_gm, probs_gm, output_gm, outputProbs_gm, tempTilingGm, pipe);                                                                  \
+    op.Process();                                                                                                     \
+} else {                                                                                                            \
+    GluSingleProbs<SwigluVectorBF16Probs<DTYPE_SELF, float, DTYPE_SELF, bufferNum, highPrecision>, DTYPE_SELF, DTYPE_SELF> op;  \
+    op.Init(self_gm, probs_gm, output_gm, outputProbs_gm, tempTilingGm, pipe);                                                                  \
+    op.Process();                                                                                                     \
+}

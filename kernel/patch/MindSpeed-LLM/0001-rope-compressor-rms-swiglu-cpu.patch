@@ -1,0 +1,627 @@
+From f82d9b8ce12f8d559cec5937899cc2d98ff6f4b3 Mon Sep 17 00:00:00 2001
+Date: Tue, 25 Aug 2026 15:57:47 +0800
+Subject: [PATCH] =?UTF-8?q?=E5=90=8C=E6=AD=A5=E5=90=88=E5=85=A5rope?=
+ =?UTF-8?q?=E3=80=81compressor=E3=80=81rms=E3=80=81swiglu=E3=80=81cpu?=
+ =?UTF-8?q?=E7=BB=91=E6=A0=B8=E7=89=B9=E6=80=A7?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ .../core/fusions/fused_bias_swiglu.py         |   7 +
+ .../core/models/deepseek4/deepseek4_model.py  |  38 +++
+ .../transformer/deepseek4/compressor.py       |  45 ++-
+ .../tasks/models/transformer/deepseek4/csa.py |  57 +++-
+ .../tasks/models/transformer/dsa_indexer.py   |  33 ++-
+ mindspeed_llm/training/cpu_binding.py         | 270 ++++++++++++++++++
+ mindspeed_llm/training/training.py            |   7 +-
+ 7 files changed, 430 insertions(+), 27 deletions(-)
+ create mode 100644 mindspeed_llm/training/cpu_binding.py
+
+diff --git a/mindspeed_llm/core/fusions/fused_bias_swiglu.py b/mindspeed_llm/core/fusions/fused_bias_swiglu.py
+index ade89a3e..91bec3ca 100644
+--- a/mindspeed_llm/core/fusions/fused_bias_swiglu.py
++++ b/mindspeed_llm/core/fusions/fused_bias_swiglu.py
+@@ -20,8 +20,15 @@ def fused_swiglu_with_limit(x, limit=0):
+     else:
+         limit = _SWIGLU_LIMIT
+     if limit > 0:
++        # [Add by GTS-AILab] [feature GTSOps] swiglu_limit
++        from mindspeed.gts.ops.gts_custom_op import gts_swiglu_limit
++        out = gts_swiglu_limit(x, limit)
++        if out is not None:
++            return out
++
+         y_1, y_2 = torch.chunk(x, 2, dim=-1)
+         y_1 = y_1.clamp(min=None, max=limit)
+         y_2 = y_2.clamp(min=-limit, max=limit)
+         return torch_npu.npu_swiglu(torch.cat([y_1, y_2], dim=-1).to(x.dtype), dim=-1)
+     return torch_npu.npu_swiglu(x, dim=-1)
++
+diff --git a/mindspeed_llm/core/models/deepseek4/deepseek4_model.py b/mindspeed_llm/core/models/deepseek4/deepseek4_model.py
+index 5728e8f5..f830987e 100644
+--- a/mindspeed_llm/core/models/deepseek4/deepseek4_model.py
++++ b/mindspeed_llm/core/models/deepseek4/deepseek4_model.py
+@@ -260,6 +260,8 @@ class DeepSeek4Model(MegatronCoreGPTModel):
+             # decoder will get hidden_states from encoder.input_tensor
+             decoder_input = None
+ 
++        # [Add by GTS-AILab] [feature GTSOps] muls
++        from mindspeed.gts.ops.gts_custom_op import is_enable_op
+         # Rotary positional embeddings (embedding is None for PP intermediate devices)
+         rotary_pos_emb = None
+         if self.position_embedding_type == 'rope':
+@@ -267,6 +269,42 @@ class DeepSeek4Model(MegatronCoreGPTModel):
+                 inference_context, self.decoder, decoder_input, self.config, packed_seq_params
+             )
+             rotary_pos_emb = self.rotary_pos_emb(rotary_seq_len)
++        elif is_enable_op("rope") and self.position_embedding_type == 'deepseek4':
++            rope_theta = args.rope_theta  # compress_ration=1
++            compress_rope_theta = args.compress_rope_theta  # for compress_ratio>1
++
++            # [Add by GTS-AILab]  [feature GTSOps] Cache rotary_pos_emb across steps.
++            # All scalar args.* are constant,so freqs_cis is identical each step. But the original torch.outer+polar
++            # recomputes new tensors, changing data_ptr each time, causing downstream RoPE fusion (gts_custom_op)
++            # to miss its cos/sin cache and redo prep per step. Caching the stacked result by scalar
++            # keys returns the same object, stabilizing data_ptr, so cos/sin cache hits, eliminating
++            # per-step prep (RepeatInterleave/Neg/Stack...), and rotary generation runs only once.
++            # Reuses __init__'s rotary_pos_emb_cache.
++            _rpe_key = (args.rope_head_dim, args.rope_scaling_original_max_position_embeddings,
++                        args.original_seq_len, rope_theta, compress_rope_theta,
++                        args.rope_factor, args.beta_fast, args.beta_slow)
++            rotary_pos_emb = self.rotary_pos_emb_cache.get(_rpe_key)
++            if rotary_pos_emb is None:
++                rotary_pos_emb_comp = self.rotary_pos_emb(
++                    args.rope_head_dim,
++                    args.rope_scaling_original_max_position_embeddings,
++                    args.original_seq_len,
++                    compress_rope_theta,
++                    args.rope_factor,
++                    args.beta_fast,
++                    args.beta_slow,
++                )
++                rotary_pos_emb_no_comp = self.rotary_pos_emb(
++                    args.rope_head_dim,
++                    args.rope_scaling_original_max_position_embeddings,
++                    0,
++                    rope_theta,
++                    args.rope_factor,
++                    args.beta_fast,
++                    args.beta_slow,
++                )
++                rotary_pos_emb = torch.stack((rotary_pos_emb_comp, rotary_pos_emb_no_comp))
++                self.rotary_pos_emb_cache[_rpe_key] = rotary_pos_emb
+         elif self.position_embedding_type == 'deepseek4':
+             rope_theta = args.rope_theta  # compress_ration=1
+             compress_rope_theta = args.compress_rope_theta  # for compress_ratio>1
+diff --git a/mindspeed_llm/tasks/models/transformer/deepseek4/compressor.py b/mindspeed_llm/tasks/models/transformer/deepseek4/compressor.py
+index dd23bfad..2058c91b 100644
+--- a/mindspeed_llm/tasks/models/transformer/deepseek4/compressor.py
++++ b/mindspeed_llm/tasks/models/transformer/deepseek4/compressor.py
+@@ -105,6 +105,34 @@ class Compressor(MegatronModule):
+         tensor = tensor[:, rank * local_len : (rank + 1) * local_len, :]
+         return tensor
+ 
++    # [Add by GTS-AILab] [feature GTSOps] compressor0
++    def fused_overlap_transform_with_sp_cp(self, kv, score, kv_value, score_value):
++        from mindspeed.gts.ops.gts_custom_op import gts_wind_overlap_transform
++        if mpu.get_tensor_and_context_parallel_world_size() <= 1:
++            return gts_wind_overlap_transform(kv, score, self.compress_ratio, self.head_dim, kv_value, score_value)
++
++        kv = kv.transpose(0, 1)  # BSH --> SBH
++        kv = gather_from_sp_cp(kv)
++        kv = kv.transpose(0, 1)  # SBH --> BSH
++        score = score.transpose(0, 1)  # BSH --> SBH
++        score = gather_from_sp_cp(score)
++        score = score.transpose(0, 1)  # SBH --> BSH
++
++        kv_out, score_out = gts_wind_overlap_transform(kv, score, self.compress_ratio, self.head_dim, kv_value, score_value)
++
++        kv_out = kv_out.transpose(0, 1)  # BSH --> SBH
++        kv_out = permute_cp_shard(kv_out, reorder=False)
++        kv_out = kv_out.transpose(0, 1)  # SBH --> BSH
++        score_out = score_out.transpose(0, 1)  # BSH --> SBH
++        score_out = permute_cp_shard(score_out, reorder=False)
++        score_out = score_out.transpose(0, 1)  # SBH --> BSH
++
++        local_len = kv_out.shape[1] // mpu.get_tensor_model_parallel_world_size()
++        rank = mpu.get_tensor_model_parallel_rank()
++        kv_out = kv_out[:, rank * local_len:(rank + 1) * local_len, :]
++        score_out = score_out[:, rank * local_len:(rank + 1) * local_len, :]
++        return kv_out, score_out
++
+     def _forward_tnd(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, packed_seq_params):
+         assert start_pos == 0, "TND format only supports start_pos == 0"
+ 
+@@ -202,8 +230,13 @@ class Compressor(MegatronModule):
+             kv = kv.unflatten(1, (-1, ratio))
+             score = score.unflatten(1, (-1, ratio)) + self.ape
+             if overlap:
+-                kv = self.overlap_transform_with_sp_cp(kv, 0)
+-                score = self.overlap_transform_with_sp_cp(score, float("-inf"))
++                # [Add by GTS-AILab] [feature GTSOps] compressor0
++                from mindspeed.gts.ops.gts_custom_op import is_enable_op
++                if is_enable_op('compressor0'):
++                    kv, score = self.fused_overlap_transform_with_sp_cp(kv, score, 0, float("-inf"))
++                else:
++                    kv = self.overlap_transform_with_sp_cp(kv, 0)
++                    score = self.overlap_transform_with_sp_cp(score, float("-inf"))
+ 
+             kv = (kv * score.softmax(dim=2)).sum(dim=2)
+         else:
+@@ -228,7 +261,13 @@ class Compressor(MegatronModule):
+         if not should_compress:
+             return None
+         kv = self.norm(kv.to(dtype))
+-        kv[..., -self.rope_head_dim :] = apply_rotary_emb(kv[..., -self.rope_head_dim :], freqs_cis)
++
++        # [Add by GTS-AILab] [feature GTSOps] For RoPE on compressed kv, the wind_scale_rope operator can be used.
++        # RoPE for compressed kv: same form as main-path kv (scale already multiplied inside norm, forward pass,
++        # here kv is already in BSH so need_transpose=False).
++        from mindspeed.gts.ops.gts_rope import gts_rope_forward
++        kv = gts_rope_forward(kv, freqs_cis, self.rope_head_dim, need_transpose=False)
++
+         if self.rotate:
+             kv = rotate_activation(kv)
+         # if start_pos == 0:
+diff --git a/mindspeed_llm/tasks/models/transformer/deepseek4/csa.py b/mindspeed_llm/tasks/models/transformer/deepseek4/csa.py
+index cdf242fa..d0493c36 100644
+--- a/mindspeed_llm/tasks/models/transformer/deepseek4/csa.py
++++ b/mindspeed_llm/tasks/models/transformer/deepseek4/csa.py
+@@ -37,9 +37,10 @@ from mindspeed_llm.tasks.models.transformer.dsa_indexer import (
+ )
+ from mindspeed_llm.core.context_parallel.kvallgather_context_parallel import gather_from_sp_cp, permute_cp_shard
+ from mindspeed_llm.tasks.models.transformer.deepseek4.deepseek_utils import apply_rotary_emb, get_cmp_cu_seqlens
++# [Add by GTS-AILab] [feature GTSOps] scale-rope
++from mindspeed.gts.ops.gts_custom_op import gts_scale_rope, gts_rmsnorm_without_weight, is_enable_op
+ from mindspeed_llm.ops.npu_sparse_flash_mla_with_indexer_loss import npu_sparse_flash_mla_with_indexer_loss
+ from mindspeed_llm.ops.npu_sparse_flash_mla import npu_sparse_flash_mla
+-
+ try:
+     import mindspeed.ops.npu_sparse_lightning_indexer_grad_kl_loss as ms_slig
+ except ImportError:
+@@ -441,27 +442,46 @@ class DeepSeek4SelfAttention(MegatronModule):
+         q, _ = self.linear_q_up_proj(q_compressed)  # s,b,n_heads_local * self.head_dim
+ 
+         q = q.view(q_len, bsz, self.n_local_heads, -1)
+-
+-        if args.use_fused_rmsnorm:
++        # [Add by GTS-AILab] [feature GTSOps] enable rmsnorm_without_weight
++        if is_enable_op('rms0'):
++            from mindspeed.gts.ops.gts_custom_op import gts_rmsnorm_without_weight
++            rstd = gts_rmsnorm_without_weight(q, self.config.layernorm_epsilon, q.dtype)
++        elif args.use_fused_rmsnorm:
+             nD = q.shape[-1]
+             norm_gamma = torch.ones(nD, device=q.device, dtype=torch.float32)
+-            q = torch_npu.npu_rms_norm(q, gamma=norm_gamma, epsilon=self.config.layernorm_epsilon)[0]
++            result = torch_npu.npu_rms_norm(q, gamma=norm_gamma, epsilon=self.config.layernorm_epsilon)
++            rstd = result[1]
+         else:
+-            q = q * torch.rsqrt(q.square().mean(-1, keepdim=True) + self.config.layernorm_epsilon)
++            rstd = torch.rsqrt(q.square().mean(-1, keepdim=True) + self.config.layernorm_epsilon)
+ 
+-        q = q.transpose(0, 1)
+         global_freqs_cis = self.get_freqs_cis(start_pos, local_seq_len=q_len_local, get_global=True)
+         local_freqs_cis = self.get_freqs_cis(start_pos, local_seq_len=q_len_local, get_global=False)
+-        q[..., -self.rope_head_dim :] = apply_rotary_emb(q[..., -self.rope_head_dim :], global_freqs_cis)
+-        q = q.transpose(0, 1)
++
++        # [Add by GTS-AILab] [feature GTSOps] q-rope
++        if is_enable_op("rope"):
++            # 融合 q*rsqrt + RoPE + 写回; 返回 None(开关关/未编译)则回退原路。
++            q = gts_scale_rope(q, global_freqs_cis, self.rope_head_dim, scale=rstd)
++        else:
++            if not is_enable_op('rms0') and args.use_fused_rmsnorm:
++                q = result[0]
++            else:
++                q = q * rstd
++            q = q.transpose(0, 1)
++            q[..., -self.rope_head_dim :] = apply_rotary_emb(q[..., -self.rope_head_dim :], global_freqs_cis)
++            q = q.transpose(0, 1)
+ 
+         # ========================================
+         # kv norm + rope  &topk_idxs
+         kv = self.kv_layernorm(kv_compressed)  # s,b,head_dim, [2048, 1, 512])
+-        # rope+window_idx
+-        kv = kv.transpose(0, 1)
+-        kv[..., -self.rope_head_dim :] = apply_rotary_emb(kv[..., -self.rope_head_dim :], local_freqs_cis)
+-        kv = kv.transpose(0, 1)
++        # [Add by GTS-AILab] [feature GTSOps] rope
++        out = gts_scale_rope(kv, local_freqs_cis, self.rope_head_dim) if is_enable_op("rope") else None
++        if out is not None:
++            kv = out
++        else:                                                # 回退原路
++            # rope+window_idx
++            kv = kv.transpose(0, 1)
++            kv[..., -self.rope_head_dim :] = apply_rotary_emb(kv[..., -self.rope_head_dim :], local_freqs_cis)
++            kv = kv.transpose(0, 1)
+         if self.config.sequence_parallel or self.kv_allgather:
+             kv = gather_from_sp_cp(kv)
+ 
+@@ -572,6 +592,8 @@ class DeepSeek4SelfAttention(MegatronModule):
+                     if offset != 0
+                     else compress_topk_idxs
+                 )
++                # [Add by GTS-AILab] [feature GTSOps] q-rope
++                q = q.detach() if is_enable_op('indexer-q-detach') else q
+                 if tp_size > 1:
+                     total_query = gather_from_tensor_model_parallel_region(q.view(*q.shape[:2], -1))
+                     total_query = total_query.view(*q.shape[:2], -1, q.shape[-1])
+@@ -605,9 +627,14 @@ class DeepSeek4SelfAttention(MegatronModule):
+                 o = DSAIndexerLossAutoScaler.apply(o, loss)
+ 
+         o = o.transpose(0, 1)
+-        o_rotated = o.clone()
+-        o_rotated[..., -self.rope_head_dim :] = apply_rotary_emb(o[..., -self.rope_head_dim :], global_freqs_cis, True)
+-        o = o_rotated.transpose(0, 1)
++        # [Add by GTS-AILab] [feature GTSOps] rope
++        if is_enable_op("rope"):                          # 兜底: 算子返回 None 时用原 FUNC
++            o = gts_scale_rope(o, global_freqs_cis, self.rope_head_dim, inverse=True)
++        else:                                             # 开关全关: 原 clone+slice-assign
++            o_rotated = o.clone()
++            o_rotated[..., -self.rope_head_dim :] = apply_rotary_emb(o[..., -self.rope_head_dim :], global_freqs_cis, True)
++            o = o_rotated
++        o = o.transpose(0, 1)
+ 
+         o = rearrange(
+             o,
+diff --git a/mindspeed_llm/tasks/models/transformer/dsa_indexer.py b/mindspeed_llm/tasks/models/transformer/dsa_indexer.py
+index f7f60a9a..27c888d0 100644
+--- a/mindspeed_llm/tasks/models/transformer/dsa_indexer.py
++++ b/mindspeed_llm/tasks/models/transformer/dsa_indexer.py
+@@ -184,6 +184,9 @@ class DSAIndexer(MegatronModule):
+             bias=False,
+         )
+ 
++        # [Add by GTS-AILab] [feature GTSOps] index muls
++        self.weight_scale = self.n_heads ** -0.5 * self.softmax_scale
++
+         # ---------------------------------------------------------
+         # [Warning]: FP8 quantization path is currently disabled (bf16 only)
+         # self.register_buffer("k_cache", torch.zeros(args.max_batch_size, args.max_seq_len, self.head_dim, dtype=torch.float8_e4m3fn), persistent=False)
+@@ -292,8 +295,14 @@ class DSAIndexer(MegatronModule):
+         # ---------------------------------------------------------
+         # Compute sparse attention scores in bf16
+         weights = self.weights_proj(x)
+-        weights = weights * self.n_heads**-0.5
+-        weights = weights * self.softmax_scale
++        # [Add by GTS-AILab] [feature GTSOps] index muls
++        from mindspeed.gts.ops.gts_custom_op import is_enable_op
++        if is_enable_op("index_muls"):
++            weights = weights * self.weight_scale
++        else:
++            weights = weights * self.n_heads**-0.5
++            weights = weights * self.softmax_scale
++
+         return q, k, weights, x
+ 
+     @staticmethod
+@@ -448,17 +457,25 @@ class DSAIndexer(MegatronModule):
+         q = rearrange(q, 's b (h d) -> s b h d', d=self.head_dim)
+ 
+         # Apply rotary positional embedding to the RoPE part of the query
+-        q = q.transpose(0, 1)
+-        q = q.clone()
+-        q[..., -self.rope_head_dim :] = apply_rotary_emb(q[..., -self.rope_head_dim :], freqs_cis)
+-        q = q.transpose(0, 1)
++        # [Add by GTS-AILab] [feature GTSOps] RoPE for indexer
++        #   q: same form as main-path q/kv (DeepSeek4 complex form, forward pass, scale not exposed, input in SBH layout needs conversion to BSH);
++        #   Use gts_rope_forward(need_transpose=True) to replace external transpose + slice-assign; either fuse or fall back to the original path.
++        from mindspeed.gts.ops.gts_rope import gts_rope_forward
++        q = gts_rope_forward(q, freqs_cis, self.rope_head_dim)
++
+         q = rotate_activation(q)
+         k = self.kv_compressor(x, start_pos, freqs_cis, packed_seq_params).unsqueeze(2)
+         # Apply structured rotation (e.g., scaled Hadamard transform) to both query and key
+         # This promotes mixing and can improve retrieval performance in sparse attention
+         weights = self.weights_proj(x)
+-        weights = weights * self.n_heads**-0.5
+-        weights = weights * self.softmax_scale
++        # [Add by GTS-AILab] [feature GTSOps] index muls
++        from mindspeed.gts.ops.gts_custom_op import is_enable_op
++        if is_enable_op("index_muls"):
++            weights = weights * self.weight_scale
++        else:
++            weights = weights * self.n_heads**-0.5
++            weights = weights * self.softmax_scale
++
+         return q, k, weights, x
+ 
+     def all_gather_qk_weight(self, q, k, weights):
+diff --git a/mindspeed_llm/training/cpu_binding.py b/mindspeed_llm/training/cpu_binding.py
+new file mode 100644
+index 00000000..51be1ce7
+--- /dev/null
++++ b/mindspeed_llm/training/cpu_binding.py
+@@ -0,0 +1,270 @@
++# Copyright Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
++import subprocess
++from dataclasses import dataclass
++from itertools import accumulate
++from typing import List, Dict, Tuple, Union
++
++import psutil
++import torch_npu
++
++def execute_command(cmd_list):
++    with subprocess.Popen(cmd_list,
++                          shell=False,
++                          stdout=subprocess.PIPE,
++                          stderr=subprocess.PIPE) as p:
++        out, err = p.communicate(timeout=1000)
++    res = out.decode()
++    return res
++
++
++@dataclass
++class DeviceInfo:
++    _info_line: str = ""
++    npu_id: int = 0
++    chip_id: int = 0
++    chip_logic_id: Union[int, str] = 0
++    chip_name: str = ""
++
++    def __post_init__(self):
++        self.npu_id, self.chip_id, self.chip_logic_id, self.chip_name = self._info_line.strip().split(None, 3)
++        self.npu_id = int(self.npu_id)
++        self.chip_id = int(self.chip_id)
++        if self.chip_logic_id.isnumeric():
++            self.chip_logic_id = int(self.chip_logic_id)
++
++
++class NpuHbmInfo:
++    visible_npu_ids: List = None
++    hbm_capacity: int = None
++    hbm_usage: int = None
++
++    @classmethod
++    def set_visible_devices(cls, world_size):
++        if cls.visible_npu_ids:
++            return
++        devices = sorted(list(_get_device_map_info().keys()))  # 通过npu-smi info -m指令获取到所有的chip logic id
++        device_map_info = _get_device_map_info()
++        npu_ids = []
++        for device in devices:
++            device_info = device_map_info.get(device)
++            npu_ids.append(device_info.npu_id)
++        cls.visible_npu_ids = npu_ids
++
++    @classmethod
++    def get_hbm_capacity(cls, rank, world_size, need_nz):
++        soc_version = torch_npu._C._npu_get_soc_version()
++        if cls.hbm_capacity:
++            return cls.hbm_capacity
++        if not cls.visible_npu_ids:
++            cls.set_visible_devices(world_size)
++        npu_id = cls.visible_npu_ids[rank]
++        memory_info = execute_command(["npu-smi", "info", "-i", f"{npu_id}", "-t", "memory"]).split("\n")[1:]
++        if soc_version == 240:
++            hbm_capacity_key = 'Capacity(MB)'
++        elif not need_nz:
++            hbm_capacity_key = 'HBM Capacity(MB)'
++        else:
++            hbm_capacity_key = 'DDR Capacity(MB)'
++        for line in memory_info:
++            try:
++                key, value = line.strip().split(':', 2)
++                if key.strip() == hbm_capacity_key:
++                    cls.hbm_capacity = int(value.strip()) * 1024 * 1024
++                    return cls.hbm_capacity
++            except ValueError:
++                pass # Skip the invalid lines silently while searching for HBM capacity
++        raise ValueError('not found valid hbm capactiy')
++
++    @classmethod
++    def get_hbm_usage(cls, rank, world_size, need_nz):
++        if cls.hbm_usage:
++            return cls.hbm_usage
++        if not cls.visible_npu_ids:
++            cls.set_visible_devices(world_size)
++        npu_id = cls.visible_npu_ids[rank]
++        usage_info = execute_command(["npu-smi", "info", "-i", f"{npu_id}", "-t", "usages"]).split("\n")[1:]
++        soc_version = torch_npu._C._npu_get_soc_version()
++        if soc_version == 240:
++            hbm_capacity_key = 'Memory Usage Rate(%)'
++        elif not need_nz:
++            hbm_capacity_key = 'HBM Usage Rate(%)'
++        else:
++            hbm_capacity_key = 'DDR Usage Rate(%)'
++        for line in usage_info:
++            try:
++                key, value = line.strip().split(':', 2)
++                if key.strip() == hbm_capacity_key:
++                    hbm_usage = (float(value.strip()) + 1) / 100
++                    return hbm_usage
++            except ValueError:
++                pass # Skip the invalid lines silently while searching for HBM usage data
++        raise ValueError('not found valid hbm usage')
++
++
++def _get_device_map_info() -> Dict[int, DeviceInfo]:
++    device_map_info = {}
++    device_map = execute_command(["npu-smi", "info", "-m"]).strip().split("\n")[1:]
++    for line in device_map:
++        device_info = DeviceInfo(line.strip())
++        if isinstance(device_info.chip_logic_id, int):
++            device_map_info[device_info.chip_logic_id] = device_info
++    return device_map_info
++
++
++def _get_pcie_info(devices: List[int], keyword="PCIeBusInfo"):
++    device_map_info = _get_device_map_info()
++    device_pcie_tbl = {}
++    for device in devices:
++        device_info = device_map_info.get(device)
++        if not device_info:
++            raise RuntimeError("Can not get device info, you can use BIND_CPU=0 to skip.")
++        pcie_info = execute_command(["npu-smi", "info", "-t", "board", "-i", f"{device_info.npu_id}",
++                                     "-c", f"{device_info.chip_id}"]).strip().split("\n")
++        for _ in pcie_info:
++            line = ''.join(_.split())  # 不同硬件的输出格式不同（PCIe Bus Info 或 PCIeBusInfo），在此处做统一
++            if line.startswith(keyword):
++                device_pcie_tbl[device] = line[len(keyword) + 1:]
++                break
++
++    return device_pcie_tbl
++
++
++def _get_numa_info(pcie_tbl, keyword="NUMAnode"):
++    device_numa_tbl = dict()  # key is device id, value is numa id
++    numa_devices_tbl = dict()  # key is numa id, value is device id list
++
++    for device, pcie_no in pcie_tbl.items():
++        numa_info = execute_command(["lspci", "-s", f"{pcie_no}", "-vvv"]).split("\n")
++        for _ in numa_info:
++            line = ''.join(_.split())
++            if line.startswith(keyword):
++                numa_id = int(line[len(keyword) + 1:])
++                device_numa_tbl[device] = numa_id
++
++                devices = numa_devices_tbl.get(numa_id, None)
++                if devices is None:
++                    numa_devices_tbl[numa_id] = list()
++
++                numa_devices_tbl[numa_id].append(device)
++                break
++
++    return device_numa_tbl, numa_devices_tbl
++
++
++def _get_numa_info_v2(devices: List[int], keyword="NUMAnode(s)") -> Tuple[Dict[int, int], Dict[int, List[int]]]:
++    """
++    NPU NUMA不亲和的场景，直接将devices均分到每个NUMA上
++    :param devices:
++    :param keyword:
++    :return:
++    """
++    # NUMA节点检测优化
++    numa_nodes = 1
++    numa_info = execute_command(["lscpu"]).split("\n")
++    for _ in numa_info:
++        line = ''.join(_.split())
++        if keyword not in line:
++            continue
++        numa_nodes = int(line[-1])
++        break
++
++    # 给每个numa平均分配devices
++    device_per_numa, tail_device = divmod(len(devices), numa_nodes)
++    device_count_per_numa_list = [device_per_numa + (i < tail_device) for i in range(numa_nodes)]
++
++    # 每个numa分配升序的连续的devices
++    ends = list(accumulate(device_count_per_numa_list))
++    starts = [0] + ends[:-1]
++
++    numa_devices_tbl = {
++        ind: devices[start:end]
++        for ind, (start, end) in enumerate(zip(starts, ends))
++    }
++
++    device_numa_tbl = {
++        device: numa
++        for numa, _devices in numa_devices_tbl.items()
++        for device in _devices
++    }
++
++    return device_numa_tbl, numa_devices_tbl
++
++
++def _get_cpu_info(numa_ids, keyword1="NUMAnode", keyword2="CPU(s)"):
++    cpu_idx_tbl = dict()
++    numa_keywords = [keyword1 + str(idx) + keyword2 for idx in numa_ids]
++    cpu_info = execute_command(["lscpu"]).split("\n")
++    for _ in cpu_info:
++        line = ''.join(_.split())
++        if any(line.startswith(word) for word in numa_keywords):
++            split_info = line.split(":")
++            cpu_id_ranges = split_info[-1].split(",")
++
++            ranges = list()
++            for range_str in cpu_id_ranges:
++                endpoints = range_str.split("-")
++                if len(endpoints) != 2:
++                    raise Exception("lscpu command output error, please check !")
++
++                ranges += [cid for cid in range(int(endpoints[0]), int(endpoints[1]) + 1)]
++
++            numa_id = int(split_info[0].replace(keyword1, '').replace(keyword2, ''))
++            cpu_idx_tbl[numa_id] = ranges
++    return cpu_idx_tbl
++
++
++# [Add by GTS-AILab] [feature GTSOps] bind_cpus
++# 可以用export CPU_BINDING_NUM设置每个进程绑的核数;如果不设置CPU_BINDING_NUM,
++# 会根据ratio(numa利用率)进行计算,如果有64个核，0.5表示用一半，用32个核, 平分给亲和在这个numa上的npu
++def bind_cpus(world_size, rank_id, ratio=0.5):
++    devices = sorted(list(_get_device_map_info().keys()))  # 通过npu-smi info -m指令获取到所有的chip logic id
++
++    # 获取npu和pcie的对应关系
++    device_pcie_tbl = _get_pcie_info(devices)
++    # 根据pcie信息获取npu和numa的对应关系
++    device_numa_tbl, numa_devices_tbl = _get_numa_info(device_pcie_tbl)
++    if not device_numa_tbl or not numa_devices_tbl:
++        device_numa_tbl, numa_devices_tbl = _get_numa_info_v2(devices)
++    # 获取使用的numa对应的cpu核分配信息
++    cpu_idx_tbl = _get_cpu_info(list(numa_devices_tbl.keys()))
++
++    # 当前rank的npu id
++    cur_device = devices[rank_id]
++    # 获取npu对应的numa id
++    numa_id = device_numa_tbl.get(cur_device)
++
++    # 获取共享该numa的npu信息
++    shard_devices = numa_devices_tbl.get(numa_id)
++    # 按照npu id进行排序
++    shard_devices.sort()
++
++    # 获取该numa上所有的cpu id信息
++    all_cpus = cpu_idx_tbl.get(numa_id)
++    print(
++        f"rank_id: {rank_id}, device_id: {cur_device}, "
++        f"numa_id: {numa_id}, shard_devices: {shard_devices}, cpus: {all_cpus}")
++
++    cpu_nums = len(all_cpus)
++    # 计算给该共享numa的npu分配的核的个数
++    cpu_binding_num = None
++    if cpu_binding_num is None:
++        cpu_num_per_device = int(cpu_nums * ratio // len(shard_devices))
++    else:
++        cpu_num_per_device = int(cpu_binding_num)
++        if len(shard_devices) * cpu_num_per_device > cpu_nums:
++            raise RuntimeError(
++                f"Cpu num in numa {numa_id} to assign {cpu_num_per_device} for every device is not enough, "
++                f"please decrease the value of CPU_BINDING_NUM!")
++        if cpu_num_per_device < 0:
++            raise ValueError("CPU_BINDING_NUM should not be less than 0.")
++
++    # 获取该npu的下标信息
++    idx = shard_devices.index(cur_device)
++    # 给该npu分配要绑定的cpu id
++    binding_cpus = [all_cpus[_] for _ in range(idx * cpu_num_per_device, (idx + 1) * cpu_num_per_device)]
++
++    # cpu bind
++    p = psutil.Process()
++    p.cpu_affinity(binding_cpus)
++    new_affinity = p.cpu_affinity()
++    print(f"process {p.pid}, new_affinity is {new_affinity}, cpu count {cpu_num_per_device}")
+diff --git a/mindspeed_llm/training/training.py b/mindspeed_llm/training/training.py
+index 991f6c08..0e30172d 100644
+--- a/mindspeed_llm/training/training.py
++++ b/mindspeed_llm/training/training.py
+@@ -469,7 +469,12 @@ def pretrain(train_valid_test_dataset_provider,
+ 
+     args = get_args()
+     timers = get_timers()
+-
++    # [Add by GTS-AILab] [feature GTSOps] bind_cpus
++    from mindspeed.gts.ops.gts_custom_op import is_enable_op
++    if is_enable_op("bind_cpus"):
++        from .cpu_binding import bind_cpus
++        logging.info(f"----- add bind_cpus world_size={args.world_size} local_rank={args.local_rank} -----")
++        bind_cpus(args.world_size, args.local_rank, 1)
+ 
+     if args.log_progress:
+         append_to_progress_log("Starting job")
+-- 
+2.45.0.windows.1
+
