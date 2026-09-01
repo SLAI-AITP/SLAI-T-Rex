@@ -32,6 +32,11 @@ constexpr int32_t WSRG_BUFFER_NUM = 2;
 constexpr int32_t WSRG_NUM_TWO = 2;
 constexpr int32_t WSRG_SIZE_OF_FLOAT = 4;
 constexpr uint32_t WSRG_BATCH = 8;   // 一次处理同 seq 的 8 行
+constexpr uint32_t WSRG_BLOCK_SIZE = 32;   // UB 搬运/对齐粒度(B)
+// scale 的 dtype 独立于 x: BF16 或 FP32, 与前向 WindScaleRope 的两档一一对应。
+//   sizeof 出的是 size_t, 显式收成 uint32_t 免得 AlignUp(uint32_t,uint32_t) 处走隐式窄化。
+constexpr uint32_t WSRG_SCALE_PER_BLOCK =
+    WSRG_BLOCK_SIZE / static_cast<uint32_t>(sizeof(DTYPE_SCALE));   // bf16:16, fp32:8
 
 class WindScaleRopeGrad {
 public:
@@ -51,6 +56,10 @@ public:
 
         blockIdx_ = GetBlockIdx();
         rowStart_ = blockIdx_ * rowsPerCore_;
+        // rowStart_ 也要夹: usedCore*rowsPerCore 可能 > T, 尾核 rowStart_>T_ 会使 rowEnd_-rowStart_ 下溢 -> DataCopyPad 越界(507035)
+        if (rowStart_ > T_) {
+            rowStart_ = T_;
+        }
         rowEnd_ = rowStart_ + rowsPerCore_;
         if (rowEnd_ > T_) {
             rowEnd_ = T_;
@@ -62,7 +71,7 @@ public:
     {
         gradOutGm_.SetGlobalBuffer((__gm__ DTYPE_X*)gradOutGm);
         xGm_.SetGlobalBuffer((__gm__ DTYPE_X*)xGm);
-        scaleGm_.SetGlobalBuffer((__gm__ DTYPE_X*)scaleGm);
+        scaleGm_.SetGlobalBuffer((__gm__ DTYPE_SCALE*)scaleGm);   // scale dtype 独立于 x(bf16/fp32)
         cosGm_.SetGlobalBuffer((__gm__ float*)cosGm);
         sinGm_.SetGlobalBuffer((__gm__ float*)sinGm);
         gradXGm_.SetGlobalBuffer((__gm__ DTYPE_X*)gradXGm);
@@ -83,9 +92,9 @@ public:
         //   rowLen 用最大 WSRG_BATCH(尾块 cnt<8 也够)。
         reduceTmpElems_ = ((WSRG_BATCH * D_ + 63u) / 64u) * 8u;
         pipe_.InitBuffer(reduceTmpBuf_, reduceTmpElems_ * sizeof(float));
-        // scale 整核搬入
-        uint32_t scaleAlign = AlignUp(rowsPerCore_, 16u);
-        pipe_.InitBuffer(scaleBuf_, scaleAlign * sizeof(DTYPE_X));
+        // scale 整核搬入(元素数按 scale 自身 dtype 对齐到 32B: bf16 16个 / fp32 8个)
+        uint32_t scaleAlign = AlignUp(rowsPerCore_, WSRG_SCALE_PER_BLOCK);
+        pipe_.InitBuffer(scaleBuf_, scaleAlign * sizeof(DTYPE_SCALE));
         // cos/sin 用 TQue(double buffer, 框架自动管 MTE2↔V 同步), 每 batch 搬该 seq 的 cos/sin。
         //   之前用常驻 TBuf(csBuf_) + curSeq_ + 手动 SetFlag/WaitFlag(单 EVENT_ID0), 在 kv 等
         //   rowsPerSeq=1 场景每 batch 换 seq 的高频下, V_MTE2/MTE2_V 交替复用同一 event 配对错乱 ->
@@ -95,11 +104,12 @@ public:
         pipe_.InitBuffer(rotBuf_, ropeDimAligned_ * sizeof(float));
         pipe_.InitBuffer(maskBuf_, ropeDimAligned_ * sizeof(uint32_t));
 
-        scaleLocal_ = scaleBuf_.Get<DTYPE_X>();
-        {
-            uint32_t n = rowEnd_ - rowStart_;
-            DataCopyExtParams p{1, static_cast<uint32_t>(n * sizeof(DTYPE_X)), 0, 0, 0};
-            DataCopyPadExtParams<DTYPE_X> pad{false, 0, 0, 0};
+        // 空核(rowStart_==rowEnd_==T_)跳过, 零长度 DataCopyPad 无意义且不保证合法。
+        scaleLocal_ = scaleBuf_.Get<DTYPE_SCALE>();
+        uint32_t n = rowEnd_ - rowStart_;
+        if (n > 0) {
+            DataCopyExtParams p{1, static_cast<uint32_t>(n * sizeof(DTYPE_SCALE)), 0, 0, 0};
+            DataCopyPadExtParams<DTYPE_SCALE> pad{false, 0, 0, 0};
             DataCopyPad(scaleLocal_, scaleGm_[rowStart_], p, pad);
         }
 
@@ -176,7 +186,7 @@ private:
         // ---- grad_x = grad_u * scale (广播 scaleVec, 一次 Mul fp32, 整行) ----
         LocalTensor<float> scaleVec = scaleVecBuf_.Get<float>();
         for (uint32_t i = 0; i < cnt; ++i) {
-            float sv = ToFloat(scaleLocal_.GetValue(rowBase - rowStart_ + i));
+            float sv = ScaleAt(rowBase - rowStart_ + i);       // bf16/fp32 都提到 fp32 再广播
             Duplicate(scaleVec[i * D_], sv, D_);
         }
         PipeBarrier<PIPE_V>();
@@ -223,17 +233,39 @@ private:
         return (b == 0) ? a : ((a + b - 1) / b * b);
     }
 
+    // scale 值取到 fp32: fp32 档直接返回, bf16 档走 ToFloat。
+    //   【务必保持 ToF32 是模板、且形参类型就是 S】: if constexpr 的弃置分支只有在
+    //   依赖模板参数时才不实例化。若把 if constexpr 直接写进非模板的 ScaleAt(), 或写成模板
+    //   但分支里用的是 scaleLocal_(类型固定为 LocalTensor<DTYPE_SCALE>, 不依赖模板参数),
+    //   弃置分支都会照样在定义期被检查, 于是:
+    //     fp32 档 -> 实例化 ToFloat<float>, 撞 kernel_scalar_convert.h:133 的 static_assert
+    //               (ToFloat 只支持 bfloat16_t/hifloat8_t/fp8/fp4);
+    //     bf16 档 -> `return v;` 报 no viable conversion bfloat16_t -> float。
+    //   (两种失败均已用 clang -std=c++17 复刻 CANN 声明实测过。)
+    template <typename S>
+    __aicore__ inline float ToF32(const S& v)
+    {
+        if constexpr (IsSameType<S, float>::value) {
+            return v;
+        } else {
+            return ToFloat(v);
+        }
+    }
+
+    __aicore__ inline float ScaleAt(uint32_t idx) { return ToF32(scaleLocal_.GetValue(idx)); }
+
 private:
     TPipe& pipe_;
     TQue<QuePosition::VECIN, WSRG_BUFFER_NUM> inQueGrad_, inQueX_, csQue_;  // csQue_: cos/sin double buffer
     TQue<QuePosition::VECOUT, WSRG_BUFFER_NUM> outQueGradX_, outQueGradS_;
     TBuf<TPosition::VECCALC> guBuf_, xfBuf_, scaleVecBuf_, scaleBuf_, rotBuf_, maskBuf_, reduceTmpBuf_;
-    LocalTensor<DTYPE_X> scaleLocal_;
+    LocalTensor<DTYPE_SCALE> scaleLocal_;
     LocalTensor<uint32_t> mask_;
     uint32_t ropeDimAligned_{0};
     uint32_t reduceTmpElems_{0};
 
-    GlobalTensor<DTYPE_X> gradOutGm_, xGm_, scaleGm_, gradXGm_;
+    GlobalTensor<DTYPE_X> gradOutGm_, xGm_, gradXGm_;
+    GlobalTensor<DTYPE_SCALE> scaleGm_;                  // scale 与 x 的 dtype 解耦
     GlobalTensor<float> cosGm_, sinGm_, gradScaleGm_;
 
     uint32_t T_, S_, N_, D_, ropeDim_, ropeHalf_, passDim_;

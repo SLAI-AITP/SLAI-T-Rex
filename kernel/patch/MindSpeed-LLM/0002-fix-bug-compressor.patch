@@ -1,0 +1,40 @@
+From 82f76b7d0f1dd7512bd0264efaa35b0c4d42594d Mon Sep 17 00:00:00 2001
+Date: Wed, 2 Sep 2026 18:30:32 +0800
+Subject: [PATCH 2/3] fix bug: compressor
+
+---
+ .../tasks/models/transformer/deepseek4/compressor.py  | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/mindspeed_llm/tasks/models/transformer/deepseek4/compressor.py b/mindspeed_llm/tasks/models/transformer/deepseek4/compressor.py
+index 2058c91b..95860a1d 100644
+--- a/mindspeed_llm/tasks/models/transformer/deepseek4/compressor.py
++++ b/mindspeed_llm/tasks/models/transformer/deepseek4/compressor.py
+@@ -108,6 +108,12 @@ class Compressor(MegatronModule):
+     # [Add by GTS-AILab] [feature GTSOps] compressor0
+     def fused_overlap_transform_with_sp_cp(self, kv, score, kv_value, score_value):
+         from mindspeed.gts.ops.gts_custom_op import gts_wind_overlap_transform
++        if kv.shape[0] != 1:
++            # 融合算子非comb路径仅支持 B=1（tiling 校验 dim[0]==1），B>1 回退非融合路径
++            kv = self.overlap_transform_with_sp_cp(kv, kv_value)
++            score = self.overlap_transform_with_sp_cp(score, score_value)
++            return kv, score
++
+         if mpu.get_tensor_and_context_parallel_world_size() <= 1:
+             return gts_wind_overlap_transform(kv, score, self.compress_ratio, self.head_dim, kv_value, score_value)
+ 
+@@ -118,7 +124,10 @@ class Compressor(MegatronModule):
+         score = gather_from_sp_cp(score)
+         score = score.transpose(0, 1)  # SBH --> BSH
+ 
+-        kv_out, score_out = gts_wind_overlap_transform(kv, score, self.compress_ratio, self.head_dim, kv_value, score_value)
++        # [Workaround] gather+transpose 后逻辑形状为 [1,S,R,2D]，但底层 buffer 为 [S,1,R,2D]
++        kv_out, score_out = gts_wind_overlap_transform( kv.squeeze(0), score.squeeze(0), self.compress_ratio, self.head_dim, kv_value, score_value)
++        kv_out = kv_out.unsqueeze(0)
++        score_out = score_out.unsqueeze(0)
+ 
+         kv_out = kv_out.transpose(0, 1)  # BSH --> SBH
+         kv_out = permute_cp_shard(kv_out, reorder=False)
+-- 
+2.45.0.windows.1
+

@@ -31,6 +31,12 @@ namespace AscendC {
 constexpr int32_t WSR_BUFFER_NUM = 2;
 constexpr int32_t WSR_NUM_TWO = 2;
 constexpr int32_t WSR_SIZE_OF_FLOAT = 4;
+constexpr uint32_t WSR_BLOCK_SIZE = 32;   // UB 搬运/对齐粒度(B)
+// scale 的 dtype 独立于 x: BF16(rms0 出的 rstd) 或 FP32(npu_rms_norm/torch.rsqrt 出的 rstd)。
+//   由 OpDef 的两档 dtype 组合决定, 编译期各出一份 kernel 二进制。
+//   sizeof 出的是 size_t, 显式收成 uint32_t 免得 AlignUp(uint32_t,uint32_t) 处走隐式窄化。
+constexpr uint32_t WSR_SCALE_PER_BLOCK =
+    WSR_BLOCK_SIZE / static_cast<uint32_t>(sizeof(DTYPE_SCALE));   // bf16:16, fp32:8
 // seq-block 批处理: 一次处理同 seq 的 WSR_BATCH 行(向量吃满)。
 //   UB 估算(BATCH=8, D=512): inQueX 8×512×2×2(double)=16KB + outQue 16KB + calcBuf(fp32) 8×512×4=16KB
 //   + scaleVec(fp32) 16KB ≈ 64KB, 远低于 UB(~192KB), 安全有余量。BATCH 可后续调大。
@@ -55,6 +61,10 @@ public:
 
         blockIdx_ = GetBlockIdx();
         rowStart_ = blockIdx_ * rowsPerCore_;
+        // rowStart_ 也要夹: usedCore*rowsPerCore 可能 > T, 尾核 rowStart_>T_ 会使 rowEnd_-rowStart_ 下溢 -> DataCopyPad 越界(507035)
+        if (rowStart_ > T_) {
+            rowStart_ = T_;
+        }
         rowEnd_ = rowStart_ + rowsPerCore_;
         if (rowEnd_ > T_) {
             rowEnd_ = T_;
@@ -64,7 +74,7 @@ public:
     __aicore__ inline void Process(GM_ADDR xGm, GM_ADDR scaleGm, GM_ADDR cosGm, GM_ADDR sinGm, GM_ADDR outGm)
     {
         xGm_.SetGlobalBuffer((__gm__ DTYPE_X*)xGm);
-        scaleGm_.SetGlobalBuffer((__gm__ DTYPE_X*)scaleGm);
+        scaleGm_.SetGlobalBuffer((__gm__ DTYPE_SCALE*)scaleGm);   // scale dtype 独立于 x(bf16/fp32)
         cosGm_.SetGlobalBuffer((__gm__ float*)cosGm);
         sinGm_.SetGlobalBuffer((__gm__ float*)sinGm);
         outGm_.SetGlobalBuffer((__gm__ DTYPE_X*)outGm);
@@ -75,9 +85,9 @@ public:
         pipe_.InitBuffer(outQue_, WSR_BUFFER_NUM, WSR_BATCH * D_ * sizeof(DTYPE_X));
         // 计算缓冲(fp32): u[BATCH×D]
         pipe_.InitBuffer(calcBuf_, WSR_BATCH * D_ * sizeof(float));
-        // scale 先搬进 UB; 一次搬该核所有行(pad 到 32B)
-        uint32_t scaleAlign = AlignUp(rowsPerCore_, 16u);     // 16 bf16 = 32B
-        pipe_.InitBuffer(scaleBuf_, scaleAlign * sizeof(DTYPE_X));
+        // scale 先搬进 UB; 一次搬该核所有行(pad 到 32B)。元素数按 scale 自身 dtype 算(bf16 16个/fp32 8个 = 32B)
+        uint32_t scaleAlign = AlignUp(rowsPerCore_, WSR_SCALE_PER_BLOCK);
+        pipe_.InitBuffer(scaleBuf_, scaleAlign * sizeof(DTYPE_SCALE));
         // scaleVec: BATCH×D 的 fp32 scale 广播向量, 供 fp32 Mul(每行 scale 不同, 不能用标量 Muls)
         pipe_.InitBuffer(scaleVecBuf_, WSR_BATCH * D_ * sizeof(float));
         // cos/sin: host 已预展开到 ropeDim 长度(每复数重复2份, sin偶位已取负)。
@@ -90,12 +100,13 @@ public:
         pipe_.InitBuffer(cosBuf2_, ropeDimAligned_ * sizeof(float));
         pipe_.InitBuffer(maskBuf_, ropeDimAligned_ * sizeof(uint32_t));
 
-        // 把本核 [rowStart_, rowEnd_) 的 scale 一次性搬进 UB
-        scaleLocal_ = scaleBuf_.Get<DTYPE_X>();
-        {
-            uint32_t n = rowEnd_ - rowStart_;
-            DataCopyExtParams p{1, static_cast<uint32_t>(n * sizeof(DTYPE_X)), 0, 0, 0};
-            DataCopyPadExtParams<DTYPE_X> pad{false, 0, 0, 0};
+        // 把本核 [rowStart_, rowEnd_) 的 scale 一次性搬进 UB。空核(rowStart_==rowEnd_==T_)直接跳过,
+        //   零长度 DataCopyPad 无意义且不保证合法。
+        scaleLocal_ = scaleBuf_.Get<DTYPE_SCALE>();
+        uint32_t n = rowEnd_ - rowStart_;
+        if (n > 0) {
+            DataCopyExtParams p{1, static_cast<uint32_t>(n * sizeof(DTYPE_SCALE)), 0, 0, 0};
+            DataCopyPadExtParams<DTYPE_SCALE> pad{false, 0, 0, 0};
             DataCopyPad(scaleLocal_, scaleGm_[rowStart_], p, pad);
         }
 
@@ -143,7 +154,7 @@ private:
         // 构造 scaleVec[cnt×D]: 第 i 行全 D 维 = scale[i]
         LocalTensor<float> scaleVec = scaleVecBuf_.Get<float>();
         for (uint32_t i = 0; i < cnt; ++i) {
-            float sv = ToFloat(scaleLocal_.GetValue(rowBase - rowStart_ + i));
+            float sv = ScaleAt(rowBase - rowStart_ + i);       // bf16/fp32 都提到 fp32 再广播
             Duplicate(scaleVec[i * D_], sv, D_);               // 第 i 行 D 维填 scale[i]
         }
         PipeBarrier<PIPE_V>();
@@ -202,6 +213,27 @@ private:
         return (b == 0) ? a : ((a + b - 1) / b * b);
     }
 
+    // scale 值取到 fp32: fp32 档直接返回, bf16 档走 ToFloat。
+    //   【务必保持 ToF32 是模板、且形参类型就是 S】: if constexpr 的弃置分支只有在
+    //   依赖模板参数时才不实例化。若把 if constexpr 直接写进非模板的 ScaleAt(), 或写成模板
+    //   但分支里用的是 scaleLocal_(类型固定为 LocalTensor<DTYPE_SCALE>, 不依赖模板参数),
+    //   弃置分支都会照样在定义期被检查, 于是:
+    //     fp32 档 -> 实例化 ToFloat<float>, 撞 kernel_scalar_convert.h:133 的 static_assert
+    //               (ToFloat 只支持 bfloat16_t/hifloat8_t/fp8/fp4);
+    //     bf16 档 -> `return v;` 报 no viable conversion bfloat16_t -> float。
+    //   (两种失败均已用 clang -std=c++17 复刻 CANN 声明实测过。)
+    template <typename S>
+    __aicore__ inline float ToF32(const S& v)
+    {
+        if constexpr (IsSameType<S, float>::value) {
+            return v;
+        } else {
+            return ToFloat(v);
+        }
+    }
+
+    __aicore__ inline float ScaleAt(uint32_t idx) { return ToF32(scaleLocal_.GetValue(idx)); }
+
 private:
     TPipe& pipe_;
     TQue<QuePosition::VECIN, WSR_BUFFER_NUM> inQueX_;
@@ -209,12 +241,12 @@ private:
     TBuf<TPosition::VECCALC> calcBuf_;
     TBuf<TPosition::VECCALC> scaleBuf_, scaleVecBuf_, rotBuf_, cosBuf2_, maskBuf_;
     TQue<QuePosition::VECIN, WSR_BUFFER_NUM> csQue_;   // cos/sin 每 batch 搬运(double buffer, 框架自动同步)
-    LocalTensor<DTYPE_X> scaleLocal_;
+    LocalTensor<DTYPE_SCALE> scaleLocal_;
     LocalTensor<uint32_t> mask_;
     uint32_t ropeDimAligned_{0};
 
     GlobalTensor<DTYPE_X> xGm_;
-    GlobalTensor<DTYPE_X> scaleGm_;
+    GlobalTensor<DTYPE_SCALE> scaleGm_;
     GlobalTensor<float> cosGm_;
     GlobalTensor<float> sinGm_;
     GlobalTensor<DTYPE_X> outGm_;

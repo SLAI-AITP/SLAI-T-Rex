@@ -1,11 +1,6 @@
-From 9ae9015395365c40195c4d93cbafe9641300df63 Mon Sep 17 00:00:00 2001
-Date: Tue, 25 Aug 2026 11:53:54 +0800
-Subject: [PATCH] =?UTF-8?q?feat:=20=E5=90=88=E5=85=A5=20permute/gts=5Fswig?=
- =?UTF-8?q?lu=5Flimit=5Fprobs=20make=5Fchunk=5Fsort=5Fmap=E7=AD=89?=
- =?UTF-8?q?=E7=89=B9=E6=80=A7?=
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+From 0e410344a5ff9552384bb4b59220677010a4faf9 Mon Sep 17 00:00:00 2001
+Date: Wed, 2 Sep 2026 18:19:16 +0800
+Subject: [PATCH] support permute/swiglu-limit-probs/compressor
 
 ---
  mindspeed/core/fusions/fused_moe_permute.py           | 11 +++++++++++

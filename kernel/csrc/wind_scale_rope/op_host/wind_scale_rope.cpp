@@ -12,7 +12,11 @@
 namespace ops {
 // inputs=[x; scale; cos; sin]; outputs=[out]
 //   x:    [T, D]      BF16  (T = B*S*N 摊平; D = head_dim = 512)
-//   scale:[T, 1]      BF16  (rmsnorm 的 rstd, 每行一个)
+//   scale:[T, 1]      BF16 或 FP32 (rmsnorm 的 rstd, 每行一个)
+//     两档 dtype 组合(其余张量各档相同, OpDef 要求所有 in/out 档位数一致):
+//       档0: scale BF16  <- gts_rmsnorm_without_weight(outDType=q.dtype) 出的 rstd
+//       档1: scale FP32  <- torch_npu.npu_rms_norm()[1] 出的 rstd(恒 fp32), 或 torch.rsqrt 的 fp32 结果
+//     kernel 内 scale 一律先提升到 fp32 参与 u=x*scale, 故档1 不损精度(档0 是调用方已经损过了)。
 //   cos:  [S, ropeDim] FP32 (host 预展开: 每复数 cos 重复2份到相邻两 lane, S 维索引)
 //   sin:  [S, ropeDim] FP32 (host 预展开: sinSigned, 偶位=-sin 奇位=+sin, 供 out=u*cos+rotate(u)*sin)
 //   out:  [T, D]      BF16
@@ -22,7 +26,7 @@ public:
     {
         std::vector<ge::Format> formats = {ge::FORMAT_ND, ge::FORMAT_ND};
         this->Input("x").ParamType(REQUIRED).DataType({ge::DT_BF16, ge::DT_BF16}).Format(formats);
-        this->Input("scale").ParamType(REQUIRED).DataType({ge::DT_BF16, ge::DT_BF16}).Format(formats);
+        this->Input("scale").ParamType(REQUIRED).DataType({ge::DT_BF16, ge::DT_FLOAT}).Format(formats);
         this->Input("cos").ParamType(REQUIRED).DataType({ge::DT_FLOAT, ge::DT_FLOAT}).Format(formats);
         this->Input("sin").ParamType(REQUIRED).DataType({ge::DT_FLOAT, ge::DT_FLOAT}).Format(formats);
         this->Output("out").ParamType(REQUIRED).DataType({ge::DT_BF16, ge::DT_BF16}).Format(formats);

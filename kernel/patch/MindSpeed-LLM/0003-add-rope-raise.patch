@@ -1,0 +1,43 @@
+From 0bc03516e8783bfee14aa430ce50e6fd9323a598 Mon Sep 17 00:00:00 2001
+Date: Wed, 2 Sep 2026 18:42:13 +0800
+Subject: [PATCH 3/3] add rope raise
+
+---
+ mindspeed_llm/core/models/deepseek4/deepseek4_model.py  | 2 +-
+ mindspeed_llm/tasks/models/transformer/deepseek4/csa.py | 7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/mindspeed_llm/core/models/deepseek4/deepseek4_model.py b/mindspeed_llm/core/models/deepseek4/deepseek4_model.py
+index f830987e..83a4a288 100644
+--- a/mindspeed_llm/core/models/deepseek4/deepseek4_model.py
++++ b/mindspeed_llm/core/models/deepseek4/deepseek4_model.py
+@@ -269,7 +269,7 @@ class DeepSeek4Model(MegatronCoreGPTModel):
+                 inference_context, self.decoder, decoder_input, self.config, packed_seq_params
+             )
+             rotary_pos_emb = self.rotary_pos_emb(rotary_seq_len)
+-        elif is_enable_op("rope") and self.position_embedding_type == 'deepseek4':
++        elif False and is_enable_op("rope") and self.position_embedding_type == 'deepseek4':
+             rope_theta = args.rope_theta  # compress_ration=1
+             compress_rope_theta = args.compress_rope_theta  # for compress_ratio>1
+ 
+diff --git a/mindspeed_llm/tasks/models/transformer/deepseek4/csa.py b/mindspeed_llm/tasks/models/transformer/deepseek4/csa.py
+index aeb85e65..643233c1 100644
+--- a/mindspeed_llm/tasks/models/transformer/deepseek4/csa.py
++++ b/mindspeed_llm/tasks/models/transformer/deepseek4/csa.py
+@@ -430,6 +430,13 @@ class DeepSeek4SelfAttention(MegatronModule):
+         q_len = q_len_local * tp_size if self.config.sequence_parallel else q_len_local
+         q_len_global = q_len * cp_size if cp_size > 1 else q_len
+         self.freqs_cis = self.freqs_cis[start_pos : start_pos + q_len_global]
++
++        # [Add by GTS-AILab] [feature GTSOps] enable rope_raise
++        if is_enable_op("rope_raise") and self.freqs_cis.shape[0] != q_len_global:
++            raise RuntimeError(f"freqs_cis 被静默截断: 要 {q_len_global} 行, 实得 "
++                f"{self.freqs_cis.shape[0]} 行; q_len_local={q_len_local}, "
++                f"tp={tp_size}, hc_mult={args.hc_mult}")
++
+         if self.kv_allgather:
+             self.freqs_cis = permute_cp_shard(self.freqs_cis, reorder=False)
+         q_compressed = self.linear_q(hidden_states)  # s,b,lora_rank
+-- 
+2.45.0.windows.1
+
