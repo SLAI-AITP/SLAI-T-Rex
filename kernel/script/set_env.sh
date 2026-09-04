@@ -78,8 +78,7 @@ function replace_transformer_ops() {
 }
 
 export PYTHONDONTWRITEBYTECODE=1
-main --enable-gts-bind-cpus \
-  --enable-gts-rms0 --enable-gts-swiglu1 --enable-gts-swiglu1-probs \
-  --enable-gts-rope --enable-gts-compressor0 --enable-gts-make-chunk-sort-map \
-  --enable-gts-index-muls --enable-gts-permute --enable-gts-indexer-q-detach
+main --enable-gts-bind-cpus --enable-gts-swiglu1 --enable-gts-swiglu1-probs --enable-gts-permute --enable-gts-index-muls
+# 其他暂不开启特性：--enable-gts-rms0 --enable-gts-indexer-q-detach --enable-gts-rope --enable-gts-compressor0 --enable-gts-make-chunk-sort-map
+
 enable_malloc tcmalloc # support: mimalloc tcmalloc jemalloc
