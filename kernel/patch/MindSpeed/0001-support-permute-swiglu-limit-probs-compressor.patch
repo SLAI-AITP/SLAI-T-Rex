@@ -1,0 +1,96 @@
+From 0e410344a5ff9552384bb4b59220677010a4faf9 Mon Sep 17 00:00:00 2001
+Date: Wed, 2 Sep 2026 18:19:16 +0800
+Subject: [PATCH] support permute/swiglu-limit-probs/compressor
+
+---
+ mindspeed/core/fusions/fused_moe_permute.py           | 11 +++++++++++
+ .../grouped_mlp_with_comp_and_comm_overlap_all2all.py |  9 +++++++++
+ mindspeed/lite/ops/triton/sort_chunks_by_idx.py       |  9 +++++++++
+ mindspeed/ops/triton/sort_chunks_by_idx.py            |  9 +++++++++
+ 4 files changed, 38 insertions(+)
+
+diff --git a/mindspeed/core/fusions/fused_moe_permute.py b/mindspeed/core/fusions/fused_moe_permute.py
+index 3f78a7ed..c5967b6c 100644
+--- a/mindspeed/core/fusions/fused_moe_permute.py
++++ b/mindspeed/core/fusions/fused_moe_permute.py
+@@ -56,6 +56,17 @@ def permute(
+         drop_and_pad: bool = False,
+ ) -> torch.Tensor:
+     if fused:
++        # [Add by GTS-AILab] [feature GTSOps] permute 开启
++        from mindspeed.gts.ops.gts_custom_op import is_enable_op
++        if is_enable_op("permute"):
++            #   bf16              fp32            int32
++            permuted_input, permuted_probs, sorted_indices = (
++                                        # bf16     bool      fp32
++                MoePermuteMaskMap.apply(tokens, routing_map, probs, num_out_tokens, drop_and_pad))
++            if isinstance(probs, torch.Tensor):
++                permuted_probs.to(probs.dtype) # fp32 -> bf16
++            return permuted_input, permuted_probs, sorted_indices
++
+         tokens, probs, original_dtype = convert_tensors_to_fp32_if_needed(tokens, probs)
+         permuted_input, permuted_probs, sorted_indices = (
+             MoePermuteMaskMap.apply(tokens, routing_map, probs, num_out_tokens, drop_and_pad))
+diff --git a/mindspeed/core/transformer/moe/moe_feature/overlap/grouped_mlp_with_comp_and_comm_overlap_all2all.py b/mindspeed/core/transformer/moe/moe_feature/overlap/grouped_mlp_with_comp_and_comm_overlap_all2all.py
+index 8ef7dc89..280edc34 100644
+--- a/mindspeed/core/transformer/moe/moe_feature/overlap/grouped_mlp_with_comp_and_comm_overlap_all2all.py
++++ b/mindspeed/core/transformer/moe/moe_feature/overlap/grouped_mlp_with_comp_and_comm_overlap_all2all.py
+@@ -42,6 +42,15 @@ class GroupedMlpWithCompAndCommOverlapAll2All(torch.autograd.Function):
+             inputs.untyped_storage().resize_(0)
+ 
+         def activation_func_with_probs_detach(x, probs):
++            # [Add by GTS-AILab] [feature GTSOps] swiglu_limit+probs.
++            # Fused path returns (with_probs, without_probs); fallback keeps the original eager path.
++            from megatron.training.global_vars import get_args
++            from mindspeed.gts.ops.gts_custom_op import gts_swiglu_limit_probs
++            limit = getattr(get_args(), "swiglu_limit", 0)
++            out = gts_swiglu_limit_probs(x, limit, probs)
++            if out is not None:
++                return out[1], out[0]
++
+             dtype = x.dtype
+             act_without_probs = activation_func(x)
+             fin_res = act_without_probs * (probs.unsqueeze(-1))
+diff --git a/mindspeed/lite/ops/triton/sort_chunks_by_idx.py b/mindspeed/lite/ops/triton/sort_chunks_by_idx.py
+index 2df2a431..b9d9b132 100644
+--- a/mindspeed/lite/ops/triton/sort_chunks_by_idx.py
++++ b/mindspeed/lite/ops/triton/sort_chunks_by_idx.py
+@@ -84,6 +84,15 @@ def make_chunk_sort_map(
+     num_splits: int
+         Number of splits of split_sizes and sorted_indices.
+     """
++    # [Add by GTS-AILab] [feature GTSOps] make_chunk_sort_map
++    try:
++        from mindspeed.gts.ops.gts_custom_op import gts_make_chunk_sort_map
++        row_id_map_gts = gts_make_chunk_sort_map(split_sizes, sorted_indices, num_tokens)
++        if row_id_map_gts is not None:
++            return row_id_map_gts
++    except ImportError:
++        pass
++
+     row_id_map = torch.empty((num_tokens,), dtype=torch.int32, device="npu")
+     num_blocks = min(48, num_tokens)
+     block_size = triton.cdiv(num_tokens, num_blocks)
+diff --git a/mindspeed/ops/triton/sort_chunks_by_idx.py b/mindspeed/ops/triton/sort_chunks_by_idx.py
+index 2df2a431..b9d9b132 100644
+--- a/mindspeed/ops/triton/sort_chunks_by_idx.py
++++ b/mindspeed/ops/triton/sort_chunks_by_idx.py
+@@ -84,6 +84,15 @@ def make_chunk_sort_map(
+     num_splits: int
+         Number of splits of split_sizes and sorted_indices.
+     """
++    # [Add by GTS-AILab] [feature GTSOps] make_chunk_sort_map
++    try:
++        from mindspeed.gts.ops.gts_custom_op import gts_make_chunk_sort_map
++        row_id_map_gts = gts_make_chunk_sort_map(split_sizes, sorted_indices, num_tokens)
++        if row_id_map_gts is not None:
++            return row_id_map_gts
++    except ImportError:
++        pass
++
+     row_id_map = torch.empty((num_tokens,), dtype=torch.int32, device="npu")
+     num_blocks = min(48, num_tokens)
+     block_size = triton.cdiv(num_tokens, num_blocks)
+-- 
+2.45.0.windows.1
+

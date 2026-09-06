@@ -1,0 +1,71 @@
+{
+    "version": 1,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 19,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default Config",
+            "description": "Default build using Unix Makefiles generator",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build_out",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": {
+                    "type": "STRING",
+                    "value": "Release"
+                },
+                "BUILD_OPS_LIST": {
+                    "type": "STRING",
+                    "value": "*"
+                },
+                "EXCLUDE_OPS_LIST": {
+                    "type": "STRING",
+                    "value": "-"
+                },
+                "ENABLE_SOURCE_PACKAGE": {
+                    "type": "BOOL",
+                    "value": "False"
+                },
+                "ENABLE_BINARY_PACKAGE": {
+                    "type": "BOOL",
+                    "value": "True"
+                },
+                "ASCEND_COMPUTE_UNIT": {
+                    "type": "STRING",
+                    "value": "ascend910b;ascend310p;ascend910;ascend910_93"
+                },
+                "ENABLE_TEST": {
+                    "type": "BOOL",
+                    "value": "False"
+                },
+                "vendor_name": {
+                    "type": "STRING",
+                    "value": "gtsops"
+                },
+                "ASCEND_CANN_PACKAGE_PATH": {
+                    "type": "PATH",
+                    "value": "$env{ASCEND_HOME_PATH}"
+                },
+                "ASCEND_PYTHON_EXECUTABLE": {
+                    "type": "STRING",
+                    "value": "python3"
+                },
+                "CMAKE_INSTALL_PREFIX": {
+                    "type": "PATH",
+                    "value": "${sourceDir}/build_out"
+                },
+                "ENABLE_CROSS_COMPILE": {
+                    "type": "BOOL",
+                    "value": "False"
+                },
+                "CMAKE_CROSS_PLATFORM_COMPILER": {
+                    "type": "PATH",
+                    "value": "/usr/bin/aarch64-linux-gnu-g++"
+                }
+            }
+        }
+    ]
+}
