@@ -19,7 +19,7 @@
 
 # SLAI T-Rex
 
-技术报告配套开源仓库：[SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](docs/SLAI-T-Rex.pdf)。
+技术报告 [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](https://arxiv.org/abs/2607.20145) 的配套开源仓库。
 
 - **模型：** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)
 - **代码：** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
@@ -55,6 +55,8 @@ SLAI-T-Rex/
 ├── training/common/     MindSpeed 运行时路径公共解析
 ├── training/cpt/        DeepSeek-V4 Flash/Pro 4K CPT 启动
 ├── training/sft/        DeepSeek-V4 Flash 8K 与 Pro 4K SFT 启动
+├── kernel/               AscendC 算子、框架补丁与运行时环境
+├── docker/               Ascend A3/CANN 训练镜像构建与校验
 ├── eval/                OR benchmark
 ├── docs/                技术报告 PDF
 └── assets/
@@ -67,6 +69,8 @@ SLAI-T-Rex/
 | [training/convert](training/convert/) | 脚本 | MindSpeed 数据转换；HF / MCore / FP8 checkpoint |
 | [training/cpt](training/cpt/) | 脚本 | MindSpeed-LLM 4K CPT |
 | [training/sft](training/sft/) | 脚本 | MindSpeed-LLM 8K SFT |
+| [kernel](kernel/) | 源码与脚本 | AscendC 自定义算子、MindSpeed/MindSpeed-LLM 补丁和运行时环境 |
+| [docker](docker/) | 构建脚本 | CANN 9.1.0 / Ascend A3 训练镜像构建、版本锁定和校验 |
 | [eval](eval/) | 可运行 | NL4OPT、OptiBench、B4O-Feasible、B4O-ORGEval |
 
 ```text

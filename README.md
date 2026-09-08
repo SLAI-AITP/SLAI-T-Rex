@@ -19,7 +19,7 @@
 
 # SLAI T-Rex
 
-Open-source companion to [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](docs/SLAI-T-Rex.pdf).
+Open-source companion repository for the technical report [SLAI T-Rex: Full-Parameter Post-training of the DeepSeek-V4 Family on Ascend SuperPOD](https://arxiv.org/abs/2607.20145).
 
 - **Model:** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)
 - **Code:** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
@@ -55,6 +55,8 @@ SLAI-T-Rex/
 ├── training/common/     shared MindSpeed runtime discovery
 ├── training/cpt/        DeepSeek-V4 Flash/Pro 4K CPT launchers
 ├── training/sft/        DeepSeek-V4 Flash 8K and Pro 4K SFT launchers
+├── kernel/               AscendC kernels, framework patches, and runtime setup
+├── docker/               Ascend A3/CANN image build and validation
 ├── eval/                OR benchmarks
 ├── docs/                technical report PDF
 └── assets/
@@ -67,6 +69,8 @@ SLAI-T-Rex/
 | [training/convert](training/convert/) | scripts | MindSpeed data conversion; HF / MCore / FP8 checkpoints |
 | [training/cpt](training/cpt/) | scripts | MindSpeed-LLM 4K CPT |
 | [training/sft](training/sft/) | scripts | MindSpeed-LLM 8K SFT |
+| [kernel](kernel/) | source/scripts | AscendC custom kernels, MindSpeed/MindSpeed-LLM patches, and runtime setup |
+| [docker](docker/) | build scripts | CANN 9.1.0 / Ascend A3 image build, version pinning, and validation |
 | [eval](eval/) | runnable | NL4OPT, OptiBench, B4O-Feasible, B4O-ORGEval |
 
 ```text
