@@ -1,5 +1,13 @@
 # SLAI T-Rex Ascend 训练镜像搭建指南
 
+SLAI T-Rex 已在 Quay.io 发布预构建训练镜像。若无需修改镜像内容，可以直接拉取：
+
+```bash
+docker pull quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0
+```
+
+该标签面向 Ascend A3，包含与本文一致的 CANN 9.1.0、MindSpeed、MindSpeed-LLM、Megatron-LM 及训练算子环境。只有需要复现构建过程、调整依赖版本或定制算子时，才需要继续按照本文从头构建。
+
 本构建用于 DeepSeek-V4 Flash/Pro CPT 与 SFT，目标设备为 Ascend A3
 `ascend910_93`。主要版本如下：
 
@@ -9,8 +17,6 @@
 - MindSpeed-LLM `v26.1.0`；
 - Megatron-LM `core_v0.12.1`；
 - ops-transformer 9.1.0。
-
-训练数据、Tokenizer、模型权重和集群配置不写入镜像。
 
 ## 1. 一键构建
 
@@ -27,7 +33,7 @@ bash docker/build_image.sh
 slai-trex:ascend-cann910-a3
 ```
 
-整个过程只调用一次 `docker build`，不会先生成 MindSpeed-LLM 中间镜像。入口脚本只在
+整个过程只调用一次 `docker build`。入口脚本只在
 Docker 构建前完成安装包下载、SHA256 校验、公开源码准备和 openEuler 基础镜像导入。
 
 ## 2. 可选设置

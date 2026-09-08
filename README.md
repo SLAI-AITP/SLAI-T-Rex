@@ -23,6 +23,7 @@ Open-source companion to [SLAI T-Rex: Full-Parameter Post-training of the DeepSe
 
 - **Model:** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)
 - **Code:** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
+- **Training image:** `quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0`
 
 The report studies full-parameter post-training of DeepSeek-V4 on Ascend CloudMatrix384 SuperPOD (910C). This repository ships the reproducible pieces: OR CPT/SFT data construction, MindSpeed-LLM launch templates, checkpoint conversion, and OR benchmark evaluation.
 
@@ -73,6 +74,16 @@ checkpoint prep -> CPT data -> CPT train -> SFT data -> SFT train -> eval
 ```
 
 Large-scale production inputs, private cluster configs, and proprietary eval artifacts are not included. Training scripts assume an existing Ascend / MindSpeed environment (MindSpeed-LLM, CANN, and cluster launchers are not vendored).
+
+## Prebuilt Training Image
+
+The Ascend A3 training image with CANN 9.1.0 is available from Quay.io:
+
+```bash
+docker pull quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0
+```
+
+See the [training image build guide](docs/IMAGE_BUILD_GUIDE_zh.md) for the pinned components and instructions for rebuilding or customizing the image.
 
 ## Quick start
 

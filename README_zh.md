@@ -23,6 +23,7 @@
 
 - **模型：** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)
 - **代码：** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
+- **训练镜像：** `quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0`
 
 报告研究在 Ascend CloudMatrix384 SuperPOD（910C）上对 DeepSeek-V4 做全参数后训练。本仓库提供可复现部分：OR CPT/SFT 数据构建、MindSpeed-LLM 启动模板、checkpoint 转换、OR benchmark 评测。
 
@@ -73,6 +74,16 @@ checkpoint 准备 -> CPT 数据 -> CPT 训练 -> SFT 数据 -> SFT 训练 -> 评
 ```
 
 大规模生产数据、私有集群配置和内部评测产物不随仓库发布。训练脚本面向已准备好的 Ascend / MindSpeed 环境，不内置 MindSpeed-LLM、CANN 或集群启动器。
+
+## 预构建训练镜像
+
+面向 Ascend A3 和 CANN 9.1.0 的训练镜像已发布到 Quay.io，可直接拉取：
+
+```bash
+docker pull quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0
+```
+
+镜像构建版本、内容和自行构建方法见[训练镜像搭建指南](docs/IMAGE_BUILD_GUIDE_zh.md)。
 
 ## 快速开始
 
