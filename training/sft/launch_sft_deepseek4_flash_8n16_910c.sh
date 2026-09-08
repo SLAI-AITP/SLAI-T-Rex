@@ -8,7 +8,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MINDSPEED_LLM_DIR="${MINDSPEED_LLM_DIR:-$(cd "${SCRIPT_DIR}/../../.." && pwd)}"
 SFT_TRAIN_SCRIPT="${SFT_TRAIN_SCRIPT:-${SCRIPT_DIR}/train_sft_deepseek4_flash_8k.sh}"
 
 TRAIN_ITERS="${TRAIN_ITERS:-250}"
@@ -28,8 +27,6 @@ infer_node_rank() {
 }
 
 NODE_RANK="$(infer_node_rank)"
-export NODE_RANK TRAIN_ITERS GBS MINDSPEED_LLM_DIR
-export PYTHONPATH="${MINDSPEED_LLM_DIR}/Megatron-LM:${PYTHONPATH:-}"
 
 if [[ -n "${BASHRC:-}" && -f "${BASHRC}" ]]; then
     source "${BASHRC}"
@@ -42,6 +39,10 @@ if [[ -n "${PRE_INSTALL_SCRIPT:-}" ]]; then
     fi
     bash "${PRE_INSTALL_SCRIPT}"
 fi
+
+source "${SCRIPT_DIR}/../common/resolve_runtime.sh"
+resolve_mindspeed_runtime posttrain_gpt.py
+export NODE_RANK TRAIN_ITERS GBS
 
 export SFT_RUN_ID="${SFT_RUN_ID:-${RUN_ID:-${VC_JOB_ID:-${SLURM_JOB_ID:-$(date +%Y%m%d_%H%M)}}}}"
 echo "SFT_RUN_ID=${SFT_RUN_ID}"

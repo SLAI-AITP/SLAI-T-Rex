@@ -1,0 +1,3 @@
+# Local downloads and source caches.
+.build-cache/
+packages/

@@ -51,8 +51,9 @@ SLAI-T-Rex/
 ├── data/cpt/            OR-CPT engine (solver-verified synthesis)
 ├── data/sft/            OR SFT distillation toolkit
 ├── training/convert/    data and checkpoint conversion
-├── training/cpt/        4K CPT launcher
-├── training/sft/        8K SFT launcher
+├── training/common/     shared MindSpeed runtime discovery
+├── training/cpt/        DeepSeek-V4 Flash/Pro 4K CPT launchers
+├── training/sft/        DeepSeek-V4 Flash 8K and Pro 4K SFT launchers
 ├── eval/                OR benchmarks
 ├── docs/                technical report PDF
 └── assets/
@@ -99,14 +100,14 @@ Training, conversion, and eval commands live in the module READMEs above.
 
 ## Training defaults
 
-| | CPT (`training/cpt`) | SFT (`training/sft`) |
-| --- | --- | --- |
-| Seq / GBS | 4096 / 128 | 8192 / 128 |
-| Iters / LR | 280 / 3e-6 | 250 / 5e-6 |
-| Parallelism | TP=1, PP=4, EP=32 | TP=1, PP=4, EP=32 |
-| Data | `{"text": "..."}` JSONL | OpenAI `messages` JSONL |
+| Recipe | Seq / GBS | Iters / LR | Parallelism |
+| --- | --- | --- | --- |
+| Flash CPT | 4096 / 128 | 280 / 3e-6 | TP=1, PP=4, EP=32 |
+| Flash SFT | 8192 / 128 | 250 / 5e-6 | TP=1, PP=4, EP=32 |
+| Pro CPT | 4096 / 256 | 45 / 1e-6 | TP=2, PP=8, EP=64 |
+| Pro SFT | 4096 / 1024 | 2000 / 1e-5 | TP=2, PP=8, EP=64 |
 
-Match hardware layout, checkpoint format, and packing before changing these.
+Training paths are provided through environment variables. The launchers discover MindSpeed repositories cloned next to SLAI-T-Rex or use explicit `MINDSPEED_LLM_DIR`, `MINDSPEED_DIR`, and `MEGATRON_DIR` values. Match hardware layout, checkpoint format, tokenizer, and packing before changing the defaults.
 
 ## Citation
 

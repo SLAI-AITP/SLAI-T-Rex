@@ -10,8 +10,8 @@ set -o pipefail
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MINDSPEED_LLM_DIR="${MINDSPEED_LLM_DIR:-$(cd "${SCRIPT_DIR}/../../.." && pwd)}"
-MINDSPEED_DIR="${MINDSPEED_DIR:-${MINDSPEED_LLM_DIR}/../MindSpeed}"
+source "${SCRIPT_DIR}/../common/resolve_runtime.sh"
+resolve_mindspeed_runtime posttrain_gpt.py || exit 1
 
 required_var() {
     local name="$1"
@@ -312,7 +312,6 @@ FINETUNE_ARGS="
 "
 
 cd "${MINDSPEED_LLM_DIR}"
-export PYTHONPATH="${MINDSPEED_DIR}:${MINDSPEED_LLM_DIR}/Megatron-LM:${PYTHONPATH:-}"
 
 if [[ "${NODE_RANK}" == "0" ]]; then
     cp "$0" "${ARCHIVE_DIR}/train_script.sh"

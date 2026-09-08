@@ -51,8 +51,9 @@ SLAI-T-Rex/
 ├── data/cpt/            OR-CPT engine（solver-verified 合成）
 ├── data/sft/            OR SFT 蒸馏工具
 ├── training/convert/    数据与 checkpoint 转换
-├── training/cpt/        4K CPT 启动
-├── training/sft/        8K SFT 启动
+├── training/common/     MindSpeed 运行时路径公共解析
+├── training/cpt/        DeepSeek-V4 Flash/Pro 4K CPT 启动
+├── training/sft/        DeepSeek-V4 Flash 8K 与 Pro 4K SFT 启动
 ├── eval/                OR benchmark
 ├── docs/                技术报告 PDF
 └── assets/
@@ -99,14 +100,14 @@ python3 -m or_cpt_engine.cli.main --help
 
 ## 训练默认值
 
-| | CPT (`training/cpt`) | SFT (`training/sft`) |
-| --- | --- | --- |
-| Seq / GBS | 4096 / 128 | 8192 / 128 |
-| Iters / LR | 280 / 3e-6 | 250 / 5e-6 |
-| 并行 | TP=1, PP=4, EP=32 | TP=1, PP=4, EP=32 |
-| 数据 | `{"text": "..."}` JSONL | OpenAI `messages` JSONL |
+| Recipe | Seq / GBS | Iters / LR | 并行配置 |
+| --- | --- | --- | --- |
+| Flash CPT | 4096 / 128 | 280 / 3e-6 | TP=1, PP=4, EP=32 |
+| Flash SFT | 8192 / 128 | 250 / 5e-6 | TP=1, PP=4, EP=32 |
+| Pro CPT | 4096 / 256 | 45 / 1e-6 | TP=2, PP=8, EP=64 |
+| Pro SFT | 4096 / 1024 | 2000 / 1e-5 | TP=2, PP=8, EP=64 |
 
-改这些值前先对齐硬件拓扑、checkpoint 格式和 packing。
+数据、tokenizer、初始权重和输出路径均通过环境变量传入。训练脚本会自动查找与 SLAI-T-Rex 同级的 MindSpeed 仓库，也可显式设置 `MINDSPEED_LLM_DIR`、`MINDSPEED_DIR` 和 `MEGATRON_DIR`。修改默认值前请先对齐硬件拓扑、checkpoint 格式、tokenizer 和 packing。
 
 ## 引用
 
