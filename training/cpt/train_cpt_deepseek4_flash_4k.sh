@@ -13,8 +13,8 @@ JOB_NAME=${JOB_NAME:-"cpt_weighted_mix_gbs128"}
 DESCRIPTION="${DESCRIPTION:-Weighted CPT data mixture, GBS128}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MINDSPEED_LLM_DIR="${MINDSPEED_LLM_DIR:-$(cd "${SCRIPT_DIR}/../../.." && pwd)}"
-MINDSPEED_DIR="${MINDSPEED_DIR:-${MINDSPEED_LLM_DIR}/../MindSpeed}"
+source "${SCRIPT_DIR}/../common/resolve_runtime.sh"
+resolve_mindspeed_runtime pretrain_deepseek4.py || exit 1
 
 DATA_ROOT="${DATA_ROOT:-/path/to/processed_datasets}"
 VALID_DATA_PATH="${VALID_DATA_PATH:-${DATA_ROOT}/validation/val_text_document}"
@@ -373,7 +373,6 @@ cd "${MINDSPEED_LLM_DIR}"
 mkdir -p "$CKPT_SAVE_DIR"
 mkdir -p logs
 
-export PYTHONPATH="${MINDSPEED_DIR}:${MINDSPEED_LLM_DIR}/Megatron-LM:${PYTHONPATH:-}"
 MINDSPEED_DATA_CACHE="${MINDSPEED_DATA_CACHE:-/tmp/mindspeed_data_cache}"
 rm -rf "${MINDSPEED_DATA_CACHE}"
 

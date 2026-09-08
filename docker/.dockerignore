@@ -1,0 +1,3 @@
+# Host-only caches and the rootfs archive are not needed by Dockerfile RUN steps.
+.build-cache/
+packages/openEuler-docker.aarch64.tar.xz

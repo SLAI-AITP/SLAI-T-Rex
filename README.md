@@ -23,6 +23,7 @@ Open-source companion to [SLAI T-Rex: Full-Parameter Post-training of the DeepSe
 
 - **Model:** [SLAIAITP/DeepSeek-V4-Flash-OR](https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR)
 - **Code:** [SLAI-AITP/SLAI-T-Rex](https://github.com/SLAI-AITP/SLAI-T-Rex)
+- **Training image:** `quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0`
 
 The report studies full-parameter post-training of DeepSeek-V4 on Ascend CloudMatrix384 SuperPOD (910C). This repository ships the reproducible pieces: OR CPT/SFT data construction, MindSpeed-LLM launch templates, checkpoint conversion, and OR benchmark evaluation.
 
@@ -51,8 +52,9 @@ SLAI-T-Rex/
 ├── data/cpt/            OR-CPT engine (solver-verified synthesis)
 ├── data/sft/            OR SFT distillation toolkit
 ├── training/convert/    data and checkpoint conversion
-├── training/cpt/        4K CPT launcher
-├── training/sft/        8K SFT launcher
+├── training/common/     shared MindSpeed runtime discovery
+├── training/cpt/        DeepSeek-V4 Flash/Pro 4K CPT launchers
+├── training/sft/        DeepSeek-V4 Flash 8K and Pro 4K SFT launchers
 ├── eval/                OR benchmarks
 ├── docs/                technical report PDF
 └── assets/
@@ -72,6 +74,16 @@ checkpoint prep -> CPT data -> CPT train -> SFT data -> SFT train -> eval
 ```
 
 Large-scale production inputs, private cluster configs, and proprietary eval artifacts are not included. Training scripts assume an existing Ascend / MindSpeed environment (MindSpeed-LLM, CANN, and cluster launchers are not vendored).
+
+## Prebuilt Training Image
+
+The Ascend A3 training image with CANN 9.1.0 is available from Quay.io:
+
+```bash
+docker pull quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0
+```
+
+See the [training image build guide](docs/IMAGE_BUILD_GUIDE_zh.md) for the pinned components and instructions for rebuilding or customizing the image.
 
 ## Quick start
 
@@ -99,14 +111,14 @@ Training, conversion, and eval commands live in the module READMEs above.
 
 ## Training defaults
 
-| | CPT (`training/cpt`) | SFT (`training/sft`) |
-| --- | --- | --- |
-| Seq / GBS | 4096 / 128 | 8192 / 128 |
-| Iters / LR | 280 / 3e-6 | 250 / 5e-6 |
-| Parallelism | TP=1, PP=4, EP=32 | TP=1, PP=4, EP=32 |
-| Data | `{"text": "..."}` JSONL | OpenAI `messages` JSONL |
+| Recipe | Seq / GBS | Iters / LR | Parallelism |
+| --- | --- | --- | --- |
+| Flash CPT | 4096 / 128 | 280 / 3e-6 | TP=1, PP=4, EP=32 |
+| Flash SFT | 8192 / 128 | 250 / 5e-6 | TP=1, PP=4, EP=32 |
+| Pro CPT | 4096 / 256 | 45 / 1e-6 | TP=2, PP=8, EP=64 |
+| Pro SFT | 4096 / 1024 | 2000 / 1e-5 | TP=2, PP=8, EP=64 |
 
-Match hardware layout, checkpoint format, and packing before changing these.
+Training paths are provided through environment variables. The launchers discover MindSpeed repositories cloned next to SLAI-T-Rex or use explicit `MINDSPEED_LLM_DIR`, `MINDSPEED_DIR`, and `MEGATRON_DIR` values. Match hardware layout, checkpoint format, tokenizer, and packing before changing the defaults.
 
 ## Citation
 
