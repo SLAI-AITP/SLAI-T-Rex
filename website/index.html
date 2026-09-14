@@ -137,7 +137,11 @@
           </article>
           <article class="research-block research-domain">
             <div class="block-topline">
-              <img src="./assets/icons/orproject.svg" alt="" width="36" height="36">
+              <div class="block-icons" aria-label="CPT plus SFT">
+                <img src="./assets/icons/cpt-train.svg" alt="CPT" width="48" height="48">
+                <span class="block-icon-plus" aria-hidden="true">+</span>
+                <img src="./assets/icons/sft-train.svg" alt="SFT" width="48" height="48">
+              </div>
               <span>02 / ADAPTATION</span>
             </div>
             <h3 data-en="Use the substrate to adapt the model" data-zh="在训练底座上适配模型">Use the substrate to adapt the model</h3>
@@ -299,7 +303,10 @@
             <div class="workflow-connector" aria-hidden="true"></div>
             <article class="workflow-step">
               <div class="step-number">04</div>
-              <img src="./assets/icons/workflow.svg" alt="" width="42" height="42">
+              <div class="evaluation-mark" aria-hidden="true">
+                <span>OR</span>
+                <strong>4</strong>
+              </div>
               <h3 data-en="Evaluate" data-zh="评测">Evaluate</h3>
               <p data-en="Run four OR benchmarks and inspect both executable feasibility and canonical model structure." data-zh="在四项 OR benchmark 上评测，同时检查程序可执行性和标准模型结构。">Run four OR benchmarks and inspect both executable feasibility and canonical model structure.</p>
             </article>

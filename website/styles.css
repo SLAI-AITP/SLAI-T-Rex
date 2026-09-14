@@ -548,6 +548,25 @@ h2 {
   height: 36px;
 }
 
+.block-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 48px;
+}
+
+.block-icons img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.block-icon-plus {
+  color: var(--pink);
+  font-size: 1.3rem;
+  font-weight: 850;
+}
+
 .research-block h3 {
   margin: 42px 0 12px;
   font-size: 1.45rem;
@@ -687,6 +706,31 @@ h2 {
 .workflow-step img {
   width: 42px;
   height: 42px;
+}
+
+.evaluation-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 96px;
+  min-height: 48px;
+  padding: 7px 11px;
+  color: var(--ink);
+  border: 2px solid var(--pink);
+  border-radius: 4px;
+  background: #fff5f9;
+}
+
+.evaluation-mark span {
+  color: var(--teal);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.evaluation-mark strong {
+  color: var(--pink);
+  font-size: 1.75rem;
+  line-height: 1;
 }
 
 .workflow-step h3 {
