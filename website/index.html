@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="SLAI T-Rex: full-parameter post-training of the DeepSeek-V4 family on Ascend SuperPOD, with solver-grounded Operations Research specialization.">
+    <meta name="theme-color" content="#121b2b">
+    <title>SLAI T-Rex | Full-parameter post-training on Ascend SuperPOD</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#top" aria-label="SLAI T-Rex home">
+          <img src="./assets/slai-trex-logo.png" alt="" width="174" height="53">
+          <span>SLAI T-Rex</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="#research" data-en="Research" data-zh="研究主线">Research</a>
+          <a href="#workflow" data-en="Workflow" data-zh="工作流">Workflow</a>
+          <a href="#results" data-en="Results" data-zh="评测结果">Results</a>
+          <a href="#quick-start" data-en="Quick start" data-zh="快速开始">Quick start</a>
+          <a href="#resources" data-en="Resources" data-zh="资源">Resources</a>
+          <button class="language-toggle" id="languageToggle" type="button" aria-label="Switch to Chinese">中文</button>
+          <a class="nav-repo" href="https://github.com/SLAI-AITP/SLAI-T-Rex" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="container">
+          <div class="hero-copy">
+            <p class="eyebrow" data-en="OPEN-SOURCE RESEARCH REPOSITORY" data-zh="开源研究仓库">OPEN-SOURCE RESEARCH REPOSITORY</p>
+            <h1>SLAI T-Rex</h1>
+            <p class="hero-title" data-en="Full-parameter post-training on Ascend SuperPOD" data-zh="面向 Ascend SuperPOD 的全参数后训练">Full-parameter post-training on Ascend SuperPOD</p>
+            <p class="hero-lede" data-en="A reproducible stack for scaling DeepSeek-V4 training on Ascend 910C and specializing DeepSeek-V4-Flash for solver-grounded Operations Research." data-zh="一套可复现的全栈方案：在 Ascend 910C 上扩展 DeepSeek-V4 训练，并通过求解器验证的数据流水线增强 DeepSeek-V4-Flash 的运筹优化能力。">A reproducible stack for scaling DeepSeek-V4 training on Ascend 910C and specializing DeepSeek-V4-Flash for solver-grounded Operations Research.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="https://arxiv.org/abs/2607.20145" target="_blank" rel="noreferrer"><span data-en="Read the report" data-zh="阅读技术报告">Read the report</span><span aria-hidden="true">↗</span></a>
+              <a class="button button-secondary" href="#quick-start"><span data-en="Quick start" data-zh="快速开始">Quick start</span><span aria-hidden="true">↓</span></a>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <img src="./assets/overview_infra_and_acc.png" alt="Ascend SuperPOD MFU improvements and Operations Research benchmark comparison">
+            <figcaption data-en="Figure 1. System efficiency improvement and overall Operations Research benchmark comparison reported in the technical report." data-zh="图 1. 技术报告中的系统效率提升与 Operations Research benchmark 总体对比。">Figure 1. System efficiency improvement and overall Operations Research benchmark comparison reported in the technical report.</figcaption>
+          </div>
+        </div>
+      </section>
+
+      <section class="metric-strip" aria-label="Headline results">
+        <div class="container metric-grid">
+          <div class="metric">
+            <strong>34.22<span>%</span></strong>
+            <span data-en="MFU on DeepSeek-V4-Pro" data-zh="DeepSeek-V4-Pro MFU">MFU on DeepSeek-V4-Pro</span>
+          </div>
+          <div class="metric">
+            <strong>2.93<span>x</span></strong>
+            <span data-en="over the open baseline recipe" data-zh="相对开源 baseline 配方">over the open baseline recipe</span>
+          </div>
+          <div class="metric metric-accent">
+            <strong>71.81<span>%</span></strong>
+            <span data-en="average zero-shot OR score" data-zh="四项 OR benchmark 平均 zero-shot 分数">average zero-shot OR score</span>
+          </div>
+          <div class="metric">
+            <strong>10<span>K</span></strong>
+            <span data-en="high-quality SFT samples" data-zh="高质量 SFT 样本">high-quality SFT samples</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section report-overview">
+        <div class="container article-header">
+          <p class="section-index">REPORT OVERVIEW</p>
+          <h2 data-en="Why this project combines infrastructure and model adaptation." data-zh="为什么这个项目同时关注基础设施和模型适配。">Why this project combines infrastructure and model adaptation.</h2>
+          <p class="article-dek" data-en="SLAI T-Rex starts from one premise: better domain capability requires a training substrate that is stable, observable, and efficient enough to support controlled experiments. A trillion-parameter MoE model stresses memory capacity, pipeline balance, collective communication, and irregular operators, while an Operations Research task also requires mathematical fidelity, executable solver code, and structural equivalence. The project handles these requirements as one connected pipeline, from Ascend runtime work to the final benchmark." data-zh="SLAI T-Rex 从一个前提出发：要提升领域能力，必须先有一个足够稳定、可观测且高效的训练底座，才能支撑受控实验。万亿参数级 MoE 模型会挑战设备内存、流水线均衡、集合通信和非规则算子；Operations Research 任务还要求数学语义正确、求解器代码可执行、模型结构等价。项目将这些要求放在同一条连续链路中，从 Ascend 运行时一直连接到最终 benchmark。">SLAI T-Rex starts from one premise: better domain capability requires a training substrate that is stable, observable, and efficient enough to support controlled experiments. A trillion-parameter MoE model stresses memory capacity, pipeline balance, collective communication, and irregular operators, while an Operations Research task also requires mathematical fidelity, executable solver code, and structural equivalence. The project handles these requirements as one connected pipeline, from Ascend runtime work to the final benchmark.</p>
+        </div>
+        <div class="container article-prose">
+          <p data-en="The system study uses DeepSeek-V4-Pro as the large-scale workload and Ascend CloudMatrix384 SuperPOD with Ascend 910C as the execution environment. The report starts from profiling rather than from an isolated optimization trick. It decomposes a training step into useful computation, exposed communication, pipeline bubble, and device-side idle time, then follows the latency into the operators and memory paths that create it. This leads to a three-layer optimization strategy: adjust the parallel execution plan, optimize dominant model-specific kernels, and fuse the long tail of small memory-bound operations." data-zh="系统部分以 DeepSeek-V4-Pro 为大规模工作负载，以 Ascend CloudMatrix384 SuperPOD 和 Ascend 910C 为执行环境。报告从 profiling 出发，而不是从某一个孤立的优化技巧出发。它把训练 step 拆解为有效计算、暴露的通信、流水线 bubble 和设备空闲时间，再继续追踪到产生这些开销的具体算子和内存路径。最终形成三层优化策略：调整并行执行方案、优化模型特有的主要算子、融合大量细碎的内存受限操作。">The system study uses DeepSeek-V4-Pro as the large-scale workload and Ascend CloudMatrix384 SuperPOD with Ascend 910C as the execution environment. The report starts from profiling rather than from an isolated optimization trick. It decomposes a training step into useful computation, exposed communication, pipeline bubble, and device-side idle time, then follows the latency into the operators and memory paths that create it. This leads to a three-layer optimization strategy: adjust the parallel execution plan, optimize dominant model-specific kernels, and fuse the long tail of small memory-bound operations.</p>
+          <p data-en="The model study uses DeepSeek-V4-Flash as the main experimentation platform. The starting checkpoint already contains useful knowledge of common linear and mixed-integer programming templates, but its errors reveal that familiarity with optimization language is not enough. A generated program may compile while using the wrong variable domain, omit a conservation constraint, mishandle a ratio, or produce a graph that is structurally different from the reference formulation. CPT is therefore used to broaden the model's domain prior, while SFT is used to make solver-facing behavior and output contracts reliable at inference time." data-zh="模型部分以 DeepSeek-V4-Flash 作为主要实验平台。初始 checkpoint 已经具备一些常见线性规划和混合整数规划模板知识，但错误分析说明，仅仅熟悉优化语言还不够。模型生成的程序可能可以编译，却使用了错误的变量域、遗漏守恒约束、错误处理比例关系，或者生成与参考 formulation 结构不同的模型。因此，CPT 用来拓宽模型的领域先验，SFT 用来让面向求解器的行为和输出契约在推理时稳定出现。">The model study uses DeepSeek-V4-Flash as the main experimentation platform. The starting checkpoint already contains useful knowledge of common linear and mixed-integer programming templates, but its errors reveal that familiarity with optimization language is not enough. A generated program may compile while using the wrong variable domain, omit a conservation constraint, mishandle a ratio, or produce a graph that is structurally different from the reference formulation. CPT is therefore used to broaden the model's domain prior, while SFT is used to make solver-facing behavior and output contracts reliable at inference time.</p>
+          <p data-en="This distinction also explains the organization of the open-source repository. Data construction is kept separate from MindSpeed-LLM training. The data tools create self-contained documents and instruction examples; conversion scripts turn them into the indexed format expected by training; launchers provide environment-driven recipes; kernel and framework directories expose the Ascend-specific acceleration path; evaluation scripts measure both execution and formulation structure." data-zh="这一区分也解释了开源仓库的组织方式。数据构建与 MindSpeed-LLM 训练相互分离：数据工具负责生成自包含文档和指令样本；转换脚本将数据处理为训练所需的 indexed 格式；启动脚本提供通过环境变量配置的训练 recipe；kernel 和 framework 目录暴露 Ascend 特定的加速路径；评测脚本同时测量程序执行和 formulation 结构。">This distinction also explains the organization of the open-source repository. Data construction is kept separate from MindSpeed-LLM training. The data tools create self-contained documents and instruction examples; conversion scripts turn them into the indexed format expected by training; launchers provide environment-driven recipes; kernel and framework directories expose the Ascend-specific acceleration path; evaluation scripts measure both execution and formulation structure.</p>
+        </div>
+        <div class="container overview-table-wrap">
+          <table class="article-table">
+            <caption data-en="One closed loop from training substrate to domain capability" data-zh="从训练底座到领域能力的完整闭环">One closed loop from training substrate to domain capability</caption>
+            <thead>
+              <tr>
+                <th scope="col" data-en="Stage" data-zh="阶段">Stage</th>
+                <th scope="col" data-en="Role in the loop" data-zh="在闭环中的作用">Role in the loop</th>
+                <th scope="col" data-en="Output" data-zh="产出">Output</th>
+                <th scope="col" data-en="Repository entry" data-zh="仓库入口">Repository entry</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row" data-en="Training substrate" data-zh="训练底座">Training substrate</th>
+                <td data-en="Make the model and runtime stable enough for full-parameter updates on Ascend." data-zh="让模型和运行时能够在 Ascend 上稳定执行全参数更新。">Make the model and runtime stable enough for full-parameter updates on Ascend.</td>
+                <td data-en="Parallel execution, communication overlap, memory strategy, and optimized operators." data-zh="并行执行、通信重叠、内存策略和优化后的算子。">Parallel execution, communication overlap, memory strategy, and optimized operators.</td>
+                <td><code>kernel/</code>, <code>docker/</code></td>
+              </tr>
+              <tr>
+                <th scope="row" data-en="Data and adaptation" data-zh="数据与模型适配">Data and adaptation</th>
+                <td data-en="Use the stable substrate to inject OR knowledge, then align it with solver-facing instructions." data-zh="在稳定底座上注入 OR 知识，再将这些知识对齐为面向求解器的指令行为。">Use the stable substrate to inject OR knowledge, then align it with solver-facing instructions.</td>
+                <td data-en="Solver-verified CPT documents and Clean-CoT SFT examples." data-zh="求解器验证的 CPT 文档和 Clean-CoT SFT 样本。">Solver-verified CPT documents and Clean-CoT SFT examples.</td>
+                <td><code>data/</code>, <code>training/</code></td>
+              </tr>
+              <tr>
+                <th scope="row" data-en="Measurement and feedback" data-zh="测量与反馈">Measurement and feedback</th>
+                <td data-en="Check whether system and data choices become reliable downstream behavior." data-zh="检查系统和数据选择是否转化为可靠的下游行为。">Check whether system and data choices become reliable downstream behavior.</td>
+                <td data-en="Four OR benchmark scores, general-capability checks, logs, and registries." data-zh="四项 OR benchmark 分数、通用能力检查、日志和 registry。">Four OR benchmark scores, general-capability checks, logs, and registries.</td>
+                <td><code>eval/</code>, <code>training/</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section section-intro" id="research">
+        <div class="container intro-grid">
+          <div>
+            <p class="section-index">THE CONTINUOUS PIPELINE</p>
+            <h2 data-en="Turn an efficient training substrate into OR capability." data-zh="把高效训练底座转化为 OR 领域能力。">Turn an efficient training substrate into OR capability.</h2>
+          </div>
+          <p class="section-summary" data-en="SLAI T-Rex is one continuous post-training workflow. Ascend-aware parallelism, memory management, and kernel execution first create a stable training substrate. The same substrate then carries solver-verified OR data through CPT and SFT, and finally exposes whether the adaptation worked through execution and structural-equivalence benchmarks." data-zh="SLAI T-Rex 是一条连续的后训练工作流。首先通过面向 Ascend 的并行、内存管理和算子执行优化，建立稳定的训练底座；然后在同一底座上使用求解器验证的 OR 数据执行 CPT 和 SFT；最后通过程序执行和结构等价 benchmark 检验适配是否真正有效。">SLAI T-Rex is one continuous post-training workflow. Ascend-aware parallelism, memory management, and kernel execution first create a stable training substrate. The same substrate then carries solver-verified OR data through CPT and SFT, and finally exposes whether the adaptation worked through execution and structural-equivalence benchmarks.</p>
+        </div>
+        <div class="container research-grid">
+          <article class="research-block research-system">
+            <div class="block-topline">
+              <img src="./assets/icons/model-deploy.svg" alt="" width="36" height="36">
+              <span>01 / FOUNDATION</span>
+            </div>
+            <h3 data-en="Build the training substrate" data-zh="建立训练底座">Build the training substrate</h3>
+            <p data-en="The system optimizations are the first part of the model adaptation story. They make full-parameter MoE updates practical on Ascend, so the later OR data and checkpoint experiments can be interpreted without confusing infrastructure instability with modeling quality." data-zh="系统优化是模型适配故事的第一部分。它让全参数 MoE 更新能够在 Ascend 上稳定运行，使后续 OR 数据和 checkpoint 实验不必把基础设施不稳定误判为建模质量问题。">The system optimizations are the first part of the model adaptation story. They make full-parameter MoE updates practical on Ascend, so the later OR data and checkpoint experiments can be interpreted without confusing infrastructure instability with modeling quality.</p>
+            <div class="tag-list">
+              <span>910C</span><span>MoE</span><span>AuraKernel</span>
+            </div>
+          </article>
+          <article class="research-block research-domain">
+            <div class="block-topline">
+              <div class="block-icons" aria-label="CPT plus SFT">
+                <img src="./assets/icons/cpt-train.svg" alt="CPT" width="48" height="48">
+                <span class="block-icon-plus" aria-hidden="true">+</span>
+                <img src="./assets/icons/sft-train.svg" alt="SFT" width="48" height="48">
+              </div>
+              <span>02 / ADAPTATION</span>
+            </div>
+            <h3 data-en="Use the substrate to adapt the model" data-zh="在训练底座上适配模型">Use the substrate to adapt the model</h3>
+            <p data-en="The OR stage is not an independent application layer. It reuses the training runtime, conversion path, checkpoint format, monitoring, and evaluation boundary established by the system work. CPT supplies domain structure; SFT makes that structure appear as valid, executable, and benchmark-aligned output." data-zh="OR 阶段不是独立于系统之外的应用层。它复用系统工作建立的训练运行时、数据转换路径、checkpoint 格式、监控机制和评测边界。CPT 提供领域结构，SFT 让这些结构以有效、可执行且符合 benchmark 要求的输出形式出现。">The OR stage is not an independent application layer. It reuses the training runtime, conversion path, checkpoint format, monitoring, and evaluation boundary established by the system work. CPT supplies domain structure; SFT makes that structure appear as valid, executable, and benchmark-aligned output.</p>
+            <div class="tag-list">
+              <span>CPT</span><span>SFT</span><span>Gurobi</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section system-detail">
+        <div class="container article-header">
+          <p class="section-index">SYSTEM STUDY / ASCEND SUPERPOD</p>
+          <h2 data-en="The bottleneck is a chain, not a single kernel." data-zh="瓶颈是一条链路，而不是一个单独的算子。">The bottleneck is a chain, not a single kernel.</h2>
+          <p class="article-dek" data-en="At trillion-parameter scale, device time is shaped by the interaction of parallelism, communication, memory, and operator implementation. The report measures these layers together so that a kernel speedup is interpreted in the context of the training step that it actually affects." data-zh="在万亿参数级规模上，设备时间由并行策略、通信、内存和算子实现共同决定。报告将这些层次放在一起测量，因此算子加速可以被放回它真正影响的训练 step 中解释。">At trillion-parameter scale, device time is shaped by the interaction of parallelism, communication, memory, and operator implementation. The report measures these layers together so that a kernel speedup is interpreted in the context of the training step that it actually affects.</p>
+        </div>
+        <div class="container article-prose">
+          <h3 data-en="Profiling the exposed communication" data-zh="分析暴露出来的通信开销">Profiling the exposed communication</h3>
+          <p data-en="The baseline training step spends 40.76 seconds in communication, which accounts for 52.2% of total device kernel time in the reported profile. Tensor and data parallel collectives contribute the largest share, followed by pipeline point-to-point traffic. Expert-parallel AllToAllV is important for MoE token dispatch, but it is a smaller part of this particular breakdown because the SuperPOD interconnect handles that traffic comparatively well." data-zh="在报告的 profiling 中，baseline training step 的通信耗时为 40.76 秒，占总设备 kernel 时间的 52.2%。Tensor 和 data parallel 的集合通信占比最高，其次是 pipeline 的点对点通信。Expert parallel 的 AllToAllV 对 MoE token dispatch 很重要，但在这一 breakdown 中占比较小，因为 SuperPOD 互联对这部分流量的处理相对更好。">The baseline training step spends 40.76 seconds in communication, which accounts for 52.2% of total device kernel time in the reported profile. Tensor and data parallel collectives contribute the largest share, followed by pipeline point-to-point traffic. Expert-parallel AllToAllV is important for MoE token dispatch, but it is a smaller part of this particular breakdown because the SuperPOD interconnect handles that traffic comparatively well.</p>
+        </div>
+        <div class="container overview-table-wrap">
+          <table class="article-table">
+            <caption data-en="Table 1. Communication latency breakdown in DeepSeek-V4-Pro training" data-zh="表 1. DeepSeek-V4-Pro 训练中的通信耗时分解">Table 1. Communication latency breakdown in DeepSeek-V4-Pro training</caption>
+            <thead>
+              <tr>
+                <th scope="col" data-en="Parallelism dimension" data-zh="并行维度">Parallelism dimension</th>
+                <th scope="col" data-en="Primitives" data-zh="通信原语">Primitives</th>
+                <th scope="col" data-en="Latency (s)" data-zh="耗时（秒）">Latency (s)</th>
+                <th scope="col" data-en="Share of communication" data-zh="占通信比例">Share of communication</th>
+                <th scope="col" data-en="Share of total" data-zh="占总耗时比例">Share of total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Tensor / Data</th><td>AllReduce, AllGather, ReduceScatter</td><td>19.71</td><td>48.4%</td><td>25.2%</td></tr>
+              <tr><th scope="row">Pipeline</th><td>Send, Receive</td><td>14.95</td><td>36.7%</td><td>19.2%</td></tr>
+              <tr><th scope="row">Expert</th><td>AllToAllV</td><td>5.91</td><td>14.5%</td><td>7.6%</td></tr>
+              <tr><th scope="row">Misc.</th><td>Broadcast and others</td><td>0.18</td><td>0.4%</td><td>0.2%</td></tr>
+              <tr class="table-total"><th scope="row" data-en="Communication total" data-zh="通信合计">Communication total</th><td></td><td>40.76</td><td>100%</td><td>52.2%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="container article-prose">
+          <h3 data-en="From parallelism to kernel execution" data-zh="从并行策略到算子执行">From parallelism to kernel execution</h3>
+          <p data-en="The system response is hierarchical. Expert-tensor parallelism reduces unnecessary tensor-parallel pressure in MoE layers while keeping the pipeline configuration stable. Load-balanced scheduling addresses uneven work between pipeline stages. Communication and computation are overlapped where the execution graph permits it, and token dispatch is organized so that synchronization does not expose avoidable idle time. The optimizer path uses memory-aware techniques, including a double-buffered swap strategy, to keep full-parameter training within device constraints." data-zh="系统层面的应对是分层的。Expert-tensor parallelism 在保持 pipeline 配置稳定的同时，降低 MoE 层对 tensor parallel 的额外压力；负载均衡调度用于处理不同 pipeline stage 之间的工作不均；在执行图允许的范围内重叠通信和计算，并组织 token dispatch，减少同步暴露出来的空闲时间；优化器路径使用包括 double-buffered swap 在内的内存感知策略，使全参数训练保持在设备约束内。">The system response is hierarchical. Expert-tensor parallelism reduces unnecessary tensor-parallel pressure in MoE layers while keeping the pipeline configuration stable. Load-balanced scheduling addresses uneven work between pipeline stages. Communication and computation are overlapped where the execution graph permits it, and token dispatch is organized so that synchronization does not expose avoidable idle time. The optimizer path uses memory-aware techniques, including a double-buffered swap strategy, to keep full-parameter training within device constraints.</p>
+          <p data-en="Profiling also shows why generic operator optimization is insufficient. Sparse attention is memory- and control-bound: the vector compute pipeline remains lightly used while local-buffer movement and scalar index or gather logic dominate. By contrast, MatMul and grouped expert computation are closer to cube-compute saturation. The long tail contains many tiny Cast, Add, reshape, and copy operations. Each is short, but the repeated launch and memory traffic costs accumulate across the step, making them natural targets for fusion." data-zh="profiling 还说明了为什么通用算子优化并不够。Sparse attention 主要受内存和控制流限制：vector compute pipeline 使用率较低，而本地 buffer 搬运、标量索引和 gather 逻辑占据主要时间。相比之下，MatMul 和 grouped expert computation 更接近 cube 计算饱和。长尾部分包含大量细小的 Cast、Add、reshape 和 copy 操作。它们单次执行很短，但反复的 launch 和内存流量会在整个 step 中累积，因此适合通过融合处理。">Profiling also shows why generic operator optimization is insufficient. Sparse attention is memory- and control-bound: the vector compute pipeline remains lightly used while local-buffer movement and scalar index or gather logic dominate. By contrast, MatMul and grouped expert computation are closer to cube-compute saturation. The long tail contains many tiny Cast, Add, reshape, and copy operations. Each is short, but the repeated launch and memory traffic costs accumulate across the step, making them natural targets for fusion.</p>
+        </div>
+        <div class="container overview-table-wrap">
+          <table class="article-table">
+            <caption data-en="Table 2. Representative top operators in the reported profile" data-zh="表 2. 报告 profiling 中的代表性主要算子">Table 2. Representative top operators in the reported profile</caption>
+            <thead>
+              <tr>
+                <th scope="col">Operator</th>
+                <th scope="col" data-en="Task-duration share" data-zh="Task-duration 占比">Task-duration share</th>
+                <th scope="col" data-en="Calls" data-zh="调用次数">Calls</th>
+                <th scope="col" data-en="Average (us)" data-zh="平均耗时（us）">Average (us)</th>
+                <th scope="col" data-en="Observed behavior" data-zh="观察到的特征">Observed behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">SparseAttnSharedkvGrad</th><td>16.86%</td><td>224</td><td>27,593</td><td data-en="Sparse attention backward; low vector compute use" data-zh="Sparse attention 反向；vector compute 使用率低">Sparse attention backward; low vector compute use</td></tr>
+              <tr><th scope="row">MatMulV3</th><td>12.77%</td><td>5,600</td><td>836</td><td data-en="Load-heavy dense matrix operation" data-zh="加载受限的稠密矩阵操作">Load-heavy dense matrix operation</td></tr>
+              <tr><th scope="row">GroupedMatmul</th><td>9.50%</td><td>1,344</td><td>2,592</td><td data-en="MoE expert computation; cube-bound" data-zh="MoE expert 计算；主要受 cube 计算限制">MoE expert computation; cube-bound</td></tr>
+              <tr><th scope="row">Cast</th><td>6.02%</td><td>40,063</td><td>55</td><td data-en="Frequent memory-bound conversion" data-zh="频繁的内存受限类型转换">Frequent memory-bound conversion</td></tr>
+              <tr><th scope="row">SparseLightningIndexerGradKLLoss</th><td>5.52%</td><td>96</td><td>21,082</td><td data-en="Sparse indexer gradient; scalar and load bound" data-zh="Sparse indexer 反向；标量和加载受限">Sparse indexer gradient; scalar and load bound</td></tr>
+              <tr class="table-total"><th scope="row" data-en="92 remaining operator types" data-zh="其余 92 类算子">92 remaining operator types</th><td>32.88%</td><td>140,357</td><td>about 86</td><td data-en="Small, memory-bound vector and copy kernels" data-zh="细小、内存受限的 vector 和 copy kernel">Small, memory-bound vector and copy kernels</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="container article-prose">
+          <h3 data-en="AuraKernel and full-stack fusion" data-zh="AuraKernel 与全栈融合">AuraKernel and full-stack fusion</h3>
+          <p data-en="AuraKernel combines a hardware-grounded harness, iterative optimization memory, parallel candidate evaluation, and solver-guided tiling search. The optimization loop first compiles and checks a candidate for correctness on real Ascend hardware. Only feasible candidates enter performance comparison. This separates mathematical or functional correctness from performance selection, and makes hardware counters useful as a diagnosis of whether a candidate is compute-bound, movement-bound, or scalar-bound." data-zh="AuraKernel 结合了硬件感知的 harness、跨迭代优化记忆、并行候选评测和求解器引导的 tiling 搜索。优化循环先在真实 Ascend 硬件上编译并检查候选实现的正确性，只有通过检查的候选才进入性能比较。这将数学或功能正确性与性能选择分开，也使硬件 counter 能够用于诊断候选实现究竟受计算、数据搬运还是标量执行限制。">AuraKernel combines a hardware-grounded harness, iterative optimization memory, parallel candidate evaluation, and solver-guided tiling search. The optimization loop first compiles and checks a candidate for correctness on real Ascend hardware. Only feasible candidates enter performance comparison. This separates mathematical or functional correctness from performance selection, and makes hardware counters useful as a diagnosis of whether a candidate is compute-bound, movement-bound, or scalar-bound.</p>
+          <p data-en="The reported operator improvements are deliberately read at two levels. AuraKernel improves already-visible bottleneck kernels, including sparse attention, the lightning indexer gradient, and weight-free RMSNorm. The fusion path changes the execution unit itself by removing eager intermediate tensors, dtype round trips, and autograd-visible boundaries. The distinction matters: an isolated kernel speedup and a fused module speedup answer different questions, but both contribute to the final MFU result." data-zh="报告中的算子优化结果分为两个层次。AuraKernel 优化已经暴露出来的主要瓶颈算子，包括 sparse attention、lightning indexer gradient 和无权重 RMSNorm；融合路径则直接改变执行单元，消除 eager intermediate tensor、dtype 往返和 autograd 可见的边界。这个区分很重要：单个算子加速和融合模块加速回答的是不同问题，但两者都会贡献到最终 MFU。">The reported operator improvements are deliberately read at two levels. AuraKernel improves already-visible bottleneck kernels, including sparse attention, the lightning indexer gradient, and weight-free RMSNorm. The fusion path changes the execution unit itself by removing eager intermediate tensors, dtype round trips, and autograd-visible boundaries. The distinction matters: an isolated kernel speedup and a fused module speedup answer different questions, but both contribute to the final MFU result.</p>
+        </div>
+        <div class="container overview-table-wrap">
+          <table class="article-table">
+            <caption data-en="Table 3. Selected operator improvements reported on Ascend 910C" data-zh="表 3. 报告中 Ascend 910C 上的部分算子优化结果">Table 3. Selected operator improvements reported on Ascend 910C</caption>
+            <thead>
+              <tr>
+                <th scope="col">Operator or module</th>
+                <th scope="col" data-en="Baseline context" data-zh="优化上下文">Baseline context</th>
+                <th scope="col" data-en="Speedup" data-zh="加速比">Speedup</th>
+                <th scope="col" data-en="Optimization idea" data-zh="优化思路">Optimization idea</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">SparseAttnSharedkv</th><td>cmp. ratio 128</td><td>1.23x</td><td data-en="Reduce memory movement in sparse attention" data-zh="减少 sparse attention 的内存搬运">Reduce memory movement in sparse attention</td></tr>
+              <tr><th scope="row">SparseAttnSharedkvGrad</th><td>cmp. ratio 128</td><td>1.24x</td><td data-en="Restructure memory- and control-bound backward work" data-zh="重构内存和控制流受限的反向计算">Restructure memory- and control-bound backward work</td></tr>
+              <tr><th scope="row">SparseLightningIndexerGradKLLoss</th><td>CFA / SCFA paths</td><td>1.16x / 1.21x</td><td data-en="Reduce scalar address calculation and global loads" data-zh="减少标量地址计算和全局加载">Reduce scalar address calculation and global loads</td></tr>
+              <tr><th scope="row">RMSNormWithoutWeightFwd</th><td>tp = 2</td><td>11.90x</td><td data-en="2D blocking, multi-row processing, FP32 accumulation" data-zh="二维 blocking、多行处理和 FP32 累加">2D blocking, multi-row processing, FP32 accumulation</td></tr>
+              <tr><th scope="row">RMSNormWithoutWeightBwd</th><td>tp = 2</td><td>3.42x</td><td data-en="Vectorize the reduction and reduce scalar work" data-zh="向量化 reduction，减少标量工作">Vectorize the reduction and reduce scalar work</td></tr>
+              <tr><th scope="row">Limited SwiGLU forward</th><td>Fused module</td><td>8.86x</td><td data-en="Keep clamp and gate chain on chip" data-zh="将 clamp 和 gate 链保持在片上">Keep clamp and gate chain on chip</td></tr>
+              <tr><th scope="row">RoPE backward</th><td>Fused module</td><td>3.54x</td><td data-en="Remove eager slice-assignment scatter chain" data-zh="移除 eager slice-assignment scatter 链">Remove eager slice-assignment scatter chain</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section context-section">
+        <div class="container narrative-grid">
+          <div class="narrative-lead">
+            <p class="section-index">WHY TWO STAGES</p>
+            <h2 data-en="An optimization model can run and still be wrong." data-zh="一个优化模型即使能执行，也可能是错的。">An optimization model can run and still be wrong.</h2>
+          </div>
+          <div class="narrative-copy">
+            <p data-en="Operations Research asks a model to preserve meaning across several layers at once: a natural-language problem, a mathematical formulation, a data interface, and an executable solver program. A response that looks plausible or returns a solution is not necessarily faithful to the intended model." data-zh="运筹优化要求模型同时在多个层面保持语义一致：自然语言问题、数学 formulation、数据接口和可执行求解器程序。看起来合理或能够返回解的答案，不一定忠实于原始模型。">Operations Research asks a model to preserve meaning across several layers at once: a natural-language problem, a mathematical formulation, a data interface, and an executable solver program. A response that looks plausible or returns a solution is not necessarily faithful to the intended model.</p>
+            <p data-en="The report's error analysis found that structural equivalence was the largest failure family, while protocol and API mistakes were the most visible Pass@1 failures. Other recurring problems included continuous variables used for discrete entities, incomplete conservation constraints, unit and ratio errors, and nonlinear expressions that were not solver-compatible." data-zh="报告中的错误分析显示，结构等价错误是占比最高的失败类型，而协议、API 和 schema 错误是 Pass@1 下最常见的直接失败原因。其他高频问题还包括把离散实体建成连续变量、遗漏守恒约束、单位和比例关系错误，以及不符合求解器要求的非线性表达。">The report's error analysis found that structural equivalence was the largest failure family, while protocol and API mistakes were the most visible Pass@1 failures. Other recurring problems included continuous variables used for discrete entities, incomplete conservation constraints, unit and ratio errors, and nonlinear expressions that were not solver-compatible.</p>
+          </div>
+        </div>
+        <div class="container signal-grid">
+          <article class="signal">
+            <strong>28.3<span>%</span></strong>
+            <h3 data-en="Structural equivalence" data-zh="结构等价">Structural equivalence</h3>
+            <p data-en="Variable families, constraint counts, and the canonical formulation graph do not match the reference." data-zh="变量族、约束数量或标准 formulation 图与参考模型不一致。">Variable families, constraint counts, and the canonical formulation graph do not match the reference.</p>
+          </article>
+          <article class="signal">
+            <strong>23.9<span>%</span></strong>
+            <h3 data-en="Protocol, API, schema" data-zh="协议、API 与 schema">Protocol, API, schema</h3>
+            <p data-en="Code fences, malformed Python, unsafe indexing, or incorrect Gurobi usage block evaluation before reasoning can be scored." data-zh="代码围栏、错误 Python、不安全索引或错误 Gurobi 用法，会在推理能力被评分前直接阻断评测。">Code fences, malformed Python, unsafe indexing, or incorrect Gurobi usage block evaluation before reasoning can be scored.</p>
+          </article>
+          <article class="signal">
+            <strong>12.5<span>%</span></strong>
+            <h3 data-en="Discrete-variable semantics" data-zh="离散变量语义">Discrete-variable semantics</h3>
+            <p data-en="Counts, assignments, vehicles, and selections need integer or binary domains instead of an LP relaxation." data-zh="人数、分配、车辆和选择等实体需要整数或二进制变量域，而不能被错误放松为连续变量。">Counts, assignments, vehicles, and selections need integer or binary domains instead of an LP relaxation.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section workflow-section" id="workflow">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="section-index">02 / WORKFLOW</p>
+              <h2 data-en="From verified seeds to reliable outputs." data-zh="从验证种子到可靠输出。">From verified seeds to reliable outputs.</h2>
+            </div>
+            <p data-en="Every stage has a distinct job: preserve mathematical fidelity, inject domain priors, align output contracts, then measure what survives." data-zh="每个阶段各司其职：保持数学正确性、注入领域先验、对齐输出契约，再验证最终能力。">Every stage has a distinct job: preserve mathematical fidelity, inject domain priors, align output contracts, then measure what survives.</p>
+          </div>
+          <div class="workflow-line">
+            <article class="workflow-step">
+              <div class="step-number">01</div>
+              <img src="./assets/icons/cpt-data.svg" alt="" width="42" height="42">
+              <h3 data-en="Verify" data-zh="验证">Verify</h3>
+              <p data-en="Generate and filter optimization seeds with contracts, static checks, and independent solver execution." data-zh="通过领域契约、静态检查和独立求解器执行，生成并筛选优化问题种子。">Generate and filter optimization seeds with contracts, static checks, and independent solver execution.</p>
+            </article>
+            <div class="workflow-connector" aria-hidden="true"></div>
+            <article class="workflow-step">
+              <div class="step-number">02</div>
+              <img src="./assets/icons/cpt-train.svg" alt="" width="42" height="42">
+              <h3 data-en="Adapt" data-zh="适配">Adapt</h3>
+              <p data-en="Use OR-dominant CPT to teach terminology, formulation patterns, solver APIs, and structural priors." data-zh="使用 OR 主导的 CPT 学习术语、建模模式、求解器 API 和结构先验。">Use OR-dominant CPT to teach terminology, formulation patterns, solver APIs, and structural priors.</p>
+            </article>
+            <div class="workflow-connector" aria-hidden="true"></div>
+            <article class="workflow-step">
+              <div class="step-number">03</div>
+              <img src="./assets/icons/sft-train.svg" alt="" width="42" height="42">
+              <h3 data-en="Align" data-zh="对齐">Align</h3>
+              <p data-en="Clean and distill instruction data around code-only, feasibility, and structural-equivalence contracts." data-zh="围绕代码输出、可行性和结构等价契约，清洗并蒸馏指令数据。">Clean and distill instruction data around code-only, feasibility, and structural-equivalence contracts.</p>
+            </article>
+            <div class="workflow-connector" aria-hidden="true"></div>
+            <article class="workflow-step">
+              <div class="step-number">04</div>
+              <div class="evaluation-mark" aria-hidden="true">
+                <span>OR</span>
+                <strong>4</strong>
+              </div>
+              <h3 data-en="Evaluate" data-zh="评测">Evaluate</h3>
+              <p data-en="Run four OR benchmarks and inspect both executable feasibility and canonical model structure." data-zh="在四项 OR benchmark 上评测，同时检查程序可执行性和标准模型结构。">Run four OR benchmarks and inspect both executable feasibility and canonical model structure.</p>
+            </article>
+          </div>
+          <div class="workflow-explain">
+            <article>
+              <p class="mini-label">CPT</p>
+              <h3 data-en="Teach the domain before asking for the answer." data-zh="先学习领域，再要求模型作答。">Teach the domain before asking for the answer.</h3>
+              <p data-en="Continued pre-training exposes the model to OR terminology, recurring formulation families, solver-aware nonlinear reasoning, data structures, and the relationship between business requirements and mathematical constraints. It is the knowledge-infusion stage of the pipeline." data-zh="继续预训练让模型接触 OR 术语、常见 formulation 家族、面向求解器的非线性推理、数据结构，以及业务需求与数学约束之间的关系。它承担的是流水线中的知识注入职责。">Continued pre-training exposes the model to OR terminology, recurring formulation families, solver-aware nonlinear reasoning, data structures, and the relationship between business requirements and mathematical constraints. It is the knowledge-infusion stage of the pipeline.</p>
+            </article>
+            <article>
+              <p class="mini-label mini-label-pink">SFT</p>
+              <h3 data-en="Make the knowledge appear in the required format." data-zh="让领域知识以要求的格式稳定出现。">Make the knowledge appear in the required format.</h3>
+              <p data-en="Supervised fine-tuning teaches the model to follow code-only contracts, write safe Gurobi programs, handle data files and schemas, extract objective values, and produce canonical outputs without relying on few-shot demonstrations. It is the behavior-shaping stage." data-zh="监督微调让模型学会遵守 code-only 契约、编写安全的 Gurobi 程序、处理数据文件和 schema、提取目标值，并在没有 few-shot 示例时生成标准输出。它承担的是行为塑形职责。">Supervised fine-tuning teaches the model to follow code-only contracts, write safe Gurobi programs, handle data files and schemas, extract objective values, and produce canonical outputs without relying on few-shot demonstrations. It is the behavior-shaping stage.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section data-engine-section">
+        <div class="container section-heading">
+          <div>
+            <p class="section-index">DATA ENGINE</p>
+            <h2 data-en="Correctness is built before tokenization." data-zh="正确性在 token 化之前就已经开始构建。">Correctness is built before tokenization.</h2>
+          </div>
+          <p data-en="The OR-CPT Engine treats language generation as one step inside a controlled verification path. The release keeps the data and training boundaries separate: the engine establishes mathematical fidelity and lineage, while MindSpeed tokenizes, packs, samples, and optimizes the model." data-zh="OR-CPT Engine 将语言生成视为受控验证路径中的一个环节。开源版本保持数据构建与训练边界分离：数据引擎负责数学正确性和 lineage，MindSpeed 负责 token 化、packing、采样和模型优化。">The OR-CPT Engine treats language generation as one step inside a controlled verification path. The release keeps the data and training boundaries separate: the engine establishes mathematical fidelity and lineage, while MindSpeed tokenizes, packs, samples, and optimizes the model.</p>
+        </div>
+        <div class="container engine-grid">
+          <article class="engine-item">
+            <span class="engine-number">01</span>
+            <h3 data-en="Verified seeds" data-zh="验证种子">Verified seeds</h3>
+            <p data-en="A seed is a structured optimization instance with sets, coefficients, objective direction, variable domains, bounds, constraint families, and executable or LP artifacts. Infeasible, degenerate, unstable, or duplicated seeds are filtered before language generation." data-zh="种子是结构化优化实例，包含集合、系数、目标方向、变量域、边界、约束族以及可执行或 LP 产物。不可行、退化、不稳定或重复的种子会在语言生成前被过滤。">A seed is a structured optimization instance with sets, coefficients, objective direction, variable domains, bounds, constraint families, and executable or LP artifacts. Infeasible, degenerate, unstable, or duplicated seeds are filtered before language generation.</p>
+          </article>
+          <article class="engine-item">
+            <span class="engine-number">02</span>
+            <h3 data-en="Structured variation" data-zh="结构化变化">Structured variation</h3>
+            <p data-en="Canonical and semantic intermediate representations make it possible to vary domains, entities, objectives, variable families, constraints, numerical ranges, and data shapes without copying the source problem. Samples are rendered as data-in-problem (DP), data-in-table (DT), or data-problem-separate (DPS)." data-zh="Canonical IR 和 Semantic IR 让数据能够在不复制源问题的前提下改变领域、实体、目标、变量族、约束、数值范围和数据形状。样本会被渲染为 DP、DT 或 DPS 三种数据形态。">Canonical and semantic intermediate representations make it possible to vary domains, entities, objectives, variable families, constraints, numerical ranges, and data shapes without copying the source problem. Samples are rendered as data-in-problem (DP), data-in-table (DT), or data-problem-separate (DPS).</p>
+          </article>
+          <article class="engine-item">
+            <span class="engine-number">03</span>
+            <h3 data-en="Admission gates" data-zh="准入质量门">Admission gates</h3>
+            <p data-en="Accepted documents pass natural-language quality checks, contract validation, static checks, independent execution, and objective comparison. Agreement on one numerical optimum is not treated as proof of symbolic equivalence, so structural checks remain necessary." data-zh="通过准入的数据需要经过自然语言质量检查、契约验证、静态检查、独立执行和目标值比对。单个数值实例上的最优值一致不被视为符号等价的证明，因此结构检查仍然不可省略。">Accepted documents pass natural-language quality checks, contract validation, static checks, independent execution, and objective comparison. Agreement on one numerical optimum is not treated as proof of symbolic equivalence, so structural checks remain necessary.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section training-detail">
+        <div class="container article-header">
+          <p class="section-index">TRAINING DESIGN</p>
+          <h2 data-en="CPT is selected as an initialization, not as a score by itself." data-zh="CPT 的价值在于作为初始化，而不只是单独看一个分数。">CPT is selected as an initialization, not as a score by itself.</h2>
+          <p class="article-dek" data-en="The training experiment is designed around transfer. A checkpoint is useful when it models the OR corpus better, remains numerically stable, retains general capability, and improves a later SFT run under matched conditions. This makes the CPT-to-SFT comparison more informative than comparing unrelated recipes." data-zh="训练实验围绕迁移价值设计。一个 checkpoint 是否有用，要同时看它是否更好地建模 OR 语料、训练是否数值稳定、通用能力是否保留，以及在同条件 SFT 中是否带来正向收益。因此，CPT→SFT 的受控比较比比较互不相同的训练 recipe 更有信息量。">The training experiment is designed around transfer. A checkpoint is useful when it models the OR corpus better, remains numerically stable, retains general capability, and improves a later SFT run under matched conditions. This makes the CPT-to-SFT comparison more informative than comparing unrelated recipes.</p>
+        </div>
+        <div class="container article-prose">
+          <h3 data-en="A domain-dominant but retention-aware mixture" data-zh="领域主导、同时关注能力保持的数据混合">A domain-dominant but retention-aware mixture</h3>
+          <p data-en="The CPT corpus combines solver-verified OR documents with collected OR resources, mathematical reasoning data, code data, and general English. The roles are deliberately different. OR documents provide formulation semantics and structural modeling patterns; mathematical data supports symbolic derivation and reformulation; code data supports executable solver implementation; general English protects broad language understanding. The report therefore treats mixture composition as a recipe parameter rather than assuming that pure domain data is always better." data-zh="CPT 语料将求解器验证的 OR 文档与收集的 OR 资源、数学推理数据、代码数据和通用英文数据混合。它们承担不同作用：OR 文档提供 formulation 语义和结构化建模模式；数学数据支持符号推导与 reformulation；代码数据支持可执行的求解器实现；通用英文用于保护广泛语言理解能力。因此，报告把数据混合比例视为 recipe 参数，而不是默认纯领域数据一定更好。">The CPT corpus combines solver-verified OR documents with collected OR resources, mathematical reasoning data, code data, and general English. The roles are deliberately different. OR documents provide formulation semantics and structural modeling patterns; mathematical data supports symbolic derivation and reformulation; code data supports executable solver implementation; general English protects broad language understanding. The report therefore treats mixture composition as a recipe parameter rather than assuming that pure domain data is always better.</p>
+          <p data-en="The practical lesson is important for reproduction. A domain-specialized model should not be selected from OR validation loss alone. Intermediate checkpoints are checked on held-out OR likelihood, general validation signals, representative general benchmarks, and downstream OR transfer. The best checkpoint is the one that gives a useful balance across these objectives and continues to improve the next training stage." data-zh="这对复现很重要。领域模型不能只根据 OR validation loss 选择。中间 checkpoint 还需要检查 held-out OR likelihood、通用验证信号、代表性的通用 benchmark 以及下游 OR transfer。最终选择的是在这些目标之间取得有效平衡，并能继续改善下一训练阶段的 checkpoint。">The practical lesson is important for reproduction. A domain-specialized model should not be selected from OR validation loss alone. Intermediate checkpoints are checked on held-out OR likelihood, general validation signals, representative general benchmarks, and downstream OR transfer. The best checkpoint is the one that gives a useful balance across these objectives and continues to improve the next training stage.</p>
+        </div>
+        <div class="container article-prose">
+          <h3 data-en="Why the matched transfer test matters" data-zh="为什么需要同条件迁移实验">Why the matched transfer test matters</h3>
+          <p data-en="The controlled comparison uses the same Clean-CoT SFT data, optimizer configuration, update budget, sequence length, and evaluation protocol for two routes: original checkpoint to SFT, and original checkpoint to CPT to SFT. The difference between those final models is therefore interpreted as the contribution of the CPT initialization. This design avoids attributing a gain to CPT when it may actually come from a different SFT dataset or learning-rate schedule." data-zh="受控比较让两条路线使用相同的 Clean-CoT SFT 数据、优化器配置、更新预算、序列长度和评测协议：原始 checkpoint→SFT，以及原始 checkpoint→CPT→SFT。因此，最终模型之间的差异可以归因于 CPT 初始化。这样可以避免把来自不同 SFT 数据或学习率策略的收益错误归因给 CPT。">The controlled comparison uses the same Clean-CoT SFT data, optimizer configuration, update budget, sequence length, and evaluation protocol for two routes: original checkpoint to SFT, and original checkpoint to CPT to SFT. The difference between those final models is therefore interpreted as the contribution of the CPT initialization. This design avoids attributing a gain to CPT when it may actually come from a different SFT dataset or learning-rate schedule.</p>
+          <p data-en="The report also records a long-running 50K SFT stability run on eight nodes and 128 Ascend 910C NPUs. With global batch size 128, micro batch size 1, and sequence length 8192, the run reaches 800/800 iterations without skipped or NaN iterations. This is infrastructure evidence rather than the main quality result, but it establishes that the data conversion, MindSpeed-LLM launcher, model implementation, and Ascend environment can sustain the workflow." data-zh="报告还记录了一次 50K SFT 长时稳定性实验，使用 8 个节点、共 128 张 Ascend 910C。配置为 global batch size 128、micro batch size 1、序列长度 8192，训练完成 800/800 iterations，没有 skipped iteration 或 NaN iteration。这是基础设施稳定性证据，而不是主要质量结论，但说明数据转换、MindSpeed-LLM 启动脚本、模型实现和 Ascend 环境能够支撑完整工作流。">The report also records a long-running 50K SFT stability run on eight nodes and 128 Ascend 910C NPUs. With global batch size 128, micro batch size 1, and sequence length 8192, the run reaches 800/800 iterations without skipped or NaN iterations. This is infrastructure evidence rather than the main quality result, but it establishes that the data conversion, MindSpeed-LLM launcher, model implementation, and Ascend environment can sustain the workflow.</p>
+        </div>
+      </section>
+
+      <section class="section results-section" id="results">
+        <div class="container">
+          <div class="section-heading results-heading">
+            <div>
+              <p class="section-index">03 / RESULTS</p>
+              <h2 data-en="The largest gains appear where structure matters." data-zh="结构要求越高，增益越明显。">The largest gains appear where structure matters.</h2>
+            </div>
+            <p data-en="Matched-condition evaluation on DeepSeek-V4-Flash shows that CPT initialization adds to Clean-CoT SFT across all four zero-shot Pass@1 cells." data-zh="在 DeepSeek-V4-Flash 的同条件评测中，CPT 初始化在四项 zero-shot Pass@1 指标上均进一步提升了 Clean-CoT SFT。">Matched-condition evaluation on DeepSeek-V4-Flash shows that CPT initialization adds to Clean-CoT SFT across all four zero-shot Pass@1 cells.</p>
+          </div>
+          <div class="results-layout">
+            <div class="table-wrap">
+              <table>
+                <caption data-en="Zero-shot Pass@1 on Operations Research benchmarks" data-zh="Operations Research benchmark 的 zero-shot Pass@1">Zero-shot Pass@1 on Operations Research benchmarks</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" data-en="Model" data-zh="模型">Model</th>
+                    <th scope="col">NL4OPT</th>
+                    <th scope="col">OptiBench</th>
+                    <th scope="col">B4O-Feasible</th>
+                    <th scope="col">B4O-ORGEval</th>
+                    <th scope="col" data-en="Average" data-zh="平均">Average</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">DeepSeek-V4-Flash</th>
+                    <td>84.08</td><td>63.33</td><td>60.47</td><td>34.26</td><td>60.54</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">SFT-Clean-CoT</th>
+                    <td>86.93</td><td>64.17</td><td>65.93</td><td>48.73</td><td>66.44</td>
+                  </tr>
+                  <tr class="result-ours">
+                    <th scope="row">SLAI T-Rex</th>
+                    <td>89.52</td><td>67.12</td><td>71.22</td><td>59.39</td><td>71.81</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <aside class="result-note">
+              <div class="result-note-mark">+</div>
+              <h3 data-en="CPT adds the most on structural equivalence." data-zh="CPT 对结构等价能力的增益最大。">CPT adds the most on structural equivalence.</h3>
+              <p data-en="Compared with SFT-Clean-CoT, CPT initialization adds +10.66 points on B4O-ORGEval and +5.29 points on B4O-Feasible. That is the report's clearest evidence for complementary CPT and SFT roles." data-zh="相较于 SFT-Clean-CoT，CPT 初始化让 B4O-ORGEval 提升 10.66 个百分点，让 B4O-Feasible 提升 5.29 个百分点。这体现了 CPT 与 SFT 的互补作用。">Compared with SFT-Clean-CoT, CPT initialization adds +10.66 points on B4O-ORGEval and +5.29 points on B4O-Feasible. That is the report's clearest evidence for complementary CPT and SFT roles.</p>
+              <a class="text-link" href="https://arxiv.org/html/2607.20145v3#S3.S3" target="_blank" rel="noreferrer"><span data-en="See the analysis" data-zh="查看分析">See the analysis</span><span aria-hidden="true">↗</span></a>
+            </aside>
+          </div>
+          <div class="benchmark-reading">
+            <div>
+              <h3 data-en="What the four benchmarks measure" data-zh="四项 benchmark 分别测什么">What the four benchmarks measure</h3>
+              <p data-en="NL4OPT and OptiBench test natural-language-to-optimization modeling and problem understanding. B4O-Feasible checks whether the generated Gurobi program executes and produces a feasible solution. B4O-ORGEval goes one layer deeper: it evaluates structural equivalence between the generated formulation and the reference model, independently of implementation details." data-zh="NL4OPT 和 OptiBench 评测自然语言到优化模型的转换与问题理解。B4O-Feasible 检查生成的 Gurobi 程序能否执行并得到可行解。B4O-ORGEval 更进一步，评测生成 formulation 与参考模型之间的结构等价性，而不依赖具体实现细节。">NL4OPT and OptiBench test natural-language-to-optimization modeling and problem understanding. B4O-Feasible checks whether the generated Gurobi program executes and produces a feasible solution. B4O-ORGEval goes one layer deeper: it evaluates structural equivalence between the generated formulation and the reference model, independently of implementation details.</p>
+            </div>
+            <div>
+              <h3 data-en="Why the combination matters" data-zh="为什么需要两阶段结合">Why the combination matters</h3>
+              <p data-en="Under matched SFT conditions, CPT initialization improves all four zero-shot Pass@1 scores, with the largest additional gain on B4O-ORGEval. The broader mixture also retains general capability: the report finds no sign of catastrophic forgetting, while pure-OR CPT causes a substantial drop on general benchmarks." data-zh="在同条件 SFT 下，CPT 初始化让四项 zero-shot Pass@1 全部提升，其中 B4O-ORGEval 的额外增益最大。更平衡的数据混合也保留了通用能力：报告未发现灾难性遗忘，而纯 OR CPT 会导致通用 benchmark 明显下降。">Under matched SFT conditions, CPT initialization improves all four zero-shot Pass@1 scores, with the largest additional gain on B4O-ORGEval. The broader mixture also retains general capability: the report finds no sign of catastrophic forgetting, while pure-OR CPT causes a substantial drop on general benchmarks.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section quality-detail">
+        <div class="container article-header">
+          <p class="section-index">DATA QUALITY / SFT</p>
+          <h2 data-en="Better data beats simply more synthetic data." data-zh="更高质量的数据，胜过单纯扩大合成数据规模。">Better data beats simply more synthetic data.</h2>
+          <p class="article-dek" data-en="The report's SFT scaling experiments show a non-monotonic pattern. Increasing a similar self-distilled dataset from 10K to 50K does not automatically improve every task. The more reliable improvement comes from identifying concrete modeling mistakes, repairing them under a contract, and validating the repaired answer before export." data-zh="报告中的 SFT scaling 实验呈现出非单调规律。将相似的 self-distilled 数据从 10K 扩大到 50K，并不会自动提升所有任务。更可靠的提升来自识别具体建模错误、在契约约束下修复，并在导出前验证修复后的答案。">The report's SFT scaling experiments show a non-monotonic pattern. Increasing a similar self-distilled dataset from 10K to 50K does not automatically improve every task. The more reliable improvement comes from identifying concrete modeling mistakes, repairing them under a contract, and validating the repaired answer before export.</p>
+        </div>
+        <div class="container article-prose">
+          <p data-en="The cleaning targets are practical rather than stylistic. They include wrong variable types, wrong objective direction, missing capacity or demand constraints, incorrect ratio or average handling, invalid nonlinear forms, unsafe data access, and incorrect Gurobi API calls. The goal is not to make every answer longer. It is to make the modeling checkpoints visible and repeatable: choose variable domains, determine the objective, check the critical constraints, handle ratios or nonlinear terms, then implement and execute the solver model." data-zh="清洗目标是实践性的，而不是文风上的。目标问题包括错误的变量类型、错误的目标方向、缺失的容量或需求约束、错误的比例或平均值处理、不合法的非线性形式、不安全的数据访问以及错误的 Gurobi API 调用。目标不是让每个答案变长，而是让建模检查点变得可见且可重复：选择变量域、确定目标、检查关键约束、处理比例或非线性项，最后实现并执行求解器模型。">The cleaning targets are practical rather than stylistic. They include wrong variable types, wrong objective direction, missing capacity or demand constraints, incorrect ratio or average handling, invalid nonlinear forms, unsafe data access, and incorrect Gurobi API calls. The goal is not to make every answer longer. It is to make the modeling checkpoints visible and repeatable: choose variable domains, determine the objective, check the critical constraints, handle ratios or nonlinear terms, then implement and execute the solver model.</p>
+          <p data-en="Clean-only repairs the answer while preserving the original reasoning style as much as possible. Clean-CoT additionally inserts a short modeling checklist into tagged responses. A cleaner proposes a repair, an independent reviewer checks whether the repair is justified, local validation executes the code and checks the output contract, and export checking verifies the final artifact. The reviewer is important because an apparently helpful repair can introduce a new inconsistency, such as turning a continuous quantity into an integer or deleting a necessary constraint." data-zh="clean-only 在尽量保留原始推理风格的同时修复答案。Clean-CoT 则会在带标签的回答中额外加入简短的建模 checklist。Cleaner 先提出修复，独立 Reviewer 检查修复是否有依据，local validation 执行代码并检查输出契约，export checking 再验证最终产物。Reviewer 很重要，因为看似合理的修复可能引入新的不一致，例如把连续量错误改成整数，或者删除必要约束。">Clean-only repairs the answer while preserving the original reasoning style as much as possible. Clean-CoT additionally inserts a short modeling checklist into tagged responses. A cleaner proposes a repair, an independent reviewer checks whether the repair is justified, local validation executes the code and checks the output contract, and export checking verifies the final artifact. The reviewer is important because an apparently helpful repair can introduce a new inconsistency, such as turning a continuous quantity into an integer or deleting a necessary constraint.</p>
+        </div>
+        <div class="container overview-table-wrap">
+          <table class="article-table">
+            <caption data-en="Table 4. Cleaning and export statistics for the 10K SFT run" data-zh="表 4. 10K SFT 数据清洗与导出统计">Table 4. Cleaning and export statistics for the 10K SFT run</caption>
+            <thead>
+              <tr>
+                <th scope="col" data-en="Branch" data-zh="分支">Branch</th>
+                <th scope="col" data-en="Input samples" data-zh="输入样本">Input samples</th>
+                <th scope="col" data-en="Reviewer passed" data-zh="通过 reviewer">Reviewer passed</th>
+                <th scope="col" data-en="Exported after validation" data-zh="验证后导出">Exported after validation</th>
+                <th scope="col" data-en="What is added" data-zh="主要变化">What is added</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Clean-only</th><td>10,000</td><td>9,043</td><td>8,731</td><td data-en="Repairs modeling and implementation errors" data-zh="修复建模和实现错误">Repairs modeling and implementation errors</td></tr>
+              <tr><th scope="row">Clean-CoT</th><td>10,000</td><td>9,174</td><td>8,881</td><td data-en="Repairs errors and adds a concise modeling checklist" data-zh="修复错误并增加简洁建模 checklist">Repairs errors and adds a concise modeling checklist</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="container article-prose">
+          <h3 data-en="Progressive SFT and general-capability anchoring" data-zh="渐进式 SFT 与通用能力锚定">Progressive SFT and general-capability anchoring</h3>
+          <p data-en="The report identifies a tension between solver-API syntax and natural-language modeling. A single SFT stage can let gradients from code-only targets and reasoning-rich targets interfere with one another. The proposed progressive recipe separates them. Stage I uses code-only OR targets with a conservative 5e-7 learning rate to stabilize Gurobi calls, data loading, and output contracts. Stage II continues from that checkpoint on the complete Clean-CoT 10K set with a 1e-6 learning rate, so the model can learn richer formulation behavior without losing the syntactic backbone." data-zh="报告指出，solver-API 语法能力与自然语言建模能力之间存在张力。单一 SFT 阶段可能让 code-only 目标和富含推理目标的梯度互相干扰。因此报告提出渐进式 recipe：Stage I 只使用 code-only OR 目标，以 5e-7 的保守学习率稳定 Gurobi 调用、数据加载和输出契约；Stage II 从该 checkpoint 继续使用完整 Clean-CoT 10K 数据，以 1e-6 学习率学习更丰富的 formulation 行为，同时保留底层语法能力。">The report identifies a tension between solver-API syntax and natural-language modeling. A single SFT stage can let gradients from code-only targets and reasoning-rich targets interfere with one another. The proposed progressive recipe separates them. Stage I uses code-only OR targets with a conservative 5e-7 learning rate to stabilize Gurobi calls, data loading, and output contracts. Stage II continues from that checkpoint on the complete Clean-CoT 10K set with a 1e-6 learning rate, so the model can learn richer formulation behavior without losing the syntactic backbone.</p>
+          <p data-en="The same principle applies to general capability retention. The report adds 10% to 15% general-purpose instruction data in the later SFT stage, including open-domain question answering, multi-turn dialogue, and creative writing. In CPT, the analogous lesson is to interleave OR data with mathematical, code, and general-language support data. Pure OR CPT causes a 10 to 15 point drop on general benchmarks without improving the overall OR score, so domain adaptation needs an anchor rather than an all-domain-only mixture." data-zh="通用能力保持也遵循同一原则。报告在后续 SFT 阶段加入 10% 到 15% 的通用指令数据，包括开放域问答、多轮对话和创作写作；在 CPT 阶段，相应的做法是将 OR 数据与数学、代码和通用语言支持数据交错混合。纯 OR CPT 会让通用 benchmark 下降 10 到 15 个百分点，却没有提升 OR 总分，因此领域适配需要锚点，而不是只使用领域数据。">The same principle applies to general capability retention. The report adds 10% to 15% general-purpose instruction data in the later SFT stage, including open-domain question answering, multi-turn dialogue, and creative writing. In CPT, the analogous lesson is to interleave OR data with mathematical, code, and general-language support data. Pure OR CPT causes a 10 to 15 point drop on general benchmarks without improving the overall OR score, so domain adaptation needs an anchor rather than an all-domain-only mixture.</p>
+        </div>
+      </section>
+
+      <section class="section scale-detail">
+        <div class="container article-header">
+          <p class="section-index">SCALE-UP VALIDATION</p>
+          <h2 data-en="The workflow transfers from Flash to Pro." data-zh="这套工作流可以从 Flash 扩展到 Pro。">The workflow transfers from Flash to Pro.</h2>
+          <p class="article-dek" data-en="DeepSeek-V4-Flash is the main controlled platform for studying CPT initialization and SFT data quality. DeepSeek-V4-Pro is then used to test whether the complete OR-oriented workflow remains effective at trillion-parameter scale. The Pro result is a scale-up validation of the full pipeline, not an isolated CPT ablation." data-zh="DeepSeek-V4-Flash 是研究 CPT 初始化和 SFT 数据质量的主要受控平台。随后使用 DeepSeek-V4-Pro 检验完整 OR 后训练工作流在万亿参数规模上是否仍然有效。Pro 结果用于验证完整流水线的规模扩展，不是单独的 CPT ablation。">DeepSeek-V4-Flash is the main controlled platform for studying CPT initialization and SFT data quality. DeepSeek-V4-Pro is then used to test whether the complete OR-oriented workflow remains effective at trillion-parameter scale. The Pro result is a scale-up validation of the full pipeline, not an isolated CPT ablation.</p>
+        </div>
+        <div class="container article-prose">
+          <p data-en="On DeepSeek-V4-Pro, the original model starts at an average OR score of 70.16% under the reported zero-shot Pass@4 setting. SFT alone raises the average to 76.74%, while the complete SLAI T-Rex-Pro configuration reaches 77.33%. The strongest absolute movement remains on B4O-ORGEval, which rises from 43.91% for the original model to 61.93% for the complete configuration. OptiBench changes only slightly, which is a useful reminder that a single aggregate number hides different task sensitivities." data-zh="在报告的 zero-shot Pass@4 设置下，DeepSeek-V4-Pro 原始模型的 OR 平均分为 70.16%。单独 SFT 后平均分升至 76.74%，完整 SLAI T-Rex-Pro 配置达到 77.33%。最大绝对变化仍出现在 B4O-ORGEval：从原始模型的 43.91% 上升到完整配置的 61.93%。OptiBench 变化较小，这提醒我们单个总分会掩盖不同任务的敏感性差异。">On DeepSeek-V4-Pro, the original model starts at an average OR score of 70.16% under the reported zero-shot Pass@4 setting. SFT alone raises the average to 76.74%, while the complete SLAI T-Rex-Pro configuration reaches 77.33%. The strongest absolute movement remains on B4O-ORGEval, which rises from 43.91% for the original model to 61.93% for the complete configuration. OptiBench changes only slightly, which is a useful reminder that a single aggregate number hides different task sensitivities.</p>
+        </div>
+        <div class="container overview-table-wrap">
+          <table class="article-table">
+            <caption data-en="Table 5. DeepSeek-V4-Pro scale-up validation, zero-shot Pass@4" data-zh="表 5. DeepSeek-V4-Pro 规模扩展验证，zero-shot Pass@4">Table 5. DeepSeek-V4-Pro scale-up validation, zero-shot Pass@4</caption>
+            <thead>
+              <tr>
+                <th scope="col" data-en="Model" data-zh="模型">Model</th>
+                <th scope="col">NL4OPT</th>
+                <th scope="col">OptiBench</th>
+                <th scope="col">B4O-Feasible</th>
+                <th scope="col">B4O-ORGEval</th>
+                <th scope="col" data-en="Overall" data-zh="总体">Overall</th>
+                <th scope="col" data-en="Gain" data-zh="提升">Gain</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">DeepSeek-V4-Pro</th><td>86.51</td><td>70.00</td><td>80.23</td><td>43.91</td><td>70.16</td><td>--</td></tr>
+              <tr><th scope="row">DeepSeek-V4-Pro + SFT</th><td>89.97</td><td>69.50</td><td>86.04</td><td>61.43</td><td>76.74</td><td>+6.58</td></tr>
+              <tr class="result-ours"><th scope="row">SLAI T-Rex-Pro</th><td>92.04</td><td>70.17</td><td>85.17</td><td>61.93</td><td>77.33</td><td>+7.17</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="container article-prose">
+          <p data-en="The general-capability check is deliberately reported alongside the OR result. On the Pro scale-up, SLAI T-Rex-Pro improves AIME 2024 from 83.33% to 90.00%, AIME 2025 from 70.00% to 86.67%, and LiveCodeBench from 55.00% to 67.00%. HumanEval remains at 100%; CMMLU decreases slightly from 93.88% to 93.12%. These results do not prove that forgetting is impossible, but they show why retention metrics must be part of checkpoint selection." data-zh="通用能力检查与 OR 结果一起报告。在 Pro 规模扩展实验中，SLAI T-Rex-Pro 将 AIME 2024 从 83.33% 提升到 90.00%，AIME 2025 从 70.00% 提升到 86.67%，LiveCodeBench 从 55.00% 提升到 67.00%。HumanEval 保持 100%，CMMLU 从 93.88% 小幅下降到 93.12%。这些结果不能证明遗忘绝对不会发生，但说明 checkpoint 选择必须包含能力保持指标。">The general-capability check is deliberately reported alongside the OR result. On the Pro scale-up, SLAI T-Rex-Pro improves AIME 2024 from 83.33% to 90.00%, AIME 2025 from 70.00% to 86.67%, and LiveCodeBench from 55.00% to 67.00%. HumanEval remains at 100%; CMMLU decreases slightly from 93.88% to 93.12%. These results do not prove that forgetting is impossible, but they show why retention metrics must be part of checkpoint selection.</p>
+        </div>
+      </section>
+
+      <section class="section limitations-section">
+        <div class="container narrative-grid">
+          <div class="narrative-lead">
+            <p class="section-index">LIMITATIONS AND NEXT STEPS</p>
+            <h2 data-en="The open workflow is a starting point, not a final solver." data-zh="这套开源工作流是起点，而不是最终的求解器。">The open workflow is a starting point, not a final solver.</h2>
+          </div>
+          <div class="narrative-copy">
+            <p data-en="The report is careful about what its validation proves. Matching an objective value on one numerical instance is a strong executable-consistency signal, but it is not a proof that two formulations are symbolically equivalent. Structural validation remains necessary, especially for canonical graph checks, nonlinear reformulations, ratio constraints, and quadratic terms." data-zh="报告对实验能够证明什么保持谨慎。在一个数值实例上目标值一致，是很强的可执行一致性信号，但不能证明两个 formulation 在符号上等价。结构验证仍然必要，尤其是 canonical graph 检查、非线性 reformulation、比例约束和二次项。">The report is careful about what its validation proves. Matching an objective value on one numerical instance is a strong executable-consistency signal, but it is not a proof that two formulations are symbolically equivalent. Structural validation remains necessary, especially for canonical graph checks, nonlinear reformulations, ratio constraints, and quadratic terms.</p>
+            <p data-en="The current release therefore exposes the pieces needed for inspection and reproduction while leaving room for stronger evaluators and broader data. Future work includes more diverse solver-verified corpora, better structural checks for nonlinear models, broader OR families, retention-aware curricula, and agentic reinforcement-learning workflows built on top of the verified training stack." data-zh="因此，当前版本公开了便于检查和复现的关键组件，同时为更强的评测器和更广的数据留下空间。后续方向包括更丰富的求解器验证语料、更强的非线性模型结构检查、更广泛的 OR 问题族、关注能力保持的 curriculum，以及建立在验证训练栈之上的 agentic reinforcement learning 工作流。">The current release therefore exposes the pieces needed for inspection and reproduction while leaving room for stronger evaluators and broader data. Future work includes more diverse solver-verified corpora, better structural checks for nonlinear models, broader OR families, retention-aware curricula, and agentic reinforcement-learning workflows built on top of the verified training stack.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section quick-start-section" id="quick-start">
+        <div class="container article-header">
+          <p class="section-index">QUICK START</p>
+          <h2 data-en="From the training image to four OR benchmarks." data-zh="从训练镜像到四项 OR benchmark。">From the training image to four OR benchmarks.</h2>
+          <p class="article-dek" data-en="This is the shortest complete path through the public release. It first prepares a matched Ascend runtime, then converts a base checkpoint and CPT corpus, runs the public Flash training launchers, exports the final MCore checkpoint for serving, and sends an OpenAI-compatible endpoint through the four evaluation targets." data-zh="这是走通开源版本的最短完整路径：先准备匹配的 Ascend 运行时，再转换基础 checkpoint 和 CPT 语料，使用公开的 Flash 训练启动脚本，导出用于部署的 MCore checkpoint，最后将 OpenAI-compatible 服务端点送入四项评测。">This is the shortest complete path through the public release. It first prepares a matched Ascend runtime, then converts a base checkpoint and CPT corpus, runs the public Flash training launchers, exports the final MCore checkpoint for serving, and sends an OpenAI-compatible endpoint through the four evaluation targets.</p>
+        </div>
+        <div class="container quick-start-intro">
+          <p data-en="The commands below use placeholder mount points so that the page can be copied to another cluster without carrying private paths. Replace model, dataset, output, master-node, and endpoint values with the paths and service names in your environment. Multi-node jobs must run the same command on every node with the appropriate NODE_RANK." data-zh="下面的命令使用占位挂载路径，复制到其他集群时不会带出私有路径。请根据自己的环境替换模型、数据集、输出目录、主节点和服务端点。多节点任务需要在每个节点使用相同命令，并为每个节点设置对应的 NODE_RANK。">The commands below use placeholder mount points so that the page can be copied to another cluster without carrying private paths. Replace model, dataset, output, master-node, and endpoint values with the paths and service names in your environment. Multi-node jobs must run the same command on every node with the appropriate NODE_RANK.</p>
+        </div>
+        <div class="container quick-steps">
+          <article class="quick-step">
+            <div class="quick-step-meta">
+              <span>01</span>
+              <h3 data-en="Pull or build the training image" data-zh="拉取或制作训练镜像">Pull or build the training image</h3>
+            </div>
+            <div class="quick-step-body">
+              <p data-en="The published image contains the pinned CANN, MindSpeed, MindSpeed-LLM, Megatron-LM, and Ascend operator environment. Pulling it is the fastest way to reproduce the public setup. Building from source is useful when you need to change versions or rebuild the kernels." data-zh="已发布镜像包含锁定版本的 CANN、MindSpeed、MindSpeed-LLM、Megatron-LM 和 Ascend 算子环境。直接拉取是复现公开环境最快的方式；需要调整版本或重新编译算子时，再从源码构建。">The published image contains the pinned CANN, MindSpeed, MindSpeed-LLM, Megatron-LM, and Ascend operator environment. Pulling it is the fastest way to reproduce the public setup. Building from source is useful when you need to change versions or rebuild the kernels.</p>
+              <pre><code>git clone https://github.com/SLAI-AITP/SLAI-T-Rex.git
+cd SLAI-T-Rex
+
+# Option A: use the published image
+docker pull quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0
+
+# Option B: build on a Linux AArch64 Ascend build host
+bash docker/build_image.sh
+
+# Mount the repository and external artifacts in the runtime selected by
+# your cluster scheduler. Device flags vary by deployment environment.
+docker run --rm -it --network host --ipc=host --privileged \
+  -v "$PWD":/workspace/SLAI-T-Rex-src \
+  -v /path/to/models:/data/models \
+  -v /path/to/datasets:/data/datasets \
+  -v /path/to/outputs:/data/outputs \
+  quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0 bash</code></pre>
+            </div>
+          </article>
+
+          <article class="quick-step">
+            <div class="quick-step-meta">
+              <span>02</span>
+              <h3 data-en="Prepare the checkpoint" data-zh="准备 checkpoint">Prepare the checkpoint</h3>
+            </div>
+            <div class="quick-step-body">
+              <p data-en="The public Flash launchers expect an MCore checkpoint. When the starting model is an FP8 HuggingFace checkpoint, dequantize it to BF16 first, then convert BF16 HuggingFace weights to the MCore layout. The tokenizer path can point to the BF16 HuggingFace directory if it contains the tokenizer files." data-zh="公开的 Flash 启动脚本需要 MCore checkpoint。如果初始模型是 FP8 HuggingFace checkpoint，需要先反量化为 BF16，再将 BF16 HuggingFace 权重转换为 MCore 布局。如果 BF16 HuggingFace 目录包含 tokenizer 文件，tokenizer 路径可以直接指向该目录。">The public Flash launchers expect an MCore checkpoint. When the starting model is an FP8 HuggingFace checkpoint, dequantize it to BF16 first, then convert BF16 HuggingFace weights to the MCore layout. The tokenizer path can point to the BF16 HuggingFace directory if it contains the tokenizer files.</p>
+              <pre><code>export MINDSPEED_LLM_DIR=/workspace/MindSpeed-LLM
+export TOKENIZER_PATH=/data/models/deepseek4_flash_bf16
+
+export INPUT_FP8_HF_PATH=/data/models/deepseek4_flash_fp8
+export OUTPUT_BF16_HF_PATH=/data/models/deepseek4_flash_bf16
+bash /workspace/SLAI-T-Rex-src/training/convert/convert_ckpt_fp8_to_bf16.sh
+
+export CONVERT_SCRIPT=/workspace/MindSpeed-LLM/convert_ckpt_v2.py
+export HF_LOAD_DIR=/data/models/deepseek4_flash_bf16
+export MCORE_SAVE_DIR=/data/models/deepseek4_flash_mcore
+bash /workspace/SLAI-T-Rex-src/training/convert/convert_ckpt_hf_to_mcore.sh</code></pre>
+            </div>
+          </article>
+
+          <article class="quick-step">
+            <div class="quick-step-meta">
+              <span>03</span>
+              <h3 data-en="Convert the CPT corpus" data-zh="转换 CPT 语料">Convert the CPT corpus</h3>
+            </div>
+            <div class="quick-step-body">
+              <p data-en="CPT input is JSONL with one plain text document per row, for example {&quot;text&quot;: &quot;...&quot;}. The generic conversion helper invokes the MindSpeed-LLM preprocessor, supports multiple workers and sub-processes, and emits the indexed text-document pair used by the CPT launcher." data-zh="CPT 输入是 JSONL，每行一个纯文本文档，例如 {&quot;text&quot;: &quot;...&quot;}。通用转换脚本调用 MindSpeed-LLM 预处理器，支持多个 worker 和子进程，并生成 CPT 启动脚本使用的 indexed text-document 文件对。">CPT input is JSONL with one plain text document per row, for example {"text": "..."}. The generic conversion helper invokes the MindSpeed-LLM preprocessor, supports multiple workers and sub-processes, and emits the indexed text-document pair used by the CPT launcher.</p>
+              <pre><code>cd /workspace/SLAI-T-Rex-src
+
+bash training/convert/convert_data.sh \
+  --mindspeed-llm-dir "$MINDSPEED_LLM_DIR" \
+  --input /data/datasets/or_cpt_corpus.jsonl \
+  --output-prefix /data/datasets/processed/or_cpt_corpus \
+  --tokenizer "$TOKENIZER_PATH" \
+  --handler-name GeneralPretrainHandler \
+  --json-keys text \
+  --seq-length 4096 \
+  --workers 8 \
+  --n-subs 16
+
+# Output:
+# /data/datasets/processed/or_cpt_corpus_text_document.bin
+# /data/datasets/processed/or_cpt_corpus_text_document.idx</code></pre>
+            </div>
+          </article>
+
+          <article class="quick-step">
+            <div class="quick-step-meta">
+              <span>04</span>
+              <h3 data-en="Run Flash CPT" data-zh="运行 Flash CPT">Run Flash CPT</h3>
+            </div>
+            <div class="quick-step-body">
+              <p data-en="Set the weighted indexed dataset list and the cluster topology before launching. The public 4K Flash CPT template defaults to global batch size 128, micro batch size 1, tensor parallel 1, pipeline parallel 4, and expert parallel 32. On each node, keep the shared values identical and set NODE_RANK to that node's rank." data-zh="启动前设置带权重的 indexed 数据集列表和集群拓扑。公开的 4K Flash CPT 模板默认 global batch size 为 128、micro batch size 为 1、tensor parallel 为 1、pipeline parallel 为 4、expert parallel 为 32。在每个节点保持共享配置一致，并将 NODE_RANK 设置为当前节点 rank。">Set the weighted indexed dataset list and the cluster topology before launching. The public 4K Flash CPT template defaults to global batch size 128, micro batch size 1, tensor parallel 1, pipeline parallel 4, and expert parallel 32. On each node, keep the shared values identical and set NODE_RANK to that node's rank.</p>
+              <pre><code>cd /workspace/SLAI-T-Rex-src
+export MINDSPEED_LLM_DIR=/workspace/MindSpeed-LLM
+export MINDSPEED_DIR=/workspace/MindSpeed
+export MEGATRON_DIR=/workspace/Megatron-LM
+export TOKENIZER_PATH=/data/models/deepseek4_flash_bf16
+export CKPT_LOAD_DIR=/data/models/deepseek4_flash_mcore
+export OUTPUT_ROOT=/data/outputs/slai_trex_cpt
+export TRAIN_DATA_PATH=$'1.0 /data/datasets/processed/or_cpt_corpus_text_document'
+export VALID_DATA_PATH=/data/datasets/processed/validation/val_text_document
+
+export NNODES=8
+export NPUS_PER_NODE=16
+export MASTER_ADDR=MASTER_NODE_HOST
+export MASTER_PORT=8192
+export NODE_RANK=0
+
+bash training/cpt/train_cpt_deepseek4_flash_4k.sh</code></pre>
+            </div>
+          </article>
+
+          <article class="quick-step">
+            <div class="quick-step-meta">
+              <span>05</span>
+              <h3 data-en="Run Flash SFT" data-zh="运行 Flash SFT">Run Flash SFT</h3>
+            </div>
+            <div class="quick-step-body">
+              <p data-en="The repository includes a packed public SFT dataset under data/sft/datasets/or_sft. DATA_PATH is the prefix before the packed field names, so the example uses .../or_sft rather than .../or_sft_packed. The launcher can prepare the distributed index map once on rank 0 and make other nodes wait for the ready marker." data-zh="仓库在 data/sft/datasets/or_sft 下提供了已打包的公开 SFT 数据。DATA_PATH 应该填写 packed 字段文件名前的 prefix，因此示例使用 .../or_sft，而不是 .../or_sft_packed。启动器可以由 rank 0 预先生成分布式 index map，其他节点等待 ready 标记。">The repository includes a packed public SFT dataset under data/sft/datasets/or_sft. DATA_PATH is the prefix before the packed field names, so the example uses .../or_sft rather than .../or_sft_packed. The launcher can prepare the distributed index map once on rank 0 and make other nodes wait for the ready marker.</p>
+              <pre><code>cd /workspace/SLAI-T-Rex-src
+export MINDSPEED_LLM_DIR=/workspace/MindSpeed-LLM
+export MINDSPEED_DIR=/workspace/MindSpeed
+export MEGATRON_DIR=/workspace/Megatron-LM
+export TOKENIZER_PATH=/data/models/deepseek4_flash_bf16
+export CKPT_LOAD_DIR=/data/outputs/slai_trex_cpt/checkpoints/your_cpt_run
+export OUTPUT_ROOT=/data/outputs/slai_trex_sft
+export DATA_PATH=/workspace/SLAI-T-Rex-src/data/sft/datasets/or_sft/or_sft
+export PREPARE_INDEXMAP=1
+
+export NNODES=8
+export NPUS_PER_NODE=16
+export MASTER_ADDR=MASTER_NODE_HOST
+export MASTER_PORT=8192
+export NODE_RANK=0
+
+bash training/sft/launch_sft_deepseek4_flash_8n16_910c.sh</code></pre>
+            </div>
+          </article>
+
+          <article class="quick-step">
+            <div class="quick-step-meta">
+              <span>06</span>
+              <h3 data-en="Export and evaluate" data-zh="导出并评测">Export and evaluate</h3>
+            </div>
+            <div class="quick-step-body">
+              <p data-en="After SFT, convert the selected MCore checkpoint back to HuggingFace format and serve it through an OpenAI-compatible endpoint. The evaluation launcher runs NL4OPT, OptiBench, B4O-Feasible, and B4O-ORGEval together in 1-pass mode. A Gurobi installation and valid license are required for the solver-backed evaluations." data-zh="SFT 完成后，将选中的 MCore checkpoint 转回 HuggingFace 格式，并通过 OpenAI-compatible 服务端点提供推理。评测启动器会在 1-pass 模式下依次运行 NL4OPT、OptiBench、B4O-Feasible 和 B4O-ORGEval。求解器相关评测需要安装 Gurobi 并配置有效 license。">After SFT, convert the selected MCore checkpoint back to HuggingFace format and serve it through an OpenAI-compatible endpoint. The evaluation launcher runs NL4OPT, OptiBench, B4O-Feasible, and B4O-ORGEval together in 1-pass mode. A Gurobi installation and valid license are required for the solver-backed evaluations.</p>
+              <pre><code>export CONVERT_SCRIPT=/workspace/MindSpeed-LLM/convert_ckpt_v2.py
+export MCORE_LOAD_DIR=/data/outputs/slai_trex_sft/checkpoints/your_sft_run
+export HF_SAVE_DIR=/data/outputs/slai_trex_sft/hf
+bash /workspace/SLAI-T-Rex-src/training/convert/convert_ckpt_mcore_to_hf.sh
+
+# Start your model service separately, then evaluate all four OR targets.
+cd /workspace/SLAI-T-Rex-src/eval
+python3 -m pip install -r requirements.txt
+export OPENAI_BASE_URL=http://MODEL_SERVICE_HOST:8000/v1
+export MODEL_NAME=your-served-model-name
+export OPENAI_API_KEY=none
+BACKGROUND=false bash scripts/run_eval_1pass.sh
+
+# Results: eval/results/<run-name>/
+# Logs:    eval/logs/full_<run-name>/</code></pre>
+            </div>
+          </article>
+        </div>
+        <div class="container quick-start-note">
+          <p data-en="For a first smoke test, use the packed SFT dataset already included in the repository and a small evaluation range. For a real CPT run, prepare a held-out validation prefix in addition to the training corpus. For custom SFT data, generate and validate the OpenAI-style JSONL with data/sft, then produce the packed input_ids, labels, and attention_mask files expected by the SFT launcher." data-zh="第一次冒烟测试时，可以直接使用仓库内置的 packed SFT 数据，并将评测范围设小。正式 CPT 训练除训练语料外，还应准备独立的 validation prefix。自定义 SFT 数据需要先使用 data/sft 生成并校验 OpenAI-style JSONL，再生成 SFT 启动器需要的 input_ids、labels 和 attention_mask packed 文件。">For a first smoke test, use the packed SFT dataset already included in the repository and a small evaluation range. For a real CPT run, prepare a held-out validation prefix in addition to the training corpus. For custom SFT data, generate and validate the OpenAI-style JSONL with data/sft, then produce the packed input_ids, labels, and attention_mask files expected by the SFT launcher.</p>
+        </div>
+      </section>
+
+      <section class="section stack-section">
+        <div class="container stack-layout">
+          <div class="stack-copy">
+            <p class="section-index">04 / THE STACK</p>
+            <h2 data-en="Open pieces for every stage." data-zh="覆盖每个阶段的开源组件。">Open pieces for every stage.</h2>
+            <p data-en="The repository is organized around the reproducibility boundary: data preparation, training, acceleration, conversion, and evaluation are public; private cluster paths and production artifacts stay outside the release." data-zh="仓库按可复现边界组织：公开数据准备、训练、加速、转换与评测；私有集群路径和生产产物不随仓库发布。">The repository is organized around the reproducibility boundary: data preparation, training, acceleration, conversion, and evaluation are public; private cluster paths and production artifacts stay outside the release.</p>
+          </div>
+          <div class="stack-list">
+            <a class="stack-item" href="https://github.com/SLAI-AITP/SLAI-T-Rex/tree/main/data" target="_blank" rel="noreferrer">
+              <span class="stack-number">01</span><span><strong data-en="Data" data-zh="数据">Data</strong><small data-en="CPT synthesis and SFT distillation" data-zh="CPT 合成与 SFT 蒸馏">CPT synthesis and SFT distillation</small></span><span class="arrow" aria-hidden="true">↗</span>
+            </a>
+            <a class="stack-item" href="https://github.com/SLAI-AITP/SLAI-T-Rex/tree/main/training" target="_blank" rel="noreferrer">
+              <span class="stack-number">02</span><span><strong data-en="Training" data-zh="训练">Training</strong><small data-en="MindSpeed-LLM launchers and converters" data-zh="MindSpeed-LLM 启动与转换脚本">MindSpeed-LLM launchers and converters</small></span><span class="arrow" aria-hidden="true">↗</span>
+            </a>
+            <a class="stack-item" href="https://github.com/SLAI-AITP/SLAI-T-Rex/tree/main/kernel" target="_blank" rel="noreferrer">
+              <span class="stack-number">03</span><span><strong data-en="Kernel" data-zh="算子">Kernel</strong><small data-en="AscendC operators and framework patches" data-zh="AscendC 算子与框架补丁">AscendC operators and framework patches</small></span><span class="arrow" aria-hidden="true">↗</span>
+            </a>
+            <a class="stack-item" href="https://github.com/SLAI-AITP/SLAI-T-Rex/tree/main/eval" target="_blank" rel="noreferrer">
+              <span class="stack-number">04</span><span><strong data-en="Evaluation" data-zh="评测">Evaluation</strong><small data-en="Four OR benchmarks and evaluation scripts" data-zh="四项 OR benchmark 与评测脚本">Four OR benchmarks and evaluation scripts</small></span><span class="arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="resource-band" id="resources">
+        <div class="container resource-layout">
+          <div>
+            <p class="section-index">05 / RESOURCES</p>
+            <h2 data-en="Start with the report. Run with the release." data-zh="从报告开始，用开源版本复现。">Start with the report. Run with the release.</h2>
+            <p data-en="Read the technical report for the full system and modeling story, then use the repository modules and prebuilt Ascend image to reproduce the public workflow." data-zh="先阅读技术报告了解完整的系统与建模方法，再使用仓库模块和预构建 Ascend 镜像复现公开工作流。">Read the technical report for the full system and modeling story, then use the repository modules and prebuilt Ascend image to reproduce the public workflow.</p>
+          </div>
+          <div class="resource-actions">
+            <a class="resource-link" href="https://arxiv.org/abs/2607.20145" target="_blank" rel="noreferrer"><span class="resource-icon">01</span><span><strong data-en="Technical report" data-zh="技术报告">Technical report</strong><small>arXiv:2607.20145</small></span><span aria-hidden="true">↗</span></a>
+            <a class="resource-link" href="https://www.modelscope.cn/models/SLAIAITP/DeepSeek-V4-Flash-OR" target="_blank" rel="noreferrer"><span class="resource-icon">02</span><span><strong data-en="Model checkpoint" data-zh="模型权重">Model checkpoint</strong><small>SLAIAITP/DeepSeek-V4-Flash-OR</small></span><span aria-hidden="true">↗</span></a>
+            <div class="resource-link resource-command">
+              <span class="resource-icon">03</span>
+              <span><strong data-en="Training image" data-zh="训练镜像">Training image</strong><code>quay.io/slai-t-rex/slai-t-rex:v1.0.0-a3-cann9.1.0</code></span>
+              <button id="copyCommand" type="button" data-en="Copy" data-zh="复制" aria-label="Copy Docker pull command" aria-live="polite">Copy</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span>SLAI T-Rex</span>
+        <span data-en="Full-parameter post-training for solver-grounded Operations Research." data-zh="面向求解器验证运筹优化的全参数后训练。">Full-parameter post-training for solver-grounded Operations Research.</span>
+        <a href="https://github.com/SLAI-AITP/SLAI-T-Rex" target="_blank" rel="noreferrer">GitHub ↗</a>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="SFT data icon">
+  <rect x="12" y="12" width="72" height="72" rx="14" fill="#dcfce7"/>
+  <path d="M30 32h36M30 48h28M30 64h36" stroke="#15803d" stroke-width="6" stroke-linecap="round"/>
+  <path d="M68 28l8 8-8 8" fill="none" stroke="#15803d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
