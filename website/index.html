@@ -30,7 +30,7 @@
 
     <main id="top">
       <section class="hero">
-        <div class="container">
+        <div class="container hero-layout">
           <div class="hero-copy">
             <p class="eyebrow" data-en="OPEN-SOURCE RESEARCH REPOSITORY" data-zh="开源研究仓库">OPEN-SOURCE RESEARCH REPOSITORY</p>
             <h1>SLAI T-Rex</h1>
@@ -41,22 +41,45 @@
               <a class="button button-secondary" href="#quick-start"><span data-en="Quick start" data-zh="快速开始">Quick start</span><span aria-hidden="true">↓</span></a>
             </div>
           </div>
-          <div class="hero-visual">
-            <img src="./assets/overview_infra_and_acc.png" alt="Ascend SuperPOD MFU improvements and Operations Research benchmark comparison">
-            <figcaption data-en="Figure 1. System efficiency improvement and overall Operations Research benchmark comparison reported in the technical report." data-zh="图 1. 技术报告中的系统效率提升与 Operations Research benchmark 总体对比。">Figure 1. System efficiency improvement and overall Operations Research benchmark comparison reported in the technical report.</figcaption>
-          </div>
+          <aside class="hero-mfu" aria-label="Pro SFT MFU progression from 34.85 percent to 38.57 percent">
+            <div class="hero-mfu-header">
+              <div>
+                <span data-en="PRO SFT EFFICIENCY" data-zh="PRO SFT 训练效率">PRO SFT EFFICIENCY</span>
+                <small data-en="Two optimization levels" data-zh="两级优化后的结果">Two optimization levels</small>
+              </div>
+              <strong>38.57<span>%</span></strong>
+            </div>
+            <ol class="mfu-trajectory">
+              <li>
+                <span class="mfu-node">00</span>
+                <span><b data-en="Community baseline" data-zh="社区基线">Community baseline</b><small data-en="Reference configuration" data-zh="参考配置">Reference configuration</small></span>
+                <strong>34.85%</strong>
+              </li>
+              <li>
+                <span class="mfu-node">01</span>
+                <span><b data-en="MindSpeed-LLM tuning" data-zh="MindSpeed-LLM 调优">MindSpeed-LLM tuning</b><small data-en="Parameters and runtime" data-zh="训练参数与运行环境">Parameters and runtime</small></span>
+                <strong>36.28%<small>+1.43 pp</small></strong>
+              </li>
+              <li>
+                <span class="mfu-node">02</span>
+                <span><b data-en="Custom computation paths" data-zh="自定义计算路径">Custom computation paths</b><small data-en="Fused operators and patches" data-zh="融合算子与框架补丁">Fused operators and patches</small></span>
+                <strong>38.57%<small>+2.29 pp</small></strong>
+              </li>
+            </ol>
+            <p class="mfu-total"><span data-en="Cumulative gain" data-zh="累计提升">Cumulative gain</span><strong>+3.72 pp</strong></p>
+          </aside>
         </div>
       </section>
 
       <section class="metric-strip" aria-label="Headline results">
         <div class="container metric-grid">
           <div class="metric">
-            <strong>34.22<span>%</span></strong>
-            <span data-en="MFU on DeepSeek-V4-Pro" data-zh="DeepSeek-V4-Pro MFU">MFU on DeepSeek-V4-Pro</span>
+            <strong>38.57<span>%</span></strong>
+            <span data-en="final Pro SFT MFU" data-zh="最终 Pro SFT MFU">final Pro SFT MFU</span>
           </div>
           <div class="metric">
-            <strong>2.93<span>x</span></strong>
-            <span data-en="over the open baseline recipe" data-zh="相对开源 baseline 配方">over the open baseline recipe</span>
+            <strong>+3.72<span>pp</span></strong>
+            <span data-en="over the community baseline" data-zh="相对社区基线累计提升">over the community baseline</span>
           </div>
           <div class="metric metric-accent">
             <strong>71.81<span>%</span></strong>
@@ -76,7 +99,7 @@
           <p class="article-dek" data-en="SLAI T-Rex starts from one premise: better domain capability requires a training substrate that is stable, observable, and efficient enough to support controlled experiments. A trillion-parameter MoE model stresses memory capacity, pipeline balance, collective communication, and irregular operators, while an Operations Research task also requires mathematical fidelity, executable solver code, and structural equivalence. The project handles these requirements as one connected pipeline, from Ascend runtime work to the final benchmark." data-zh="SLAI T-Rex 从一个前提出发：要提升领域能力，必须先有一个足够稳定、可观测且高效的训练底座，才能支撑受控实验。万亿参数级 MoE 模型会挑战设备内存、流水线均衡、集合通信和非规则算子；Operations Research 任务还要求数学语义正确、求解器代码可执行、模型结构等价。项目将这些要求放在同一条连续链路中，从 Ascend 运行时一直连接到最终 benchmark。">SLAI T-Rex starts from one premise: better domain capability requires a training substrate that is stable, observable, and efficient enough to support controlled experiments. A trillion-parameter MoE model stresses memory capacity, pipeline balance, collective communication, and irregular operators, while an Operations Research task also requires mathematical fidelity, executable solver code, and structural equivalence. The project handles these requirements as one connected pipeline, from Ascend runtime work to the final benchmark.</p>
         </div>
         <div class="container article-prose">
-          <p data-en="The system study uses DeepSeek-V4-Pro as the large-scale workload and Ascend CloudMatrix384 SuperPOD with Ascend 910C as the execution environment. The report starts from profiling rather than from an isolated optimization trick. It decomposes a training step into useful computation, exposed communication, pipeline bubble, and device-side idle time, then follows the latency into the operators and memory paths that create it. This leads to a three-layer optimization strategy: adjust the parallel execution plan, optimize dominant model-specific kernels, and fuse the long tail of small memory-bound operations." data-zh="系统部分以 DeepSeek-V4-Pro 为大规模工作负载，以 Ascend CloudMatrix384 SuperPOD 和 Ascend 910C 为执行环境。报告从 profiling 出发，而不是从某一个孤立的优化技巧出发。它把训练 step 拆解为有效计算、暴露的通信、流水线 bubble 和设备空闲时间，再继续追踪到产生这些开销的具体算子和内存路径。最终形成三层优化策略：调整并行执行方案、优化模型特有的主要算子、融合大量细碎的内存受限操作。">The system study uses DeepSeek-V4-Pro as the large-scale workload and Ascend CloudMatrix384 SuperPOD with Ascend 910C as the execution environment. The report starts from profiling rather than from an isolated optimization trick. It decomposes a training step into useful computation, exposed communication, pipeline bubble, and device-side idle time, then follows the latency into the operators and memory paths that create it. This leads to a three-layer optimization strategy: adjust the parallel execution plan, optimize dominant model-specific kernels, and fuse the long tail of small memory-bound operations.</p>
+          <p data-en="The system study uses DeepSeek-V4-Pro as the large-scale workload and Ascend CloudMatrix384 SuperPOD with Ascend 910C as the execution environment. It starts from profiling rather than from an isolated optimization trick, decomposing a training step into useful computation, exposed communication, pipeline bubble, and device-side idle time. The current Pro SFT implementation organizes the response into two levels: first tune the parameters and environment of existing MindSpeed-LLM capabilities, then introduce custom fused operators and framework patches for selected computation paths." data-zh="系统部分以 DeepSeek-V4-Pro 为大规模工作负载，以 Ascend CloudMatrix384 SuperPOD 和 Ascend 910C 为执行环境。优化从 profiling 出发，而不是从某一个孤立技巧出发，将训练 step 拆解为有效计算、暴露通信、pipeline bubble 和设备空闲时间。当前 Pro SFT 实现将优化归纳为两级：先调优 MindSpeed-LLM 已有能力的参数与环境，再通过融合算子与框架补丁替换部分计算路径。">The system study uses DeepSeek-V4-Pro as the large-scale workload and Ascend CloudMatrix384 SuperPOD with Ascend 910C as the execution environment. It starts from profiling rather than from an isolated optimization trick, decomposing a training step into useful computation, exposed communication, pipeline bubble, and device-side idle time. The current Pro SFT implementation organizes the response into two levels: first tune the parameters and environment of existing MindSpeed-LLM capabilities, then introduce custom fused operators and framework patches for selected computation paths.</p>
           <p data-en="The model study uses DeepSeek-V4-Flash as the main experimentation platform. The starting checkpoint already contains useful knowledge of common linear and mixed-integer programming templates, but its errors reveal that familiarity with optimization language is not enough. A generated program may compile while using the wrong variable domain, omit a conservation constraint, mishandle a ratio, or produce a graph that is structurally different from the reference formulation. CPT is therefore used to broaden the model's domain prior, while SFT is used to make solver-facing behavior and output contracts reliable at inference time." data-zh="模型部分以 DeepSeek-V4-Flash 作为主要实验平台。初始 checkpoint 已经具备一些常见线性规划和混合整数规划模板知识，但错误分析说明，仅仅熟悉优化语言还不够。模型生成的程序可能可以编译，却使用了错误的变量域、遗漏守恒约束、错误处理比例关系，或者生成与参考 formulation 结构不同的模型。因此，CPT 用来拓宽模型的领域先验，SFT 用来让面向求解器的行为和输出契约在推理时稳定出现。">The model study uses DeepSeek-V4-Flash as the main experimentation platform. The starting checkpoint already contains useful knowledge of common linear and mixed-integer programming templates, but its errors reveal that familiarity with optimization language is not enough. A generated program may compile while using the wrong variable domain, omit a conservation constraint, mishandle a ratio, or produce a graph that is structurally different from the reference formulation. CPT is therefore used to broaden the model's domain prior, while SFT is used to make solver-facing behavior and output contracts reliable at inference time.</p>
           <p data-en="This distinction also explains the organization of the open-source repository. Data construction is kept separate from MindSpeed-LLM training. The data tools create self-contained documents and instruction examples; conversion scripts turn them into the indexed format expected by training; launchers provide environment-driven recipes; kernel and framework directories expose the Ascend-specific acceleration path; evaluation scripts measure both execution and formulation structure." data-zh="这一区分也解释了开源仓库的组织方式。数据构建与 MindSpeed-LLM 训练相互分离：数据工具负责生成自包含文档和指令样本；转换脚本将数据处理为训练所需的 indexed 格式；启动脚本提供通过环境变量配置的训练 recipe；kernel 和 framework 目录暴露 Ascend 特定的加速路径；评测脚本同时测量程序执行和 formulation 结构。">This distinction also explains the organization of the open-source repository. Data construction is kept separate from MindSpeed-LLM training. The data tools create self-contained documents and instruction examples; conversion scripts turn them into the indexed format expected by training; launchers provide environment-driven recipes; kernel and framework directories expose the Ascend-specific acceleration path; evaluation scripts measure both execution and formulation structure.</p>
         </div>
@@ -159,6 +182,75 @@
           <h2 data-en="The bottleneck is a chain, not a single kernel." data-zh="瓶颈是一条链路，而不是一个单独的算子。">The bottleneck is a chain, not a single kernel.</h2>
           <p class="article-dek" data-en="At trillion-parameter scale, device time is shaped by the interaction of parallelism, communication, memory, and operator implementation. The report measures these layers together so that a kernel speedup is interpreted in the context of the training step that it actually affects." data-zh="在万亿参数级规模上，设备时间由并行策略、通信、内存和算子实现共同决定。报告将这些层次放在一起测量，因此算子加速可以被放回它真正影响的训练 step 中解释。">At trillion-parameter scale, device time is shaped by the interaction of parallelism, communication, memory, and operator implementation. The report measures these layers together so that a kernel speedup is interpreted in the context of the training step that it actually affects.</p>
         </div>
+        <div class="container mfu-stage-summary">
+          <div class="mfu-stage-intro">
+            <p class="mini-label">CURRENT PRO SFT</p>
+            <h3 data-en="Two implementation levels, measured in three stages." data-zh="两级实现优化，分三个阶段测量。">Two implementation levels, measured in three stages.</h3>
+            <p data-en="The community configuration provides the 34.85% MFU baseline. Level 1 changes only MindSpeed-LLM parameters and runtime settings, raising MFU to 36.28%. Level 2 then activates custom fused operators and framework patches, reaching 38.57%. The cumulative gain over the community baseline is 3.72 percentage points." data-zh="社区配置提供 34.85% MFU 基线。一级优化只调整 MindSpeed-LLM 参数和运行环境，将 MFU 提升到 36.28%；二级优化进一步启用融合算子和框架补丁，最终达到 38.57%。相对社区基线累计提升 3.72 个百分点。">The community configuration provides the 34.85% MFU baseline. Level 1 changes only MindSpeed-LLM parameters and runtime settings, raising MFU to 36.28%. Level 2 then activates custom fused operators and framework patches, reaching 38.57%. The cumulative gain over the community baseline is 3.72 percentage points.</p>
+          </div>
+          <div class="mfu-level-list">
+            <article>
+              <span>LEVEL 1</span>
+              <h4 data-en="Use existing MindSpeed-LLM capabilities" data-zh="调优 MindSpeed-LLM 已有能力">Use existing MindSpeed-LLM capabilities</h4>
+              <p data-en="Tune VPP, MoE All-to-All overlap, GEMM gradient-accumulation fusion, task queue behavior, HCCL settings, and the NPU memory allocator. No new operator implementation is introduced at this level." data-zh="调优 VPP、MoE All-to-All 通信计算重叠、GEMM 梯度累积融合、task queue、HCCL 参数和 NPU 内存分配器。这一级不引入新的算子实现。">Tune VPP, MoE All-to-All overlap, GEMM gradient-accumulation fusion, task queue behavior, HCCL settings, and the NPU memory allocator. No new operator implementation is introduced at this level.</p>
+            </article>
+            <article>
+              <span>LEVEL 2</span>
+              <h4 data-en="Replace selected computation paths" data-zh="替换部分原始计算路径">Replace selected computation paths</h4>
+              <p data-en="Apply framework patches and load custom operator artifacts. The optimized paths cover fused SwiGLU, MoE permutation, DSA index scaling, CPU binding, SparseFlashMla, and LightningIndexer." data-zh="应用框架补丁并加载自定义算子编译产物。优化路径覆盖融合 SwiGLU、MoE permutation、DSA index 缩放、CPU 绑核、SparseFlashMla 和 LightningIndexer。">Apply framework patches and load custom operator artifacts. The optimized paths cover fused SwiGLU, MoE permutation, DSA index scaling, CPU binding, SparseFlashMla, and LightningIndexer.</p>
+            </article>
+          </div>
+        </div>
+        <div class="container optimization-details">
+          <article class="optimization-level">
+            <header class="optimization-level-header">
+              <span>LEVEL 1 / 36.28% MFU</span>
+              <h3 data-en="Tune the training plan before changing kernels" data-zh="先调优训练方案，不改变算子实现">Tune the training plan before changing kernels</h3>
+              <p data-en="This level stays inside MindSpeed-LLM's existing feature set. Its purpose is to expose less communication, reduce pipeline idle time, and avoid unnecessary memory traffic without adding a new operator dependency." data-zh="这一级完全使用 MindSpeed-LLM 已有能力，目标是在不增加新算子依赖的前提下，减少暴露通信、降低流水线空泡，并避免不必要的显存读写。">This level stays inside MindSpeed-LLM's existing feature set. Its purpose is to expose less communication, reduce pipeline idle time, and avoid unnecessary memory traffic without adding a new operator dependency.</p>
+            </header>
+            <div class="optimization-detail-grid">
+              <section>
+                <h4 data-en="Parallel and pipeline schedule" data-zh="并行与流水线调度">Parallel and pipeline schedule</h4>
+                <p data-en="The 512-rank run uses TP=2, PP=8, EP=64, ETP=1, CP=1, and DP=32 with Sequence Parallel. Setting four layers per virtual pipeline stage introduces interleaved VPP scheduling: it shortens idle gaps between pipeline stages, while accepting more scheduling and point-to-point communication." data-zh="512 rank 训练采用 TP=2、PP=8、EP=64、ETP=1、CP=1、DP=32，并开启 Sequence Parallel。每个虚拟流水线阶段设置 4 层，引入交错 VPP 调度，以更高的调度和点对点通信频率换取更小的 pipeline 空泡。">The 512-rank run uses TP=2, PP=8, EP=64, ETP=1, CP=1, and DP=32 with Sequence Parallel. Setting four layers per virtual pipeline stage introduces interleaved VPP scheduling: it shortens idle gaps between pipeline stages, while accepting more scheduling and point-to-point communication.</p>
+                <code>TP=2 · PP=8 · EP=64 · DP=32 · VPP=4 layers</code>
+              </section>
+              <section>
+                <h4 data-en="Communication and gradient fusion" data-zh="通信与梯度融合">Communication and gradient fusion</h4>
+                <p data-en="MoE All-to-All is overlapped with expert computation so that token dispatch is less visible on the critical path. GEMM gradient accumulation is fused into the weight-gradient calculation, removing a separate Add and repeated memory access. Distributed optimizer, full recompute, optimizer swap, and manual garbage collection keep the full-parameter run within the memory budget." data-zh="将 MoE All-to-All 与专家计算重叠，减少 token dispatch 在关键路径上的暴露时间；将 GEMM 梯度累积融合进权重梯度计算，省去独立 Add 和重复显存访问。Distributed Optimizer、全量重计算、optimizer swap 和手动 GC 共同控制全参数训练的显存占用。">MoE All-to-All is overlapped with expert computation so that token dispatch is less visible on the critical path. GEMM gradient accumulation is fused into the weight-gradient calculation, removing a separate Add and repeated memory access. Distributed optimizer, full recompute, optimizer swap, and manual garbage collection keep the full-parameter run within the memory budget.</p>
+                <code>MoE overlap · GEMM grad fusion · recompute · optimizer swap</code>
+              </section>
+              <section>
+                <h4 data-en="Runtime and collective settings" data-zh="运行时与集合通信参数">Runtime and collective settings</h4>
+                <p data-en="Task queue level 2 increases asynchronous host-to-device submission. A 256 MB HCCL buffer and topology-aware All-to-All strategy target large-message throughput, while the AIV communication path is selected for this workload. Expandable allocator segments mitigate fragmentation from dynamic tensors and communication buffers. These settings can consume more peak memory and must be revalidated when CANN or HCCL changes." data-zh="Task Queue Level 2 提高 Host 到 Device 的异步下发并发度；256 MB HCCL buffer、按拓扑分层的 All-to-All 策略和 AIV 通信路径用于改善大消息通信。可扩展内存段缓解动态 Tensor 与通信 buffer 导致的碎片。这些设置可能增加峰值显存，并需要在 CANN 或 HCCL 版本变化后重新验证。">Task queue level 2 increases asynchronous host-to-device submission. A 256 MB HCCL buffer and topology-aware All-to-All strategy target large-message throughput, while the AIV communication path is selected for this workload. Expandable allocator segments mitigate fragmentation from dynamic tensors and communication buffers. These settings can consume more peak memory and must be revalidated when CANN or HCCL changes.</p>
+                <code>TASK_QUEUE_ENABLE=2 · HCCL_BUFFSIZE=256 · AIV</code>
+              </section>
+            </div>
+          </article>
+          <article class="optimization-level">
+            <header class="optimization-level-header">
+              <span>LEVEL 2 / 38.57% MFU</span>
+              <h3 data-en="Replace expensive paths with fused implementations" data-zh="用融合实现替换高开销计算路径">Replace expensive paths with fused implementations</h3>
+              <p data-en="This level adds compiled custom operators and the framework patches that route execution into them. It reduces launch overhead and intermediate memory traffic, and changes the sparse-attention path itself rather than only tuning its schedule." data-zh="这一级增加编译后的自定义算子及其框架路由补丁，不仅调整调度，还直接替换部分计算路径，以减少 Kernel 启动、中间 Tensor 和显存往返。">This level adds compiled custom operators and the framework patches that route execution into them. It reduces launch overhead and intermediate memory traffic, and changes the sparse-attention path itself rather than only tuning its schedule.</p>
+            </header>
+            <div class="optimization-detail-grid">
+              <section>
+                <h4 data-en="MoE and activation fusion" data-zh="MoE 与激活融合">MoE and activation fusion</h4>
+                <p data-en="The activation path combines value limiting, SwiGLU, routing-probability multiplication, and the corresponding backward work where applicable. MoE token permutation uses a fused mask-map path, and the DSA indexer combines two constant scales into one operation. These changes remove temporary tensors, dtype conversions, copies, and small elementwise launches." data-zh="激活路径按场景融合限幅、SwiGLU、routing probability 乘法及对应反向计算；MoE token 重排使用融合 mask-map 路径；DSA indexer 将两次常量缩放合并为一次。这些改动减少临时 Tensor、dtype 转换、数据拷贝和细碎逐元素 Kernel。">The activation path combines value limiting, SwiGLU, routing-probability multiplication, and the corresponding backward work where applicable. MoE token permutation uses a fused mask-map path, and the DSA indexer combines two constant scales into one operation. These changes remove temporary tensors, dtype conversions, copies, and small elementwise launches.</p>
+                <code>limited SwiGLU · routing probability · MoE permute · index scaling</code>
+              </section>
+              <section>
+                <h4 data-en="Sparse attention execution" data-zh="稀疏注意力执行链">Sparse attention execution</h4>
+                <p data-en="LightningIndexer first selects the top 1,024 candidate positions. SparseFlashMla then computes attention only on those positions, its fused backward handles the sparse gradient path, and the fused KL-loss backward updates the indexer. The reduction in selected positions is especially valuable for long sequences, where dense attention would otherwise dominate computation and memory access." data-zh="LightningIndexer 先筛选 topk=1024 个候选位置；SparseFlashMla 只在这些位置执行注意力，融合反向负责稀疏梯度路径，融合 KL-loss 反向再更新 indexer。对于长序列，这种方式可以避免在未选中位置上进行大量注意力计算和显存访问。">LightningIndexer first selects the top 1,024 candidate positions. SparseFlashMla then computes attention only on those positions, its fused backward handles the sparse gradient path, and the fused KL-loss backward updates the indexer. The reduction in selected positions is especially valuable for long sequences, where dense attention would otherwise dominate computation and memory access.</p>
+                <code>LightningIndexer → topk=1024 → SparseFlashMla → fused backward</code>
+              </section>
+              <section>
+                <h4 data-en="Integration boundary and validation" data-zh="接入边界与验证要求">Integration boundary and validation</h4>
+                <p data-en="The generic FlashAttention switch and the sparse-attention switch select different paths: the latter depends on the custom operator artifacts and matching framework patches. CPU affinity is also applied per local rank to reduce process migration and NUMA jitter, but it is a runtime optimization rather than an NPU kernel. Correctness, compiler compatibility, memory use, and end-to-end MFU must all be checked together after an environment change." data-zh="通用 FlashAttention 与稀疏注意力开关进入不同计算路径，后者依赖自定义算子产物和匹配的框架补丁。每个 local rank 还会绑定 CPU，以减少进程迁移和 NUMA 抖动，但这属于运行时优化而不是 NPU Kernel。环境变化后需要同时复查正确性、编译兼容性、显存占用和端到端 MFU。">The generic FlashAttention switch and the sparse-attention switch select different paths: the latter depends on the custom operator artifacts and matching framework patches. CPU affinity is also applied per local rank to reduce process migration and NUMA jitter, but it is a runtime optimization rather than an NPU kernel. Correctness, compiler compatibility, memory use, and end-to-end MFU must all be checked together after an environment change.</p>
+                <code>General FlashAttention and DSA sparse attention use distinct execution paths.</code>
+              </section>
+            </div>
+          </article>
+        </div>
         <div class="container article-prose">
           <h3 data-en="Profiling the exposed communication" data-zh="分析暴露出来的通信开销">Profiling the exposed communication</h3>
           <p data-en="The baseline training step spends 40.76 seconds in communication, which accounts for 52.2% of total device kernel time in the reported profile. Tensor and data parallel collectives contribute the largest share, followed by pipeline point-to-point traffic. Expert-parallel AllToAllV is important for MoE token dispatch, but it is a smaller part of this particular breakdown because the SuperPOD interconnect handles that traffic comparatively well." data-zh="在报告的 profiling 中，baseline training step 的通信耗时为 40.76 秒，占总设备 kernel 时间的 52.2%。Tensor 和 data parallel 的集合通信占比最高，其次是 pipeline 的点对点通信。Expert parallel 的 AllToAllV 对 MoE token dispatch 很重要，但在这一 breakdown 中占比较小，因为 SuperPOD 互联对这部分流量的处理相对更好。">The baseline training step spends 40.76 seconds in communication, which accounts for 52.2% of total device kernel time in the reported profile. Tensor and data parallel collectives contribute the largest share, followed by pipeline point-to-point traffic. Expert-parallel AllToAllV is important for MoE token dispatch, but it is a smaller part of this particular breakdown because the SuperPOD interconnect handles that traffic comparatively well.</p>
@@ -214,7 +306,7 @@
         <div class="container article-prose">
           <h3 data-en="AuraKernel and full-stack fusion" data-zh="AuraKernel 与全栈融合">AuraKernel and full-stack fusion</h3>
           <p data-en="AuraKernel combines a hardware-grounded harness, iterative optimization memory, parallel candidate evaluation, and solver-guided tiling search. The optimization loop first compiles and checks a candidate for correctness on real Ascend hardware. Only feasible candidates enter performance comparison. This separates mathematical or functional correctness from performance selection, and makes hardware counters useful as a diagnosis of whether a candidate is compute-bound, movement-bound, or scalar-bound." data-zh="AuraKernel 结合了硬件感知的 harness、跨迭代优化记忆、并行候选评测和求解器引导的 tiling 搜索。优化循环先在真实 Ascend 硬件上编译并检查候选实现的正确性，只有通过检查的候选才进入性能比较。这将数学或功能正确性与性能选择分开，也使硬件 counter 能够用于诊断候选实现究竟受计算、数据搬运还是标量执行限制。">AuraKernel combines a hardware-grounded harness, iterative optimization memory, parallel candidate evaluation, and solver-guided tiling search. The optimization loop first compiles and checks a candidate for correctness on real Ascend hardware. Only feasible candidates enter performance comparison. This separates mathematical or functional correctness from performance selection, and makes hardware counters useful as a diagnosis of whether a candidate is compute-bound, movement-bound, or scalar-bound.</p>
-          <p data-en="The reported operator improvements are deliberately read at two levels. AuraKernel improves already-visible bottleneck kernels, including sparse attention, the lightning indexer gradient, and weight-free RMSNorm. The fusion path changes the execution unit itself by removing eager intermediate tensors, dtype round trips, and autograd-visible boundaries. The distinction matters: an isolated kernel speedup and a fused module speedup answer different questions, but both contribute to the final MFU result." data-zh="报告中的算子优化结果分为两个层次。AuraKernel 优化已经暴露出来的主要瓶颈算子，包括 sparse attention、lightning indexer gradient 和无权重 RMSNorm；融合路径则直接改变执行单元，消除 eager intermediate tensor、dtype 往返和 autograd 可见的边界。这个区分很重要：单个算子加速和融合模块加速回答的是不同问题，但两者都会贡献到最终 MFU。">The reported operator improvements are deliberately read at two levels. AuraKernel improves already-visible bottleneck kernels, including sparse attention, the lightning indexer gradient, and weight-free RMSNorm. The fusion path changes the execution unit itself by removing eager intermediate tensors, dtype round trips, and autograd-visible boundaries. The distinction matters: an isolated kernel speedup and a fused module speedup answer different questions, but both contribute to the final MFU result.</p>
+          <p data-en="Within Level 2, operator results are reported at two measurement scopes. AuraKernel improves already-visible bottleneck kernels, including sparse attention, the lightning indexer gradient, and weight-free RMSNorm. The fusion path changes the execution unit itself by removing eager intermediate tensors, dtype round trips, and autograd-visible boundaries. An isolated kernel speedup and a fused module speedup answer different questions, but both contribute to the final 38.57% MFU." data-zh="在二级优化内部，算子结果采用两种测量口径。AuraKernel 优化已经暴露出来的主要瓶颈算子，包括 sparse attention、lightning indexer gradient 和无权重 RMSNorm；融合路径则直接改变执行单元，消除 eager intermediate tensor、dtype 往返和 autograd 可见边界。单算子加速与融合模块加速回答的问题不同，但都会贡献到最终 38.57% MFU。">Within Level 2, operator results are reported at two measurement scopes. AuraKernel improves already-visible bottleneck kernels, including sparse attention, the lightning indexer gradient, and weight-free RMSNorm. The fusion path changes the execution unit itself by removing eager intermediate tensors, dtype round trips, and autograd-visible boundaries. An isolated kernel speedup and a fused module speedup answer different questions, but both contribute to the final 38.57% MFU.</p>
         </div>
         <div class="container overview-table-wrap">
           <table class="article-table">
@@ -671,8 +763,8 @@ export MODEL_NAME=your-served-model-name
 export OPENAI_API_KEY=none
 BACKGROUND=false bash scripts/run_eval_1pass.sh
 
-# Results: eval/results/<run-name>/
-# Logs:    eval/logs/full_<run-name>/</code></pre>
+# Results: eval/results/&lt;run-name&gt;/
+# Logs:    eval/logs/full_&lt;run-name&gt;/</code></pre>
             </div>
           </article>
         </div>
