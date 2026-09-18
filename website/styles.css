@@ -340,18 +340,12 @@ button {
   line-height: 1.35;
 }
 
-.mfu-trajectory li > strong {
-  display: flex;
-  align-items: flex-end;
-  flex-direction: column;
-  font-size: 15px;
-  line-height: 1.35;
-}
-
-.mfu-trajectory li > strong small {
+.mfu-trajectory em {
   color: var(--teal);
   font-size: 10px;
+  font-style: normal;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .mfu-total {

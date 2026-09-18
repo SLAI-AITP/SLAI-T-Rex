@@ -6,8 +6,8 @@
     <meta name="description" content="SLAI T-Rex: full-parameter post-training of the DeepSeek-V4 family on Ascend SuperPOD, with solver-grounded Operations Research specialization.">
     <meta name="theme-color" content="#121b2b">
     <title>SLAI T-Rex | Full-parameter post-training on Ascend SuperPOD</title>
-    <link rel="stylesheet" href="./styles.css?v=20260918-1">
-    <script defer src="./app.js?v=20260918-1"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260918-2">
+    <script defer src="./app.js?v=20260918-2"></script>
   </head>
   <body>
     <header class="site-header">
@@ -41,32 +41,27 @@
               <a class="button button-secondary" href="#quick-start"><span data-en="Quick start" data-zh="快速开始">Quick start</span><span aria-hidden="true">↓</span></a>
             </div>
           </div>
-          <aside class="hero-mfu" aria-label="Pro SFT MFU progression from 34.85 percent to 38.57 percent">
+          <aside class="hero-mfu" aria-label="Best measured Pro SFT MFU: 38.57 percent">
             <div class="hero-mfu-header">
               <div>
-                <span data-en="PRO SFT EFFICIENCY" data-zh="PRO SFT 训练效率">PRO SFT EFFICIENCY</span>
-                <small data-en="Two optimization levels" data-zh="两级优化后的结果">Two optimization levels</small>
+                <span data-en="BEST PRO SFT RESULT" data-zh="PRO SFT 最优结果">BEST PRO SFT RESULT</span>
+                <small data-en="After two optimization levels" data-zh="完成两级优化后">After two optimization levels</small>
               </div>
               <strong>38.57<span>%</span></strong>
             </div>
             <ol class="mfu-trajectory">
               <li>
-                <span class="mfu-node">00</span>
-                <span><b data-en="Community baseline" data-zh="社区基线">Community baseline</b><small data-en="Reference configuration" data-zh="参考配置">Reference configuration</small></span>
-                <strong>34.85%</strong>
-              </li>
-              <li>
                 <span class="mfu-node">01</span>
-                <span><b data-en="MindSpeed-LLM tuning" data-zh="MindSpeed-LLM 调优">MindSpeed-LLM tuning</b><small data-en="Parameters and runtime" data-zh="训练参数与运行环境">Parameters and runtime</small></span>
-                <strong>36.28%<small>+1.43 pp</small></strong>
+                <span><b data-en="MindSpeed-LLM tuning" data-zh="MindSpeed-LLM 调优">MindSpeed-LLM tuning</b><small data-en="Parameters, parallelism, communication, and runtime" data-zh="训练参数、并行、通信与运行环境">Parameters, parallelism, communication, and runtime</small></span>
+                <em>LEVEL 1</em>
               </li>
               <li>
                 <span class="mfu-node">02</span>
                 <span><b data-en="Custom computation paths" data-zh="自定义计算路径">Custom computation paths</b><small data-en="Fused operators and patches" data-zh="融合算子与框架补丁">Fused operators and patches</small></span>
-                <strong>38.57%<small>+2.29 pp</small></strong>
+                <em>LEVEL 2</em>
               </li>
             </ol>
-            <p class="mfu-total"><span data-en="Cumulative gain" data-zh="累计提升">Cumulative gain</span><strong>+3.72 pp</strong></p>
+            <p class="mfu-total"><span data-en="Measured training scale" data-zh="实测训练规模">Measured training scale</span><strong>512 ranks</strong></p>
           </aside>
         </div>
       </section>
@@ -78,8 +73,8 @@
             <span data-en="final Pro SFT MFU" data-zh="最终 Pro SFT MFU">final Pro SFT MFU</span>
           </div>
           <div class="metric">
-            <strong>+3.72<span>pp</span></strong>
-            <span data-en="over the community baseline" data-zh="相对社区基线累计提升">over the community baseline</span>
+            <strong>512<span>ranks</span></strong>
+            <span data-en="distributed training scale" data-zh="分布式训练规模">distributed training scale</span>
           </div>
           <div class="metric metric-accent">
             <strong>71.81<span>%</span></strong>
@@ -185,8 +180,8 @@
         <div class="container mfu-stage-summary">
           <div class="mfu-stage-intro">
             <p class="mini-label">CURRENT PRO SFT</p>
-            <h3 data-en="Two implementation levels, measured in three stages." data-zh="两级实现优化，分三个阶段测量。">Two implementation levels, measured in three stages.</h3>
-            <p data-en="The community configuration provides the 34.85% MFU baseline. Level 1 changes only MindSpeed-LLM parameters and runtime settings, raising MFU to 36.28%. Level 2 then activates custom fused operators and framework patches, reaching 38.57%. The cumulative gain over the community baseline is 3.72 percentage points." data-zh="社区配置提供 34.85% MFU 基线。一级优化只调整 MindSpeed-LLM 参数和运行环境，将 MFU 提升到 36.28%；二级优化进一步启用融合算子和框架补丁，最终达到 38.57%。相对社区基线累计提升 3.72 个百分点。">The community configuration provides the 34.85% MFU baseline. Level 1 changes only MindSpeed-LLM parameters and runtime settings, raising MFU to 36.28%. Level 2 then activates custom fused operators and framework patches, reaching 38.57%. The cumulative gain over the community baseline is 3.72 percentage points.</p>
+            <h3 data-en="Two complementary optimization levels." data-zh="两级相互衔接的训练优化。">Two complementary optimization levels.</h3>
+            <p data-en="Level 1 tunes MindSpeed-LLM parameters, parallel scheduling, communication, and the runtime environment without introducing new operator implementations. Level 2 then replaces selected high-cost computation paths with fused operators and framework patches. The resulting Pro SFT configuration reaches the best measured MFU of 38.57%." data-zh="一级优化在不引入新算子实现的前提下，调优 MindSpeed-LLM 参数、并行调度、通信和运行环境；二级优化进一步通过融合算子和框架补丁替换部分高开销计算路径。最终 Pro SFT 配置取得 38.57% 的最优实测 MFU。">Level 1 tunes MindSpeed-LLM parameters, parallel scheduling, communication, and the runtime environment without introducing new operator implementations. Level 2 then replaces selected high-cost computation paths with fused operators and framework patches. The resulting Pro SFT configuration reaches the best measured MFU of 38.57%.</p>
           </div>
           <div class="mfu-level-list">
             <article>
@@ -204,7 +199,7 @@
         <div class="container optimization-details">
           <article class="optimization-level">
             <header class="optimization-level-header">
-              <span>LEVEL 1 / 36.28% MFU</span>
+              <span>LEVEL 1 / MINDSPEED-LLM TUNING</span>
               <h3 data-en="Tune the training plan before changing kernels" data-zh="先调优训练方案，不改变算子实现">Tune the training plan before changing kernels</h3>
               <p data-en="This level stays inside MindSpeed-LLM's existing feature set. Its purpose is to expose less communication, reduce pipeline idle time, and avoid unnecessary memory traffic without adding a new operator dependency." data-zh="这一级完全使用 MindSpeed-LLM 已有能力，目标是在不增加新算子依赖的前提下，减少暴露通信、降低流水线空泡，并避免不必要的显存读写。">This level stays inside MindSpeed-LLM's existing feature set. Its purpose is to expose less communication, reduce pipeline idle time, and avoid unnecessary memory traffic without adding a new operator dependency.</p>
             </header>
@@ -228,7 +223,7 @@
           </article>
           <article class="optimization-level">
             <header class="optimization-level-header">
-              <span>LEVEL 2 / 38.57% MFU</span>
+              <span>LEVEL 2 / CUSTOM COMPUTATION PATHS</span>
               <h3 data-en="Replace expensive paths with fused implementations" data-zh="用融合实现替换高开销计算路径">Replace expensive paths with fused implementations</h3>
               <p data-en="This level adds compiled custom operators and the framework patches that route execution into them. It reduces launch overhead and intermediate memory traffic, and changes the sparse-attention path itself rather than only tuning its schedule." data-zh="这一级增加编译后的自定义算子及其框架路由补丁，不仅调整调度，还直接替换部分计算路径，以减少 Kernel 启动、中间 Tensor 和显存往返。">This level adds compiled custom operators and the framework patches that route execution into them. It reduces launch overhead and intermediate memory traffic, and changes the sparse-attention path itself rather than only tuning its schedule.</p>
             </header>
