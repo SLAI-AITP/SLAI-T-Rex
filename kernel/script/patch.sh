@@ -16,6 +16,7 @@ export CODE_ROOT_PATH=$(cd "$(dirname $0)/../"; pwd)
 function link_op_interface() {
 (
   local patch_path=${CODE_ROOT_PATH}/patch/
+  local mindspeed_path=${opensource_path}/MindSpeed/mindspeed/
   test -d ${mindspeed_path}/gts || ln -s ${patch_path}/gts ${mindspeed_path}/gts
 )
 }
@@ -33,7 +34,6 @@ function apply_git_patch() {
 
 function main() {
   link_op_interface
-  # apply_git_patch Megatron-LM
   apply_git_patch MindSpeed
   apply_git_patch MindSpeed-LLM
 }
